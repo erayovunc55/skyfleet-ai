@@ -1,0 +1,90 @@
+export const PAGE_ROUTES = {
+  dashboard: "/",
+  liveOperations: "/live-operations",
+  transfers: "/transfers",
+  transferDetail: "/transfers/:transferId",
+  fleet: "/fleet",
+  drivers: "/drivers",
+  suppliers: "/suppliers",
+  locations: "/locations",
+  documents: "/documents",
+  ratings: "/ratings",
+  finance: "/finance",
+  aiDispatcher: "/ai-dispatcher",
+  settings: "/settings",
+};
+
+export const SIDEBAR_ROUTES = [
+  {
+    id: "dashboard",
+    title: "Dashboard",
+    icon: "🏠",
+    path: PAGE_ROUTES.dashboard,
+  },
+  {
+    id: "live-operations",
+    title: "Live Operations",
+    icon: "🛰️",
+    path: PAGE_ROUTES.liveOperations,
+  },
+  {
+    id: "transfers",
+    title: "Transfers",
+    icon: "📅",
+    path: PAGE_ROUTES.transfers,
+  },
+  {
+    id: "fleet",
+    title: "Fleet",
+    icon: "🚐",
+    path: PAGE_ROUTES.fleet,
+  },
+  {
+    id: "drivers",
+    title: "Drivers",
+    icon: "👤",
+    path: PAGE_ROUTES.drivers,
+  },
+  {
+    id: "suppliers",
+    title: "Suppliers",
+    icon: "🏢",
+    path: PAGE_ROUTES.suppliers,
+  },
+  {
+    id: "locations",
+    title: "Locations",
+    icon: "🌍",
+    path: PAGE_ROUTES.locations,
+  },
+  {
+    id: "documents",
+    title: "Documents",
+    icon: "📄",
+    path: PAGE_ROUTES.documents,
+  },
+  {
+    id: "ratings",
+    title: "Ratings",
+    icon: "⭐",
+    path: PAGE_ROUTES.ratings,
+  },
+  {
+    id: "finance",
+    title: "Finance",
+    icon: "💰",
+    path: PAGE_ROUTES.finance,
+  },
+  {
+    id: "ai-dispatcher",
+    title: "AI Dispatcher",
+    icon: "🤖",
+    path: PAGE_ROUTES.aiDispatcher,
+  },
+  {
+    id: "settings",
+    title: "Settings",
+    icon: "⚙️",
+    path: PAGE_ROUTES.settings,
+  },
+];

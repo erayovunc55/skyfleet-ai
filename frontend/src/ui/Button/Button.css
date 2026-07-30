@@ -1,0 +1,104 @@
+.sf-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
+}
+
+.sf-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.sf-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sf-button-sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 11px;
+}
+
+.sf-button-md {
+  min-height: 42px;
+  padding: 0 18px;
+  font-size: 12px;
+}
+
+.sf-button-lg {
+  min-height: 50px;
+  padding: 0 22px;
+  font-size: 13px;
+}
+
+.sf-button-primary {
+  color: #ffffff;
+  background: var(--color-primary-strong);
+}
+
+.sf-button-primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.sf-button-success {
+  color: #ffffff;
+  background: #16a34a;
+}
+
+.sf-button-success:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.sf-button-danger {
+  color: #ffffff;
+  background: #dc2626;
+}
+
+.sf-button-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.sf-button-ghost {
+  color: var(--color-text-soft);
+  border-color: var(--color-border);
+  background: transparent;
+}
+
+.sf-button-ghost:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.sf-button-secondary {
+  color: #bfdbfe;
+  border-color: rgba(59, 130, 246, 0.22);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.sf-button-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sf-button-spin 700ms linear infinite;
+}
+
+@keyframes sf-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

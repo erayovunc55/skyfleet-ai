@@ -19,7 +19,9 @@ export default function AdminLayout({
         activePage={activePage}
         onNavigate={onNavigate}
         isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={() =>
+          setSidebarOpen(false)
+        }
       />
 
       <div className="admin-layout-main">

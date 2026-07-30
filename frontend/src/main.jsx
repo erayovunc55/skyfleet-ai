@@ -1,14 +1,26 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import "./styles/recovered.css";
-
-
-
 import App from "./App.jsx";
+import AppProvider from "./context/AppProvider.jsx";
 
-createRoot(document.getElementById("root")).render(
+import "./styles/core/variables.css";
+import "./styles/core/base.css";
+
+import "./styles/components/components.css";
+import "./styles/components/forms.css";
+
+import "./styles/layout/admin-layout.css";
+
+import "./styles/modules/transfers.css";
+import "./styles/modules/suppliers.css";
+import "./styles/modules/drivers.css";
+createRoot(
+  document.getElementById("root"),
+).render(
   <StrictMode>
-    <App />
-  </StrictMode>
+    <AppProvider>
+      <App />
+    </AppProvider>
+  </StrictMode>,
 );

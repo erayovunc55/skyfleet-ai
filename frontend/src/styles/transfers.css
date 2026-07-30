@@ -1,0 +1,43 @@
+.transfer-workspace {
+  display: grid;
+  grid-template-columns:
+    minmax(320px, 0.8fr)
+    minmax(480px, 1.2fr);
+  gap: 18px;
+}
+
+.transfer-workspace-list,
+.transfer-workspace-detail,
+.transfer-workspace-map {
+  min-height: 240px;
+  padding: 22px;
+}
+
+.transfer-workspace-map {
+  grid-column: 1 / -1;
+  min-height: 360px;
+}
+
+.transfer-workspace p {
+  margin: 0 0 7px;
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.transfer-workspace h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 20px;
+}
+
+@media (max-width: 900px) {
+  .transfer-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-workspace-map {
+    grid-column: auto;
+  }
+}

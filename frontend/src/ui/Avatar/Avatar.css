@@ -1,0 +1,41 @@
+.sf-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 50%;
+  color: #ffffff;
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #0891b2
+    );
+  object-fit: cover;
+  overflow: hidden;
+  font-weight: 900;
+}
+
+.sf-avatar-sm {
+  width: 34px;
+  height: 34px;
+  font-size: 10px;
+}
+
+.sf-avatar-md {
+  width: 44px;
+  height: 44px;
+  font-size: 12px;
+}
+
+.sf-avatar-lg {
+  width: 60px;
+  height: 60px;
+  font-size: 17px;
+}
+
+.sf-avatar-xl {
+  width: 82px;
+  height: 82px;
+  font-size: 22px;
+}

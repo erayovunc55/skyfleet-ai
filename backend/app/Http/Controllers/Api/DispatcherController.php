@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Transfer;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DispatcherController extends Controller
 {
@@ -92,6 +93,41 @@ class DispatcherController extends Controller
         return response()->json([
             'data' => $data,
         ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'supplier' => 'required|string',
+            'passenger_name' => 'required|string',
+            'passenger_phone' => 'nullable|string',
+            'passenger_email' => 'nullable|email',
+            'flight_number' => 'nullable|string',
+            'pickup' => 'required|string',
+            'dropoff' => 'required|string',
+            'pickup_time' => 'required|date',
+            'vehicle_type' => 'nullable|string',
+            'driver_id' => 'nullable|exists:users,id',
+            'adult' => 'nullable|integer|min:0',
+            'child' => 'nullable|integer|min:0',
+            'baby' => 'nullable|integer|min:0',
+            'luggage_count' => 'nullable|integer|min:0',
+            'price' => 'nullable|numeric',
+            'currency' => 'nullable|string',
+            'passenger_note' => 'nullable|string',
+        ]);
+
+        if (empty($request->input('booking_reference'))) {
+            $data['booking_reference'] = 'SF-' . date('Y') . '-' . str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT);
+        } else {
+            $data['booking_reference'] = $request->input('booking_reference');
+        }
+
+        $data['status'] = 'pending';
+
+        $transfer = Transfer::create($data);
+
+        return response()->json(['data' => $transfer->fresh()], 201);
     }
 
     private function getDriverStatus(

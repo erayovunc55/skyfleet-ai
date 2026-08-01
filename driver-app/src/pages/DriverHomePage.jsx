@@ -13,6 +13,13 @@ export default function DriverHomePage({
 }) {
   const [transfers, setTransfers] =
     useState([]);
+      const [dashboard, setDashboard] =
+    useState({
+      assigned: 0,
+      ongoing: 0,
+      waiting: 0,
+      completedToday: 0,
+    });
 
   const [loading, setLoading] =
     useState(true);
@@ -33,17 +40,34 @@ export default function DriverHomePage({
     setLoading(true);
     setError("");
 
-    try {
-      const items =
-        await transferService
-          .getAssignedTransfers();
+   try {
+  const [
+    items,
+    dashboardData,
+  ] = await Promise.all([
+    transferService
+      .getAssignedTransfers(),
+    transferService
+      .getDashboard(),
+  ]);
 
-      setTransfers(
-        Array.isArray(items)
-          ? items
-          : [],
-      );
-    } catch (requestError) {
+  setTransfers(
+    Array.isArray(items)
+      ? items
+      : [],
+  );
+
+  setDashboard({
+    assigned:
+      dashboardData?.assigned ?? 0,
+    ongoing:
+      dashboardData?.ongoing ?? 0,
+    waiting:
+      dashboardData?.waiting ?? 0,
+    completedToday:
+  dashboardData?.completedToday ?? 0,
+  });
+} catch (requestError) {
       setError(
         requestError?.response?.data
           ?.message ||
@@ -109,25 +133,49 @@ if (selectedTransfer) {
         </button>
       </header>
 
-      <section className="driver-home-summary">
-        <div>
-          <span>
-            Atanmış Transfer
-          </span>
+     <section className="driver-home-summary">
+  <div className="driver-summary-grid">
+    <div className="driver-summary-card">
+      <span>Atanmış</span>
 
-          <strong>
-            {transfers.length}
-          </strong>
-        </div>
+      <strong>
+        {dashboard.assigned}
+      </strong>
+    </div>
 
-        <button
-          type="button"
-          disabled={loading}
-          onClick={loadTransfers}
-        >
-          Yenile
-        </button>
-      </section>
+    <div className="driver-summary-card">
+      <span>Devam Eden</span>
+
+      <strong>
+        {dashboard.ongoing}
+      </strong>
+    </div>
+
+    <div className="driver-summary-card">
+      <span>Bekleyen</span>
+
+      <strong>
+        {dashboard.waiting}
+      </strong>
+    </div>
+
+    <div className="driver-summary-card">
+      <span>Tamamlanan</span>
+
+<strong>
+  {dashboard.completedToday}
+</strong>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    disabled={loading}
+    onClick={loadTransfers}
+  >
+    Yenile
+  </button>
+</section>
 
       {loading && (
         <div className="driver-page-state">

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 use App\Http\Controllers\Api\TransferEvidenceController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DispatcherController;
@@ -69,6 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
         'driver/transfers',
         [DriverController::class, 'myTransfers']
     );
+    Route::get(
+    'driver/dashboard',
+    [DriverController::class, 'dashboard']
+);
 
     Route::patch(
         'drivers/{driver}/vehicle',
@@ -86,6 +90,11 @@ Route::middleware('auth:sanctum')->group(function () {
         [DispatcherController::class, 'transfers']
     );
 
+    Route::post(
+        'dispatcher/transfers',
+        [DispatcherController::class, 'store']
+    );
+
     /*
     |--------------------------------------------------------------------------
     | Transfers
@@ -96,7 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
         'transfers',
         [TransferController::class, 'index']
     );
-    
+
 Route::post(
     'transfers/{transfer}/no-show-evidence',
     [

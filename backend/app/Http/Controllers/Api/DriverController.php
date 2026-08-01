@@ -88,6 +88,51 @@ class DriverController extends Controller
             'data' => $updatedDriver,
         ]);
     }
+        public function dashboard(
+        Request $request
+    ): JsonResponse {
+        $user = $request->user();
+
+        if (!$user || $user->role !== 'driver') {
+            return response()->json([
+                'message' =>
+                    'Bu alan yalnızca sürücüler tarafından kullanılabilir.',
+            ], 403);
+        }
+
+        $assigned = Transfer::query()
+            ->where('driver_id', $user->id)
+            ->count();
+
+        $ongoing = Transfer::query()
+            ->where('driver_id', $user->id)
+            ->whereIn('status', [
+                'on_the_way',
+                'arrived',
+                'passenger_called',
+                'passenger_on_board',
+                'trip_started',
+            ])
+            ->count();
+
+        $waiting = Transfer::query()
+            ->where('driver_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
+
+        return response()->json([
+            'data' => [
+                'assigned' => $assigned,
+                'ongoing' => $ongoing,
+                'waiting' => $waiting,
+                'completedToday' => Transfer::query()
+    ->where('driver_id', $user->id)
+    ->where('status', 'completed')
+    ->whereDate('pickup_time', today())
+    ->count(),
+            ],
+        ]);
+    }
     public function myTransfers(
     Request $request
 ): JsonResponse {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import DriverHomePage from "./pages/DriverHomePage";
 import DriverLoginPage from "./pages/DriverLoginPage";
+import DispatcherApp from "./dispatcher/DispatcherApp";
 
 import {
   getStoredDriver,
@@ -31,11 +32,16 @@ export default function App() {
         handleUnauthenticated,
       );
     };
-  }, []);
-
-  async function handleLogout() {
+  }, []);  async function handleLogout() {
     await logoutDriver();
     setUser(null);
+  }
+
+  const routePath = window.location.hash ? window.location.hash.replace(/^#/, "") : window.location.pathname;
+  const isDispatcherRoute = routePath.startsWith("/dispatcher") || window.location.pathname.startsWith("/dispatcher");
+
+  if (isDispatcherRoute) {
+    return <DispatcherApp />;
   }
 
   if (!user) {
@@ -53,3 +59,5 @@ export default function App() {
     />
   );
 }
+
+

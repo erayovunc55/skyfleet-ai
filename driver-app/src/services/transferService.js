@@ -10,6 +10,13 @@ const transferService = {
       ? response.data.data
       : [];
   },
+    async getDashboard() {
+    const response = await apiClient.get(
+      "/driver/dashboard",
+    );
+
+    return response.data?.data;
+  },
 
   async updateStatus(
     transferId,

@@ -60,30 +60,11 @@ class DispatcherController extends Controller
                     ->count();
             }
 
-            return [
-                ...$transfer->toArray(),
-
-                'operation_summary' => [
-                    'driver_status' => $this->getDriverStatus(
-                        $transfer->status
-                    ),
-
-                    'vehicle_status' =>
-                        $vehicle?->operational_status
-                        ?? 'unassigned',
-
-                    'last_gps_at' =>
-                        $transfer->latestLocation
-                            ?->recorded_at
-                            ?->toISOString(),
-
-                    'today_transfer_count' =>
-                        $todayTransferCount,
-
-                    'today_completed_count' =>
-                        $todayCompletedCount,
-                ],
-            ];
+            return $this->formatTransfer(
+                $transfer,
+                $todayTransferCount,
+                $todayCompletedCount
+            );
         });
 
         return response()->json([
@@ -174,9 +155,7 @@ class DispatcherController extends Controller
             ],
         ]);
 
-        if (
-            !empty($data['driver_id'])
-        ) {
+        if (!empty($data['driver_id'])) {
             $driver = User::findOrFail(
                 $data['driver_id']
             );
@@ -196,16 +175,29 @@ class DispatcherController extends Controller
             $data['booking_reference']
             ?? $this->generateBookingReference();
 
-        $data['status'] = empty($data['driver_id'])
-            ? 'pending'
-            : 'accepted';
+        $data['status'] =
+            empty($data['driver_id'])
+                ? 'pending'
+                : 'accepted';
 
         $transfer = Transfer::create($data);
 
+        $createdTransfer = $transfer
+            ->fresh()
+            ->load([
+                'driver.vehicle',
+                'pickupLocation.type',
+                'pickupPoint.airportTerminal',
+                'dropoffLocation.type',
+                'dropoffPoint.airportTerminal',
+                'latestEvent',
+                'latestLocation',
+            ]);
+
         return response()->json([
-            'data' => $transfer
-                ->fresh()
-                ->load('driver'),
+            'data' => $this->formatTransfer(
+                $createdTransfer
+            ),
         ], 201);
     }
 
@@ -244,21 +236,86 @@ class DispatcherController extends Controller
             'status' => 'accepted',
         ]);
 
+        $updatedTransfer = $transfer
+            ->fresh()
+            ->load([
+                'driver.vehicle',
+                'pickupLocation.type',
+                'pickupPoint.airportTerminal',
+                'dropoffLocation.type',
+                'dropoffPoint.airportTerminal',
+                'latestEvent',
+                'latestLocation',
+            ]);
+
         return response()->json([
             'message' =>
                 'Sürücü başarıyla atandı.',
-            'data' => $transfer
-                ->fresh()
-                ->load([
-                    'driver.vehicle',
-                    'pickupLocation.type',
-                    'pickupPoint.airportTerminal',
-                    'dropoffLocation.type',
-                    'dropoffPoint.airportTerminal',
-                    'latestEvent',
-                    'latestLocation',
-                ]),
+
+            'data' => $this->formatTransfer(
+                $updatedTransfer
+            ),
         ]);
+    }
+
+    private function formatTransfer(
+        Transfer $transfer,
+        int $todayTransferCount = 0,
+        int $todayCompletedCount = 0
+    ): array {
+        $driver = $transfer->driver;
+        $vehicle = $driver?->vehicle;
+
+        return [
+            ...$transfer->toArray(),
+
+            /*
+             * API sözleşmesinde beklenen türetilmiş alanlar.
+             */
+            'voucher' =>
+                $transfer->booking_reference,
+
+            'driver_name' =>
+                $driver?->name,
+
+            /*
+             * Transfers tablosunda henüz supplier_id kolonu
+             * bulunmadığı için şimdilik null döndürülür.
+             */
+            'supplier_id' => null,
+
+            /*
+             * Bu anahtarlar ilişkiler yüklenmemiş veya boş olsa
+             * bile API cevabında her zaman bulunur.
+             */
+            'pickup_location' =>
+                $transfer->pickupLocation,
+
+            'dropoff_location' =>
+                $transfer->dropoffLocation,
+
+            'operation_summary' => [
+                'driver_status' =>
+                    $this->getDriverStatus(
+                        $transfer->status
+                    ),
+
+                'vehicle_status' =>
+                    $vehicle?->operational_status
+                    ?? 'unassigned',
+
+                'last_gps_at' =>
+                    $transfer->latestLocation
+                        ?->recorded_at
+                        ?->toISOString(),
+
+                'today_transfer_count' =>
+                    $todayTransferCount,
+
+                'today_completed_count' =>
+                    $todayCompletedCount,
+            ],
+        ];
     }
 
     private function generateBookingReference(): string
@@ -286,6 +343,7 @@ class DispatcherController extends Controller
     ): string {
         return match ($transferStatus) {
             'accepted',
+            'assigned',
             'on_the_way',
             'arrived',
             'passenger_called',

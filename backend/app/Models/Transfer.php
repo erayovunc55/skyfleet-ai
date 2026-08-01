@@ -12,6 +12,34 @@ class Transfer extends Model
 {
     use HasFactory;
 
+    private const STATUS_TRANSITIONS = [
+        'accepted' => [
+            'on_the_way',
+        ],
+        'on_the_way' => [
+            'arrived',
+        ],
+        'arrived' => [
+            'passenger_called',
+        ],
+        'passenger_called' => [
+            'passenger_on_board',
+        ],
+        'passenger_on_board' => [
+            'trip_started',
+        ],
+        'trip_started' => [
+            'completed',
+        ],
+        'completed' => [],
+        'no_show' => [],
+    ];
+
+    private const TERMINAL_STATUSES = [
+        'completed',
+        'no_show',
+    ];
+
     protected $fillable = [
         'pickup_location_id',
         'pickup_point_id',
@@ -57,6 +85,32 @@ class Transfer extends Model
             'dropoff_lng' => 'decimal:7',
             'price' => 'decimal:2',
         ];
+    }
+
+    public function allowedNextStatuses(): array
+    {
+        return self::STATUS_TRANSITIONS[
+            $this->status
+        ] ?? [];
+    }
+
+    public function canTransitionTo(
+        string $nextStatus
+    ): bool {
+        return in_array(
+            $nextStatus,
+            $this->allowedNextStatuses(),
+            true
+        );
+    }
+
+    public function isTerminalStatus(): bool
+    {
+        return in_array(
+            $this->status,
+            self::TERMINAL_STATUSES,
+            true
+        );
     }
 
     public function driver(): BelongsTo

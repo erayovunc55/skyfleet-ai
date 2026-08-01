@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
 }
 
@@ -290,6 +290,35 @@
   background: #f8fafc;
   color: #334155;
   font-weight: 700;
+}
+
+.dispatcher-fleet-map-page {
+  display: grid;
+  gap: 18px;
+}
+
+.dispatcher-fleet-map-map {
+  min-height: 500px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.08);
+}
+
+.dispatcher-fleet-map-list {
+  display: grid;
+  gap: 18px;
+}
+
+.dispatcher-fleet-popup p {
+  margin: 8px 0 0;
+  color: #475569;
+}
+
+@media (max-width: 960px) {
+  .dispatcher-fleet-map-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dispatcher-transfer-footer span {
@@ -705,5 +734,6 @@
     justify-content: stretch;
   }
 }
+
 
 

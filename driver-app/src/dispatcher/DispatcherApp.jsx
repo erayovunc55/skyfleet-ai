@@ -1,22 +1,67 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 import apiClient from "../services/apiClient";
+import "leaflet/dist/leaflet.css";
 import "./dispatcher.css";
 import NewTransferModal from "./components/NewTransferModal";
 import AssignDriverModal from "./components/AssignDriverModal";
 
+const driverMarkerIcon = L.divIcon({
+  className: "dispatcher-fleet-marker-icon",
+  html: '<div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#2563eb;color:#ffffff;font-size:18px;box-shadow:0 0 0 6px rgba(37,99,235,0.16);border:2px solid #ffffff;">🚐</div>',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -30],
+});
+
+function FleetMapController({ positions }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      map.invalidateSize({ animate: false });
+      if (positions.length > 1) {
+        map.fitBounds(positions, { padding: [50, 50], maxZoom: 13 });
+      } else if (positions.length === 1) {
+        map.setView(positions[0], 12);
+      }
+    }, 200);
+    return () => window.clearTimeout(timeoutId);
+  }, [map, positions]);
+
+  return null;
+}
+
+function getFleetMapCenter(items) {
+  if (!items || items.length === 0) {
+    return [41.0082, 28.9784];
+  }
+
+  const validLocations = items.filter((item) => item.latestLocation);
+  if (!validLocations.length) {
+    return [41.0082, 28.9784];
+  }
+
+  const sum = validLocations.reduce(
+    (acc, item) => ({
+      latitude: acc.latitude + item.latestLocation.latitude,
+      longitude: acc.longitude + item.latestLocation.longitude,
+    }),
+    { latitude: 0, longitude: 0 },
+  );
+
+  return [sum.latitude / validLocations.length, sum.longitude / validLocations.length];
+}
 const navItems = [
   { id: "dashboard", label: "Dashboard" },
   { id: "drivers", label: "Drivers" },
   { id: "transfers", label: "Transfers" },
+  { id: "fleet-map", label: "Fleet Map" },
   { id: "suppliers", label: "Suppliers" },
 ];
 
-const summaryCards = [
-  { id: "totalTransfers", label: "Total Transfers", value: 318, icon: "📦" },
-  { id: "activeTransfers", label: "Active Transfers", value: 42, icon: "🚚" },
-  { id: "waitingAssignment", label: "Waiting Assignment", value: 11, icon: "⏳" },
-  { id: "activeDrivers", label: "Active Drivers", value: 24, icon: "👨‍✈️" },
-];
 
 const suppliers = [
   { name: "Istanbul Express", service: "Airport Transfers", rating: 4.9, contact: "support@istexpress.com" },
@@ -124,6 +169,51 @@ function formatDriver(driver, driverName) {
   return String(driver);
 }
 
+function parseLatestLocation(item = {}) {
+  const raw =
+    item.latest_location ??
+    item.latestLocation ??
+    item.latestLocationData ??
+    item.latestLoc ??
+    null;
+
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const latitude = Number(
+    raw.latitude ?? raw.lat ?? raw.latitud ?? raw.location?.latitude ?? raw.coords?.latitude,
+  );
+  const longitude = Number(
+    raw.longitude ?? raw.lng ?? raw.lon ?? raw.location?.longitude ?? raw.coords?.longitude,
+  );
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+    recordedAt:
+      raw.recorded_at ?? raw.recordedAt ?? raw.timestamp ?? raw.updated_at ?? raw.updatedAt ?? raw.time ?? null,
+  };
+}
+
+function formatLastGpsTime(value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return date.toLocaleString([], {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 function normalizeTransfer(item = {}) {
   const pickupTimeValue = item.pickup_time || item.pickupTime || item.date;
 
@@ -156,6 +246,16 @@ function normalizeTransfer(item = {}) {
     date: formatPickupDate(pickupTimeValue || item.date),
     driverId: item.driver_id ?? item.driver?.id ?? null,
     driver: formatDriver(item.driver, item.driver_name),
+    vehiclePlate:
+      item.vehicle?.plate ??
+      item.vehicle_plate ??
+      item.vehiclePlate ??
+      item.driver?.vehicle?.plate ??
+      item.driver?.vehicle_plate ??
+      item.driver?.vehiclePlate ??
+      "-",
+    latestLocation: parseLatestLocation(item),
+    lastGpsTime: formatLastGpsTime(parseLatestLocation(item)?.recordedAt),
     status: mapDispatcherStatus(item.status || item.state),
   };
 }
@@ -179,6 +279,7 @@ function getInitialPage() {
 
   if (routePath.includes("/dispatcher/drivers")) return "drivers";
   if (routePath.includes("/dispatcher/transfers")) return "transfers";
+  if (routePath.includes("/dispatcher/fleet-map")) return "fleet-map";
   if (routePath.includes("/dispatcher/suppliers")) return "suppliers";
   return "dashboard";
 }
@@ -196,6 +297,8 @@ export default function DispatcherApp() {
   const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [driversError, setDriversError] = useState("");
+  const transfersRequestRunningRef = useRef(false);
+  const driversRequestRunningRef = useRef(false);
 
   const [isNewTransferModalOpen, setIsNewTransferModalOpen] = useState(false);
   const [assignmentTransfer, setAssignmentTransfer] = useState(null);
@@ -215,13 +318,20 @@ export default function DispatcherApp() {
   }, [toastMessage]);
 
   useEffect(() => {
-    if (activePage !== "transfers") return undefined;
+    if (!["transfers", "fleet-map"].includes(activePage)) return undefined;
 
     const controller = new AbortController();
+    let mounted = true;
+    const intervalId = window.setInterval(loadTransfers, 10000);
 
     async function loadTransfers() {
-      setIsLoadingTransfers(true);
-      setLoadError("");
+      if (transfersRequestRunningRef.current) return;
+      transfersRequestRunningRef.current = true;
+
+      if (mounted) {
+        setIsLoadingTransfers(true);
+        setLoadError("");
+      }
 
       try {
         const response = await apiClient.get("/dispatcher/transfers", {
@@ -232,8 +342,12 @@ export default function DispatcherApp() {
           ? response.data.data
           : [];
 
-        setTransfersState(items.map(normalizeTransfer));
+        if (mounted) {
+          setTransfersState(items.map(normalizeTransfer));
+        }
       } catch (error) {
+        if (!mounted) return;
+
         if (
           error?.name !== "CanceledError" &&
           error?.name !== "AbortError" &&
@@ -245,22 +359,38 @@ export default function DispatcherApp() {
           );
         }
       } finally {
-        if (!controller.signal.aborted) setIsLoadingTransfers(false);
+        transfersRequestRunningRef.current = false;
+
+        if (mounted) {
+          setIsLoadingTransfers(false);
+        }
       }
     }
 
     loadTransfers();
-    return () => controller.abort();
+
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+      controller.abort();
+    };
   }, [activePage]);
 
   useEffect(() => {
     if (!["transfers", "drivers"].includes(activePage)) return undefined;
 
     const controller = new AbortController();
+    let mounted = true;
+    const intervalId = window.setInterval(loadDrivers, 10000);
 
     async function loadDrivers() {
-      setIsLoadingDrivers(true);
-      setDriversError("");
+      if (driversRequestRunningRef.current) return;
+      driversRequestRunningRef.current = true;
+
+      if (mounted) {
+        setIsLoadingDrivers(true);
+        setDriversError("");
+      }
 
       try {
         const response = await apiClient.get("/drivers", {
@@ -271,8 +401,12 @@ export default function DispatcherApp() {
           ? response.data.data
           : [];
 
-        setDriversState(items.map(normalizeDriver));
+        if (mounted) {
+          setDriversState(items.map(normalizeDriver));
+        }
       } catch (error) {
+        if (!mounted) return;
+
         if (
           error?.name !== "CanceledError" &&
           error?.name !== "AbortError" &&
@@ -284,20 +418,29 @@ export default function DispatcherApp() {
           );
         }
       } finally {
-        if (!controller.signal.aborted) setIsLoadingDrivers(false);
+        driversRequestRunningRef.current = false;
+
+        if (mounted) {
+          setIsLoadingDrivers(false);
+        }
       }
     }
 
     loadDrivers();
-    return () => controller.abort();
+
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+      controller.abort();
+    };
   }, [activePage]);
 
   const activeDrivers = useMemo(
-    () => driversState.filter((driver) => driver.isActive),
-    [driversState],
-  );
+  () => driversState.filter((driver) => driver.isActive),
+  [driversState],
+);
 
-  const uniqueDates = useMemo(
+const uniqueDates = useMemo(
     () =>
       Array.from(
         new Set(transfersState.map((transfer) => transfer.date).filter(Boolean)),
@@ -327,6 +470,52 @@ export default function DispatcherApp() {
         .includes(query);
     });
   }, [search, statusFilter, dateFilter, transfersState]);
+
+  const fleetMapItems = useMemo(() => {
+    const activeStatuses = new Set([
+      "Assigned",
+      "Driver En Route",
+      "At Pickup",
+      "Ongoing",
+    ]);
+
+    return transfersState.filter(
+      (transfer) =>
+        activeStatuses.has(transfer.status) &&
+        transfer.latestLocation &&
+        Number.isFinite(transfer.latestLocation.latitude) &&
+        Number.isFinite(transfer.latestLocation.longitude),
+    );
+  }, [transfersState]);
+
+  const fleetMapPositions = useMemo(() =>
+    fleetMapItems.map((item) => [
+      item.latestLocation.latitude,
+      item.latestLocation.longitude,
+    ]),
+    [fleetMapItems],
+  );
+
+  const kpis = useMemo(() => {
+  const totalTransfers = visibleTransfers.length;
+  const activeStatuses = new Set(["Assigned", "Driver En Route", "At Pickup", "Ongoing"]);
+  const activeTransfers = visibleTransfers.filter((t) => activeStatuses.has(t.status)).length;
+  const waitingAssignment = visibleTransfers.filter((t) => t.status === "Waiting Assignment").length;
+  const completed = visibleTransfers.filter((t) => t.status === "Completed").length;
+  const cancelled = visibleTransfers.filter((t) => t.status === "Cancelled").length;
+  const activeDriversCount = activeDrivers.length;
+
+  return { totalTransfers, activeTransfers, waitingAssignment, completed, cancelled, activeDriversCount };
+}, [visibleTransfers, activeDrivers]);
+
+const summaryCards = useMemo(() => [
+  { id: "totalTransfers", label: "Total Transfers", value: kpis.totalTransfers, icon: "📦" },
+  { id: "activeTransfers", label: "Active Transfers", value: kpis.activeTransfers, icon: "🚚" },
+  { id: "waitingAssignment", label: "Waiting Assignment", value: kpis.waitingAssignment, icon: "⏳" },
+  { id: "completed", label: "Completed", value: kpis.completed, icon: "✅" },
+  { id: "cancelled", label: "Cancelled / No Show", value: kpis.cancelled, icon: "❌" },
+  { id: "activeDrivers", label: "Active Drivers", value: kpis.activeDriversCount, icon: "👨‍✈️" },
+], [kpis]);
 
   function navigate(page) {
     setActivePage(page);
@@ -693,6 +882,110 @@ export default function DispatcherApp() {
             </div>
           )}
 
+                    {activePage === "fleet-map" && (
+            <div className="dispatcher-fleet-map-page">
+              <div className="dispatcher-transfers-header">
+                <div>
+                  <h2>Fleet Map</h2>
+                  <p className="dispatcher-page-copy">
+                    Monitor live vehicle locations and driver activity from your dispatch fleet.
+                  </p>
+                </div>
+              </div>
+
+              <div className="dispatcher-fleet-map-map">
+                {isLoadingTransfers ? (
+                  <div className="dispatcher-loading-state">
+                    <p>Loading fleet map data...</p>
+                  </div>
+                ) : loadError ? (
+                  <div className="dispatcher-error-state">
+                    <p>{loadError}</p>
+                  </div>
+                ) : fleetMapItems.length > 0 ? (
+                  <MapContainer
+                    center={getFleetMapCenter(fleetMapItems)}
+                    zoom={12}
+                    scrollWheelZoom={false}
+                    style={{ height: "500px", width: "100%" }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <FleetMapController positions={fleetMapPositions} />
+
+                    {fleetMapItems.map((item) => (
+                      <Marker
+                        key={item.id ?? item.voucher}
+                        position={[
+                          item.latestLocation.latitude,
+                          item.latestLocation.longitude,
+                        ]}
+                        icon={driverMarkerIcon}
+                      >
+                        <Popup>
+                          <div className="dispatcher-fleet-popup">
+                            <strong>{item.driver || "Unassigned"}</strong>
+                            <p>
+                              <strong>Vehicle:</strong> {item.vehiclePlate || "-"}
+                            </p>
+                            <p>
+                              <strong>Booking:</strong> {item.voucher || "-"}
+                            </p>
+                            <p>
+                              <strong>Status:</strong> {item.status}
+                            </p>
+                            <p>
+                              <strong>Last GPS:</strong> {item.lastGpsTime || "-"}
+                            </p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </MapContainer>
+                ) : (
+                  <div className="dispatcher-empty-state">
+                    <p>No active GPS-enabled transfers are available.</p>
+                    <small>Ensure active drivers are assigned and reporting their latest location.</small>
+                  </div>
+                )}
+              </div>
+
+              <div className="dispatcher-fleet-map-list">
+                <div className="dispatcher-table-wrap">
+                  <table className="dispatcher-table">
+                    <thead>
+                      <tr>
+                        <th>Driver</th>
+                        <th>Vehicle</th>
+                        <th>Booking</th>
+                        <th>Status</th>
+                        <th>Last GPS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fleetMapItems.map((item) => (
+                        <tr key={item.id ?? item.voucher}>
+                          <td>{item.driver || "Unassigned"}</td>
+                          <td>{item.vehiclePlate || "-"}</td>
+                          <td>{item.voucher || "-"}</td>
+                          <td>
+                            <span className={`badge ${statusBadgeClasses[item.status] || "status-waiting"}`}>
+                              {item.status}
+                            </span>
+                          </td>
+                          <td>{item.lastGpsTime || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+
           {activePage === "suppliers" && (
             <div className="dispatcher-grid-list">
               {suppliers.map((supplier) => (
@@ -735,3 +1028,12 @@ export default function DispatcherApp() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+

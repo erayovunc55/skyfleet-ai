@@ -94,7 +94,10 @@ Route::middleware('auth:sanctum')->group(function () {
         'dispatcher/transfers',
         [DispatcherController::class, 'store']
     );
-
+Route::patch(
+    'dispatcher/transfers/{transfer}/assign',
+    [DispatcherController::class, 'assign']
+);
     /*
     |--------------------------------------------------------------------------
     | Transfers

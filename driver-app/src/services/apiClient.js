@@ -5,10 +5,10 @@ const API_URL =
   "/api";
 
 const TOKEN_KEY =
-  "skyfleet_driver_token";
+  "skyfleet_token";
 
 const USER_KEY =
-  "skyfleet_driver_user";
+  "skyfleet_user";
 
 const apiClient = axios.create({
   baseURL: API_URL,

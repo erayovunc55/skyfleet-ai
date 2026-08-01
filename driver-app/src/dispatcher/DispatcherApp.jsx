@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import apiClient from "../services/apiClient";
 import "./dispatcher.css";
 import NewTransferModal from "./components/NewTransferModal";
+import AssignDriverModal from "./components/AssignDriverModal";
 
 const navItems = [
   { id: "dashboard", label: "Dashboard" },
@@ -11,82 +12,16 @@ const navItems = [
 ];
 
 const summaryCards = [
-  {
-    id: "totalTransfers",
-    label: "Total Transfers",
-    value: 318,
-    icon: "📦",
-  },
-  {
-    id: "activeTransfers",
-    label: "Active Transfers",
-    value: 42,
-    icon: "🚚",
-  },
-  {
-    id: "waitingAssignment",
-    label: "Waiting Assignment",
-    value: 11,
-    icon: "⏳",
-  },
-  {
-    id: "activeDrivers",
-    label: "Active Drivers",
-    value: 24,
-    icon: "👨‍✈️",
-  },
-];
-
-const drivers = [
-  {
-    id: 1,
-    name: "Aylin Güneş",
-    status: "Available",
-    activeTransfers: 3,
-    lastSeen: "3m ago",
-  },
-  {
-    id: 2,
-    name: "Deniz Yılmaz",
-    status: "On Route",
-    activeTransfers: 2,
-    lastSeen: "Now",
-  },
-  {
-    id: 3,
-    name: "Mert Kaya",
-    status: "Offline",
-    activeTransfers: 0,
-    lastSeen: "24m ago",
-  },
-  {
-    id: 4,
-    name: "Selin Aras",
-    status: "Available",
-    activeTransfers: 4,
-    lastSeen: "5m ago",
-  },
+  { id: "totalTransfers", label: "Total Transfers", value: 318, icon: "📦" },
+  { id: "activeTransfers", label: "Active Transfers", value: 42, icon: "🚚" },
+  { id: "waitingAssignment", label: "Waiting Assignment", value: 11, icon: "⏳" },
+  { id: "activeDrivers", label: "Active Drivers", value: 24, icon: "👨‍✈️" },
 ];
 
 const suppliers = [
-  {
-    name: "Istanbul Express",
-    service: "Airport Transfers",
-    rating: 4.9,
-    contact: "support@istexpress.com",
-  },
-  {
-    name: "Golden Shuttle",
-    service: "Corporate Transfers",
-    rating: 4.7,
-    contact: "hello@goldenshuttle.com",
-  },
-  {
-    name: "Bosphorus Transit",
-    service: "VIP Transport",
-    rating: 4.8,
-    contact: "bookings@bosphorustransit.com",
-  },
+  { name: "Istanbul Express", service: "Airport Transfers", rating: 4.9, contact: "support@istexpress.com" },
+  { name: "Golden Shuttle", service: "Corporate Transfers", rating: 4.7, contact: "hello@goldenshuttle.com" },
+  { name: "Bosphorus Transit", service: "VIP Transport", rating: 4.8, contact: "bookings@bosphorustransit.com" },
 ];
 
 const statusOptions = [
@@ -115,6 +50,7 @@ function mapDispatcherStatus(status) {
     case "pending":
       return "Waiting Assignment";
     case "accepted":
+    case "assigned":
       return "Assigned";
     case "on_the_way":
       return "Driver En Route";
@@ -135,13 +71,8 @@ function mapDispatcherStatus(status) {
 }
 
 function formatLocation(location) {
-  if (!location) {
-    return "-";
-  }
-
-  if (typeof location === "string") {
-    return location.trim() || "-";
-  }
+  if (!location) return "-";
+  if (typeof location === "string") return location.trim() || "-";
 
   if (typeof location === "object") {
     return (
@@ -158,15 +89,10 @@ function formatLocation(location) {
 }
 
 function formatPickupTime(value) {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return String(value);
-  }
+  if (Number.isNaN(date.getTime())) return String(value);
 
   return date.toLocaleTimeString([], {
     hour: "2-digit",
@@ -175,37 +101,21 @@ function formatPickupTime(value) {
 }
 
 function formatPickupDate(value) {
-  if (!value) {
-    return "";
-  }
+  if (!value) return "";
 
   const rawValue = String(value);
-
   if (/^\d{4}-\d{2}-\d{2}/.test(rawValue)) {
     return rawValue.slice(0, 10);
   }
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toISOString().slice(0, 10);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
 }
 
 function formatDriver(driver, driverName) {
-  if (driverName) {
-    return driverName;
-  }
-
-  if (!driver) {
-    return "Unassigned";
-  }
-
-  if (typeof driver === "string") {
-    return driver;
-  }
+  if (driverName) return driverName;
+  if (!driver) return "Unassigned";
+  if (typeof driver === "string") return driver;
 
   if (typeof driver === "object") {
     return driver.name || driver.full_name || driver.email || "Unassigned";
@@ -244,8 +154,21 @@ function normalizeTransfer(item = {}) {
     ),
     pickupTime: formatPickupTime(pickupTimeValue),
     date: formatPickupDate(pickupTimeValue || item.date),
+    driverId: item.driver_id ?? item.driver?.id ?? null,
     driver: formatDriver(item.driver, item.driver_name),
     status: mapDispatcherStatus(item.status || item.state),
+  };
+}
+
+function normalizeDriver(item = {}) {
+  return {
+    id: item.id,
+    name: item.name || item.full_name || item.email || `Driver #${item.id}`,
+    email: item.email || "",
+    phone: item.phone || "",
+    isActive: Boolean(item.is_active),
+    vehicle: item.vehicle || null,
+    status: item.is_active ? "Available" : "Inactive",
   };
 }
 
@@ -254,18 +177,9 @@ function getInitialPage() {
     ? window.location.hash.replace(/^#/, "")
     : window.location.pathname;
 
-  if (routePath.includes("/dispatcher/drivers")) {
-    return "drivers";
-  }
-
-  if (routePath.includes("/dispatcher/transfers")) {
-    return "transfers";
-  }
-
-  if (routePath.includes("/dispatcher/suppliers")) {
-    return "suppliers";
-  }
-
+  if (routePath.includes("/dispatcher/drivers")) return "drivers";
+  if (routePath.includes("/dispatcher/transfers")) return "transfers";
+  if (routePath.includes("/dispatcher/suppliers")) return "suppliers";
   return "dashboard";
 }
 
@@ -274,42 +188,34 @@ export default function DispatcherApp() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+
   const [transfersState, setTransfersState] = useState([]);
+  const [driversState, setDriversState] = useState([]);
+
   const [isLoadingTransfers, setIsLoadingTransfers] = useState(false);
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [driversError, setDriversError] = useState("");
+
+  const [isNewTransferModalOpen, setIsNewTransferModalOpen] = useState(false);
+  const [assignmentTransfer, setAssignmentTransfer] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
-    const handlePopState = () => {
-      setActivePage(getInitialPage());
-    };
-
+    const handlePopState = () => setActivePage(getInitialPage());
     window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
-    if (!toastMessage) {
-      return undefined;
-    }
+    if (!toastMessage) return undefined;
 
-    const timer = window.setTimeout(() => {
-      setToastMessage("");
-    }, 3500);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
+    const timer = window.setTimeout(() => setToastMessage(""), 3500);
+    return () => window.clearTimeout(timer);
   }, [toastMessage]);
 
   useEffect(() => {
-    if (activePage !== "transfers") {
-      return undefined;
-    }
+    if (activePage !== "transfers") return undefined;
 
     const controller = new AbortController();
 
@@ -339,40 +245,73 @@ export default function DispatcherApp() {
           );
         }
       } finally {
-        if (!controller.signal.aborted) {
-          setIsLoadingTransfers(false);
-        }
+        if (!controller.signal.aborted) setIsLoadingTransfers(false);
       }
     }
 
     loadTransfers();
-
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [activePage]);
 
-  const uniqueDates = useMemo(() => {
-    return Array.from(
-      new Set(transfersState.map((transfer) => transfer.date).filter(Boolean)),
-    ).sort();
-  }, [transfersState]);
+  useEffect(() => {
+    if (!["transfers", "drivers"].includes(activePage)) return undefined;
+
+    const controller = new AbortController();
+
+    async function loadDrivers() {
+      setIsLoadingDrivers(true);
+      setDriversError("");
+
+      try {
+        const response = await apiClient.get("/drivers", {
+          signal: controller.signal,
+        });
+
+        const items = Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
+
+        setDriversState(items.map(normalizeDriver));
+      } catch (error) {
+        if (
+          error?.name !== "CanceledError" &&
+          error?.name !== "AbortError" &&
+          error?.code !== "ERR_CANCELED"
+        ) {
+          setDriversError(
+            error?.response?.data?.message ||
+              "Unable to load drivers. Please refresh the page.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingDrivers(false);
+      }
+    }
+
+    loadDrivers();
+    return () => controller.abort();
+  }, [activePage]);
+
+  const activeDrivers = useMemo(
+    () => driversState.filter((driver) => driver.isActive),
+    [driversState],
+  );
+
+  const uniqueDates = useMemo(
+    () =>
+      Array.from(
+        new Set(transfersState.map((transfer) => transfer.date).filter(Boolean)),
+      ).sort(),
+    [transfersState],
+  );
 
   const visibleTransfers = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("tr-TR");
 
     return transfersState.filter((transfer) => {
-      if (statusFilter && transfer.status !== statusFilter) {
-        return false;
-      }
-
-      if (dateFilter && transfer.date !== dateFilter) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
+      if (statusFilter && transfer.status !== statusFilter) return false;
+      if (dateFilter && transfer.date !== dateFilter) return false;
+      if (!query) return true;
 
       return [
         transfer.voucher,
@@ -391,23 +330,12 @@ export default function DispatcherApp() {
 
   function navigate(page) {
     setActivePage(page);
-
-    const route =
-      page === "dashboard" ? "/dispatcher" : `/dispatcher/${page}`;
-
+    const route = page === "dashboard" ? "/dispatcher" : `/dispatcher/${page}`;
     window.history.pushState({}, "", route);
   }
 
-  function handleOpenModal() {
-    setIsModalOpen(true);
-  }
-
   async function handleSaveTransfer(payload) {
-    const response = await apiClient.post(
-      "/dispatcher/transfers",
-      payload,
-    );
-
+    const response = await apiClient.post("/dispatcher/transfers", payload);
     const createdItem = response.data?.data;
 
     if (!createdItem) {
@@ -419,16 +347,45 @@ export default function DispatcherApp() {
     setTransfersState((currentTransfers) => [
       transfer,
       ...currentTransfers.filter(
-        (currentTransfer) =>
-          currentTransfer.id !== transfer.id ||
-          currentTransfer.voucher !== transfer.voucher,
+        (currentTransfer) => currentTransfer.id !== transfer.id,
       ),
     ]);
 
     setToastMessage("Transfer created successfully.");
-    setIsModalOpen(false);
+    setIsNewTransferModalOpen(false);
 
     return createdItem;
+  }
+
+  async function handleAssignDriver(driverId) {
+    if (!assignmentTransfer?.id) {
+      throw new Error("The selected transfer has no database ID.");
+    }
+
+    const response = await apiClient.patch(
+      `/dispatcher/transfers/${assignmentTransfer.id}/assign`,
+      { driver_id: Number(driverId) },
+    );
+
+    const updatedItem = response.data?.data;
+    if (!updatedItem) {
+      throw new Error("The API did not return the updated transfer.");
+    }
+
+    const updatedTransfer = normalizeTransfer(updatedItem);
+
+    setTransfersState((currentTransfers) =>
+      currentTransfers.map((transfer) =>
+        transfer.id === updatedTransfer.id ? updatedTransfer : transfer,
+      ),
+    );
+
+    setAssignmentTransfer(null);
+    setToastMessage(
+      response.data?.message || "Driver assigned successfully.",
+    );
+
+    return updatedItem;
   }
 
   const pageTitle =
@@ -471,7 +428,7 @@ export default function DispatcherApp() {
             <button
               type="button"
               className="dispatcher-btn dispatcher-btn-primary"
-              onClick={handleOpenModal}
+              onClick={() => setIsNewTransferModalOpen(true)}
             >
               New Transfer
             </button>
@@ -491,7 +448,6 @@ export default function DispatcherApp() {
                 {summaryCards.map((card) => (
                   <article key={card.id} className="dispatcher-summary-card">
                     <div className="dispatcher-summary-icon">{card.icon}</div>
-
                     <div>
                       <p>{card.label}</p>
                       <strong>{card.value}</strong>
@@ -521,24 +477,36 @@ export default function DispatcherApp() {
           )}
 
           {activePage === "drivers" && (
-            <div className="dispatcher-grid-list">
-              {drivers.map((driver) => (
-                <article
-                  key={driver.id}
-                  className="dispatcher-card dispatcher-card-large"
-                >
-                  <div>
-                    <h3>{driver.name}</h3>
-                    <p>{driver.status}</p>
-                  </div>
+            <>
+              {isLoadingDrivers ? (
+                <div className="dispatcher-loading-state">
+                  <p>Loading drivers...</p>
+                </div>
+              ) : driversError ? (
+                <div className="dispatcher-error-state">
+                  <p>{driversError}</p>
+                </div>
+              ) : (
+                <div className="dispatcher-grid-list">
+                  {driversState.map((driver) => (
+                    <article
+                      key={driver.id}
+                      className="dispatcher-card dispatcher-card-large"
+                    >
+                      <div>
+                        <h3>{driver.name}</h3>
+                        <p>{driver.status}</p>
+                      </div>
 
-                  <div className="dispatcher-card-meta">
-                    <span>{driver.activeTransfers} active</span>
-                    <span>{driver.lastSeen}</span>
-                  </div>
-                </article>
-              ))}
-            </div>
+                      <div className="dispatcher-card-meta">
+                        <span>{driver.vehicle?.plate || "No vehicle"}</span>
+                        <span>{driver.phone || driver.email || "-"}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {activePage === "transfers" && (
@@ -580,7 +548,6 @@ export default function DispatcherApp() {
                   onChange={(event) => setDateFilter(event.target.value)}
                 >
                   <option value="">All Dates</option>
-
                   {uniqueDates.map((date) => (
                     <option key={date} value={date}>
                       {date}
@@ -617,15 +584,12 @@ export default function DispatcherApp() {
 
                       <tbody>
                         {visibleTransfers.map((transfer) => {
-                          const rowKey =
-                            transfer.id ?? transfer.voucher ?? crypto.randomUUID();
-
                           const badgeClass =
                             statusBadgeClasses[transfer.status] ||
                             "status-waiting";
 
                           return (
-                            <tr key={rowKey}>
+                            <tr key={transfer.id ?? transfer.voucher}>
                               <td>{transfer.voucher || "-"}</td>
                               <td>{transfer.passenger || "-"}</td>
                               <td>{transfer.flight || "-"}</td>
@@ -642,8 +606,10 @@ export default function DispatcherApp() {
                                 <button
                                   type="button"
                                   className="dispatcher-action-button"
+                                  disabled={!transfer.id}
+                                  onClick={() => setAssignmentTransfer(transfer)}
                                 >
-                                  View
+                                  Assign Driver
                                 </button>
                               </td>
                             </tr>
@@ -655,16 +621,12 @@ export default function DispatcherApp() {
 
                   <div className="dispatcher-transfer-cards">
                     {visibleTransfers.map((transfer) => {
-                      const cardKey = `card-${
-                        transfer.id ?? transfer.voucher
-                      }`;
-
                       const badgeClass =
                         statusBadgeClasses[transfer.status] || "status-waiting";
 
                       return (
                         <article
-                          key={cardKey}
+                          key={`card-${transfer.id ?? transfer.voucher}`}
                           className="dispatcher-transfer-card"
                         >
                           <div className="transfer-card-header">
@@ -708,8 +670,10 @@ export default function DispatcherApp() {
                             <button
                               type="button"
                               className="dispatcher-action-button dispatcher-action-button-secondary"
+                              disabled={!transfer.id}
+                              onClick={() => setAssignmentTransfer(transfer)}
                             >
-                              View
+                              Assign Driver
                             </button>
                           </div>
                         </article>
@@ -753,10 +717,20 @@ export default function DispatcherApp() {
       </div>
 
       <NewTransferModal
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        open={isNewTransferModalOpen}
+        onClose={() => setIsNewTransferModalOpen(false)}
         onSave={handleSaveTransfer}
-        drivers={drivers}
+        drivers={activeDrivers}
+      />
+
+      <AssignDriverModal
+        open={Boolean(assignmentTransfer)}
+        transfer={assignmentTransfer}
+        drivers={activeDrivers}
+        isLoadingDrivers={isLoadingDrivers}
+        driversError={driversError}
+        onClose={() => setAssignmentTransfer(null)}
+        onAssign={handleAssignDriver}
       />
     </div>
   );

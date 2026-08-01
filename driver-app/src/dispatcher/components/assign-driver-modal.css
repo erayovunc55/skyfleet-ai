@@ -1,0 +1,172 @@
+.assign-driver-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.assign-driver-modal {
+  width: min(100%, 520px);
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+}
+
+.assign-driver-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.assign-driver-header p {
+  margin: 0 0 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.assign-driver-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 24px;
+}
+
+.assign-driver-close {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 10px;
+  color: #475569;
+  background: #f1f5f9;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.assign-driver-transfer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 24px 24px 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.assign-driver-transfer strong {
+  color: #0f172a;
+}
+
+.assign-driver-transfer span {
+  color: #64748b;
+}
+
+.assign-driver-modal form {
+  padding: 24px;
+}
+
+.assign-driver-field {
+  display: grid;
+  gap: 8px;
+}
+
+.assign-driver-field > span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.assign-driver-field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  outline: none;
+  color: #0f172a;
+  background: #ffffff;
+  font: inherit;
+}
+
+.assign-driver-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.assign-driver-error,
+.assign-driver-empty {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.assign-driver-error {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.assign-driver-empty {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.assign-driver-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.assign-driver-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.assign-driver-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.assign-driver-button-secondary {
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  background: #ffffff;
+}
+
+.assign-driver-button-primary {
+  border: 0;
+  color: #ffffff;
+  background: #2563eb;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+}
+
+@media (max-width: 640px) {
+  .assign-driver-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .assign-driver-modal {
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .assign-driver-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

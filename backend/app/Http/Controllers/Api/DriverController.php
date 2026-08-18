@@ -16,7 +16,10 @@ class DriverController extends Controller
     {
         $drivers = User::query()
             ->where('role', 'driver')
-            ->with('vehicle')
+            ->with([
+                'vehicle',
+                'supplierCompany:id,company_name,city,country_name',
+            ])
             ->orderBy('name')
             ->get();
 
@@ -144,7 +147,7 @@ public function store(
         'message' =>
             'Sürücü başarıyla oluşturuldu.',
         'data' =>
-            $driver->load('vehicle'),
+            $driver->load(['vehicle', 'supplierCompany']),
     ], 201);
 }
 public function update(
@@ -240,7 +243,7 @@ public function update(
         'data' =>
             $driver
                 ->fresh()
-                ->load('vehicle'),
+                ->load(['vehicle', 'supplierCompany']),
     ]);
 }
     public function assignVehicle(
@@ -297,7 +300,7 @@ public function update(
 
         $updatedDriver = $driver
             ->fresh()
-            ->load('vehicle');
+            ->load(['vehicle', 'supplierCompany']);
 
         return response()->json([
             'message' => $vehicleId

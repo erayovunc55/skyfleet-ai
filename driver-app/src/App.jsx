@@ -9,6 +9,7 @@ import {
 } from "./services/authService";
 
 import "./styles/driver-app.css";
+import "./styles/driver-transfer-tabs.css";
 
 export default function App() {
   const [user, setUser] = useState(

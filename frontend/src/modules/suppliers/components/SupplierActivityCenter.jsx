@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import supplierService from "../services/supplierService";
+import "../../../styles/modules/supplier-activity.css";
 
 const PAGE_SIZES=[20,50,100];
 const TYPES=["","supplier","document","driver","vehicle","transfer"];

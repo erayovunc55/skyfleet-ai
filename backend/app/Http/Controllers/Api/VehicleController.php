@@ -1,11 +1,12 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-use Illuminate\Support\Facades\Storage;
+
 use App\Http\Controllers\Controller;
 use App\Models\Vehicle;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class VehicleController extends Controller
@@ -13,6 +14,9 @@ class VehicleController extends Controller
     public function index(): JsonResponse
     {
         $vehicles = Vehicle::query()
+            ->with([
+                'supplierCompany:id,company_name,legal_name,city,country_name',
+            ])
             ->orderByDesc('is_active')
             ->orderBy('operational_status')
             ->orderBy('plate')
@@ -35,14 +39,14 @@ class VehicleController extends Controller
 
         return response()->json([
             'message' => 'Araç başarıyla oluşturuldu.',
-            'data' => $vehicle,
+            'data' => $vehicle->load('supplierCompany:id,company_name,legal_name,city,country_name'),
         ], 201);
     }
 
     public function show(Vehicle $vehicle): JsonResponse
     {
         return response()->json([
-            'data' => $vehicle,
+            'data' => $vehicle->load('supplierCompany:id,company_name,legal_name,city,country_name'),
         ]);
     }
 
@@ -66,83 +70,75 @@ class VehicleController extends Controller
 
         return response()->json([
             'message' => 'Araç başarıyla güncellendi.',
-            'data' => $vehicle->fresh(),
+            'data' => $vehicle->fresh()->load('supplierCompany:id,company_name,legal_name,city,country_name'),
         ]);
     }
-public function changeStatus(
-    Request $request,
-    Vehicle $vehicle
-): JsonResponse {
 
-    $validated = $request->validate([
-        'operational_status' => [
-            'required',
-            Rule::in([
-                'active',
-                'service',
-                'faulty',
-                'inactive',
-            ]),
-        ],
-    ]);
+    public function changeStatus(
+        Request $request,
+        Vehicle $vehicle
+    ): JsonResponse {
+        $validated = $request->validate([
+            'operational_status' => [
+                'required',
+                Rule::in([
+                    'active',
+                    'service',
+                    'faulty',
+                    'inactive',
+                ]),
+            ],
+        ]);
 
-    $vehicle->update([
-        'operational_status' =>
-            $validated['operational_status'],
+        $vehicle->update([
+            'operational_status' => $validated['operational_status'],
+            'is_active' => $validated['operational_status'] !== 'inactive',
+        ]);
 
-        'is_active' =>
-            $validated['operational_status']
-            !== 'inactive',
-    ]);
-
-    return response()->json([
-        'message' => 'Araç durumu güncellendi.',
-        'data' => $vehicle->fresh(),
-    ]);
-}
-public function uploadPhoto(
-    Request $request,
-    Vehicle $vehicle
-): JsonResponse {
-    $validated = $request->validate([
-        'photo' => [
-            'required',
-            'image',
-            'mimes:jpg,jpeg,png,webp',
-            'max:5120',
-        ],
-    ]);
-
-    if (
-        $vehicle->photo_path &&
-        Storage::disk('public')->exists(
-            $vehicle->photo_path
-        )
-    ) {
-        Storage::disk('public')->delete(
-            $vehicle->photo_path
-        );
+        return response()->json([
+            'message' => 'Araç durumu güncellendi.',
+            'data' => $vehicle->fresh()->load('supplierCompany:id,company_name,legal_name,city,country_name'),
+        ]);
     }
 
-    $photoPath = $validated['photo']->store(
-        'vehicles',
-        'public'
-    );
+    public function uploadPhoto(
+        Request $request,
+        Vehicle $vehicle
+    ): JsonResponse {
+        $validated = $request->validate([
+            'photo' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+        ]);
 
-    $vehicle->update([
-        'photo_path' => $photoPath,
-    ]);
+        if (
+            $vehicle->photo_path &&
+            Storage::disk('public')->exists($vehicle->photo_path)
+        ) {
+            Storage::disk('public')->delete($vehicle->photo_path);
+        }
 
-    return response()->json([
-        'message' => 'Araç fotoğrafı güncellendi.',
-        'data' => [
-            'vehicle' => $vehicle->fresh(),
-            'photo_url' => asset(
-                'storage/' . $photoPath
-            ),
-        ],
-    ]);
-}
+        $photoPath = $validated['photo']->store(
+            'vehicles',
+            'public'
+        );
+
+        $vehicle->update([
+            'photo_path' => $photoPath,
+        ]);
+
+        return response()->json([
+            'message' => 'Araç fotoğrafı güncellendi.',
+            'data' => [
+                'vehicle' => $vehicle->fresh()->load('supplierCompany:id,company_name,legal_name,city,country_name'),
+                'photo_url' => asset('storage/' . $photoPath),
+            ],
+        ]);
+    }
+
     public function destroy(
         Vehicle $vehicle
     ): JsonResponse {
@@ -153,7 +149,7 @@ public function uploadPhoto(
 
         return response()->json([
             'message' => 'Araç pasif duruma alındı.',
-            'data' => $vehicle->fresh(),
+            'data' => $vehicle->fresh()->load('supplierCompany:id,company_name,legal_name,city,country_name'),
         ]);
     }
 
@@ -170,148 +166,68 @@ public function uploadPhoto(
             : ['nullable'];
 
         return [
+            'supplier_id' => [
+                ...$nullableRule,
+                'integer',
+                'exists:suppliers,id',
+            ],
             'plate' => [
                 ...$requiredRule,
                 'string',
                 'max:20',
-                Rule::unique('vehicles', 'plate')
-                    ->ignore($vehicle?->id),
+                Rule::unique('vehicles', 'plate')->ignore($vehicle?->id),
             ],
-
-            'brand' => [
-                ...$requiredRule,
-                'string',
-                'max:100',
-            ],
-
-            'model' => [
-                ...$requiredRule,
-                'string',
-                'max:100',
-            ],
-
+            'brand' => [...$requiredRule, 'string', 'max:100'],
+            'model' => [...$requiredRule, 'string', 'max:100'],
             'year' => [
                 ...$nullableRule,
                 'integer',
                 'min:1950',
                 'max:' . (now()->year + 1),
             ],
-
-            'vehicle_type' => [
-                ...$requiredRule,
-                'string',
-                'max:100',
-            ],
-
-            'color' => [
-                ...$nullableRule,
-                'string',
-                'max:50',
-            ],
-
+            'vehicle_type' => [...$requiredRule, 'string', 'max:100'],
+            'color' => [...$nullableRule, 'string', 'max:50'],
             'passenger_capacity' => [
                 ...$requiredRule,
                 'integer',
                 'min:1',
                 'max:100',
             ],
-
             'luggage_capacity' => [
                 ...$nullableRule,
                 'integer',
                 'min:0',
                 'max:100',
             ],
-
             'vin' => [
                 ...$nullableRule,
                 'string',
                 'max:50',
-                Rule::unique('vehicles', 'vin')
-                    ->ignore($vehicle?->id),
+                Rule::unique('vehicles', 'vin')->ignore($vehicle?->id),
             ],
-
-            'registration_number' => [
-                ...$nullableRule,
-                'string',
-                'max:100',
-            ],
-
-            'insurance_expiry_date' => [
-                ...$nullableRule,
-                'date',
-            ],
-
-            'inspection_expiry_date' => [
-                ...$nullableRule,
-                'date',
-            ],
-
-            'casco_expiry_date' => [
-                ...$nullableRule,
-                'date',
-            ],
-
-            'emission_expiry_date' => [
-                ...$nullableRule,
-                'date',
-            ],
-
-            'next_maintenance_date' => [
-                ...$nullableRule,
-                'date',
-            ],
-
+            'registration_number' => [...$nullableRule, 'string', 'max:100'],
+            'insurance_expiry_date' => [...$nullableRule, 'date'],
+            'inspection_expiry_date' => [...$nullableRule, 'date'],
+            'casco_expiry_date' => [...$nullableRule, 'date'],
+            'emission_expiry_date' => [...$nullableRule, 'date'],
+            'next_maintenance_date' => [...$nullableRule, 'date'],
             'current_mileage' => [
-                ...($isUpdate
-                    ? ['sometimes']
-                    : ['nullable']),
+                ...($isUpdate ? ['sometimes'] : ['nullable']),
                 'integer',
                 'min:0',
             ],
-
-            'last_maintenance_mileage' => [
-                ...$nullableRule,
-                'integer',
-                'min:0',
-            ],
-
-            'next_maintenance_mileage' => [
-                ...$nullableRule,
-                'integer',
-                'min:0',
-            ],
-
+            'last_maintenance_mileage' => [...$nullableRule, 'integer', 'min:0'],
+            'next_maintenance_mileage' => [...$nullableRule, 'integer', 'min:0'],
             'operational_status' => [
-                ...($isUpdate
-                    ? ['sometimes']
-                    : ['nullable']),
-                Rule::in([
-                    'active',
-                    'service',
-                    'faulty',
-                    'inactive',
-                ]),
+                ...($isUpdate ? ['sometimes'] : ['nullable']),
+                Rule::in(['active', 'service', 'faulty', 'inactive']),
             ],
-
-            'photo_path' => [
-                ...$nullableRule,
-                'string',
-                'max:2048',
-            ],
-
+            'photo_path' => [...$nullableRule, 'string', 'max:2048'],
             'is_active' => [
-                ...($isUpdate
-                    ? ['sometimes']
-                    : ['nullable']),
+                ...($isUpdate ? ['sometimes'] : ['nullable']),
                 'boolean',
             ],
-
-            'note' => [
-                ...$nullableRule,
-                'string',
-                'max:5000',
-            ],
+            'note' => [...$nullableRule, 'string', 'max:5000'],
         ];
     }
 
@@ -320,9 +236,7 @@ public function uploadPhoto(
         bool $isUpdate = false
     ): array {
         if (array_key_exists('plate', $validated)) {
-            $validated['plate'] = mb_strtoupper(
-                trim($validated['plate'])
-            );
+            $validated['plate'] = mb_strtoupper(trim($validated['plate']));
         }
 
         if (array_key_exists('vin', $validated)) {
@@ -331,31 +245,15 @@ public function uploadPhoto(
                 : null;
         }
 
-        if (
-            array_key_exists(
-                'operational_status',
-                $validated
-            )
-        ) {
-            $validated['is_active'] =
-                $validated['operational_status']
-                !== 'inactive';
+        if (array_key_exists('operational_status', $validated)) {
+            $validated['is_active'] = $validated['operational_status'] !== 'inactive';
         }
 
         if (!$isUpdate) {
-            $validated['luggage_capacity'] =
-                $validated['luggage_capacity'] ?? 0;
-
-            $validated['current_mileage'] =
-                $validated['current_mileage'] ?? 0;
-
-            $validated['operational_status'] =
-                $validated['operational_status']
-                ?? 'active';
-
-            $validated['is_active'] =
-                $validated['operational_status']
-                !== 'inactive';
+            $validated['luggage_capacity'] = $validated['luggage_capacity'] ?? 0;
+            $validated['current_mileage'] = $validated['current_mileage'] ?? 0;
+            $validated['operational_status'] = $validated['operational_status'] ?? 'active';
+            $validated['is_active'] = $validated['operational_status'] !== 'inactive';
         }
 
         return $validated;

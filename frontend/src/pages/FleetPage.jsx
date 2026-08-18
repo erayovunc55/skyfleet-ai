@@ -30,13 +30,14 @@ const TEXT = {
     subtitle: "Araç, sürücü, kapasite ve uygunluk durumunu ölçeklenebilir tek ekrandan yönetin.",
     back: "Dispatcher'a Dön", refresh: "Yenile", add: "+ Araç Ekle", close: "Kapat",
     total: "Toplam Araç", active: "Operasyona Hazır", service: "Servis / Arıza", unassigned: "Sürücüsüz", insuranceRisk: "Sigorta Riski",
-    filters: "Filo Filtreleri", searchPlaceholder: "Plaka, marka, model, sürücü veya tedarikçi ara...",
+    insuranceRiskOnly: "Sigorta riski filtresi aktif", clearRisk: "Filtreyi Kaldır",
+    searchPlaceholder: "Plaka, marka, model, sürücü veya tedarikçi ara...",
     allStatuses: "Tüm durumlar", allAssignments: "Tüm atamalar", assigned: "Sürücü atanmış", notAssigned: "Sürücü atanmamış",
     inventory: "FİLO ENVANTERİ", vehicles: "Araçlar", showing: "Gösterilen", of: "/", perPage: "sayfa başına",
     previous: "Önceki", next: "Sonraki", page: "Sayfa",
     vehicle: "Araç", status: "Durum", driver: "Sürücü", supplier: "Tedarikçi", capacity: "Kapasite", luggage: "Bagaj", insurance: "Sigorta", actions: "İşlemler",
     activeStatus: "Aktif", serviceStatus: "Serviste", faultyStatus: "Arızalı", inactiveStatus: "Pasif",
-    selectDriver: "Sürücü seç", noDriver: "Atanmamış", uploadPhoto: "Fotoğraf", changing: "Güncelleniyor...", noSupplier: "—",
+    noDriver: "Atanmamış", uploadPhoto: "Fotoğraf", changing: "Güncelleniyor...", noSupplier: "Skyfleet / Dahili",
     valid: "Geçerli", expiresSoon: "Yakında Bitiyor", expired: "Süresi Doldu", notProvided: "Belirtilmedi",
     loading: "Filo bilgileri yükleniyor...", empty: "Filtrelere uyan araç bulunamadı.",
     newVehicle: "YENİ ARAÇ", addVehicle: "Filoya Araç Ekle", addSubtitle: "Yeni aracı operasyona hazır şekilde kaydedin.",
@@ -49,13 +50,14 @@ const TEXT = {
     subtitle: "Manage vehicles, drivers, capacity and compliance from one scalable workspace.",
     back: "Back to Dispatcher", refresh: "Refresh", add: "+ Add Vehicle", close: "Close",
     total: "Total Vehicles", active: "Ready for Service", service: "Service / Fault", unassigned: "No Driver", insuranceRisk: "Insurance Risk",
-    filters: "Fleet Filters", searchPlaceholder: "Search plate, brand, model, driver or supplier...",
+    insuranceRiskOnly: "Insurance risk filter active", clearRisk: "Clear Filter",
+    searchPlaceholder: "Search plate, brand, model, driver or supplier...",
     allStatuses: "All statuses", allAssignments: "All assignments", assigned: "Driver assigned", notAssigned: "No driver assigned",
     inventory: "FLEET INVENTORY", vehicles: "Vehicles", showing: "Showing", of: "of", perPage: "per page",
     previous: "Previous", next: "Next", page: "Page",
     vehicle: "Vehicle", status: "Status", driver: "Driver", supplier: "Supplier", capacity: "Capacity", luggage: "Luggage", insurance: "Insurance", actions: "Actions",
     activeStatus: "Active", serviceStatus: "In Service", faultyStatus: "Faulty", inactiveStatus: "Inactive",
-    selectDriver: "Select driver", noDriver: "Unassigned", uploadPhoto: "Photo", changing: "Updating...", noSupplier: "—",
+    noDriver: "Unassigned", uploadPhoto: "Photo", changing: "Updating...", noSupplier: "Skyfleet / Internal",
     valid: "Valid", expiresSoon: "Expires Soon", expired: "Expired", notProvided: "Not Provided",
     loading: "Loading fleet information...", empty: "No vehicles match these filters.",
     newVehicle: "NEW VEHICLE", addVehicle: "Add Vehicle to Fleet", addSubtitle: "Register a new vehicle ready for operations.",
@@ -67,13 +69,14 @@ const TEXT = {
     eyebrow: "عمليات الأسطول", title: "مركز التحكم بالأسطول", subtitle: "إدارة المركبات والسائقين والسعة والامتثال من مساحة عمل قابلة للتوسع.",
     back: "العودة إلى المرسل", refresh: "تحديث", add: "+ إضافة مركبة", close: "إغلاق",
     total: "إجمالي المركبات", active: "جاهزة للعمل", service: "صيانة / عطل", unassigned: "بدون سائق", insuranceRisk: "مخاطر التأمين",
-    filters: "فلاتر الأسطول", searchPlaceholder: "ابحث باللوحة أو العلامة أو الموديل أو السائق أو المورد...",
+    insuranceRiskOnly: "فلتر مخاطر التأمين نشط", clearRisk: "إزالة الفلتر",
+    searchPlaceholder: "ابحث باللوحة أو العلامة أو الموديل أو السائق أو المورد...",
     allStatuses: "كل الحالات", allAssignments: "كل التعيينات", assigned: "تم تعيين سائق", notAssigned: "بدون سائق",
     inventory: "مخزون الأسطول", vehicles: "المركبات", showing: "عرض", of: "من", perPage: "لكل صفحة",
     previous: "السابق", next: "التالي", page: "صفحة",
     vehicle: "المركبة", status: "الحالة", driver: "السائق", supplier: "المورد", capacity: "السعة", luggage: "الأمتعة", insurance: "التأمين", actions: "الإجراءات",
     activeStatus: "نشطة", serviceStatus: "في الصيانة", faultyStatus: "معطلة", inactiveStatus: "غير نشطة",
-    selectDriver: "اختر السائق", noDriver: "غير معين", uploadPhoto: "صورة", changing: "جارٍ التحديث...", noSupplier: "—",
+    noDriver: "غير معين", uploadPhoto: "صورة", changing: "جارٍ التحديث...", noSupplier: "Skyfleet / داخلي",
     valid: "ساري", expiresSoon: "ينتهي قريباً", expired: "منتهي", notProvided: "غير محدد",
     loading: "جارٍ تحميل معلومات الأسطول...", empty: "لا توجد مركبات مطابقة للفلاتر.",
     newVehicle: "مركبة جديدة", addVehicle: "إضافة مركبة إلى الأسطول", addSubtitle: "سجل مركبة جديدة جاهزة للتشغيل.",
@@ -85,13 +88,14 @@ const TEXT = {
     eyebrow: "OPERACIONES DE FLOTA", title: "Centro de Control de Flota", subtitle: "Gestiona vehículos, conductores, capacidad y cumplimiento desde un espacio escalable.",
     back: "Volver a Dispatcher", refresh: "Actualizar", add: "+ Añadir Vehículo", close: "Cerrar",
     total: "Vehículos Totales", active: "Listos para Servicio", service: "Servicio / Avería", unassigned: "Sin Conductor", insuranceRisk: "Riesgo de Seguro",
-    filters: "Filtros de Flota", searchPlaceholder: "Buscar matrícula, marca, modelo, conductor o proveedor...",
+    insuranceRiskOnly: "Filtro de riesgo de seguro activo", clearRisk: "Quitar filtro",
+    searchPlaceholder: "Buscar matrícula, marca, modelo, conductor o proveedor...",
     allStatuses: "Todos los estados", allAssignments: "Todas las asignaciones", assigned: "Con conductor", notAssigned: "Sin conductor",
     inventory: "INVENTARIO DE FLOTA", vehicles: "Vehículos", showing: "Mostrando", of: "de", perPage: "por página",
     previous: "Anterior", next: "Siguiente", page: "Página",
     vehicle: "Vehículo", status: "Estado", driver: "Conductor", supplier: "Proveedor", capacity: "Capacidad", luggage: "Equipaje", insurance: "Seguro", actions: "Acciones",
     activeStatus: "Activo", serviceStatus: "En servicio", faultyStatus: "Averiado", inactiveStatus: "Inactivo",
-    selectDriver: "Seleccionar conductor", noDriver: "Sin asignar", uploadPhoto: "Foto", changing: "Actualizando...", noSupplier: "—",
+    noDriver: "Sin asignar", uploadPhoto: "Foto", changing: "Actualizando...", noSupplier: "Skyfleet / Interno",
     valid: "Válido", expiresSoon: "Vence pronto", expired: "Vencido", notProvided: "No indicado",
     loading: "Cargando información de flota...", empty: "No hay vehículos que coincidan con los filtros.",
     newVehicle: "NUEVO VEHÍCULO", addVehicle: "Añadir Vehículo a la Flota", addSubtitle: "Registra un nuevo vehículo listo para operar.",
@@ -120,6 +124,7 @@ export default function FleetPage({ onBack }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignmentFilter, setAssignmentFilter] = useState("all");
+  const [insuranceRiskOnly, setInsuranceRiskOnly] = useState(false);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
@@ -279,15 +284,16 @@ export default function FleetPage({ onBack }) {
       const driver = drivers.find((d) => Number(d.vehicle_id) === Number(vehicle.id));
       if (assignmentFilter === "assigned" && !driver) return false;
       if (assignmentFilter === "unassigned" && driver) return false;
+      if (insuranceRiskOnly && !getInsuranceState(vehicle.insurance_expiry_date).risk) return false;
       if (!query) return true;
       const supplier = getSupplierLabel(vehicle);
       return [vehicle.plate, vehicle.brand, vehicle.model, vehicle.vehicle_type, vehicle.color, driver?.name, supplier]
         .filter(Boolean).join(" ").toLocaleLowerCase().includes(query);
     });
-  }, [vehicles, drivers, search, statusFilter, assignmentFilter]);
+  }, [vehicles, drivers, search, statusFilter, assignmentFilter, insuranceRiskOnly]);
 
   const totalPages = Math.max(1, Math.ceil(filteredVehicles.length / pageSize));
-  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, assignmentFilter, pageSize]);
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, assignmentFilter, insuranceRiskOnly, pageSize]);
   useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
 
   const paginatedVehicles = useMemo(() => {
@@ -318,7 +324,14 @@ export default function FleetPage({ onBack }) {
         <FleetKpi icon="✓" label={text.active} value={stats.active} tone="green" />
         <FleetKpi icon="🔧" label={text.service} value={stats.service} tone="orange" />
         <FleetKpi icon="👤" label={text.unassigned} value={stats.unassigned} tone="purple" />
-        <FleetKpi icon="🛡" label={text.insuranceRisk} value={stats.insuranceRisk} tone="red" />
+        <FleetKpi
+          icon="🛡"
+          label={text.insuranceRisk}
+          value={stats.insuranceRisk}
+          tone="red"
+          active={insuranceRiskOnly}
+          onClick={() => setInsuranceRiskOnly((value) => !value)}
+        />
       </section>
 
       {showAddVehicle && (
@@ -372,6 +385,13 @@ export default function FleetPage({ onBack }) {
           </select>
         </div>
 
+        {insuranceRiskOnly && (
+          <div className="fleet-risk-filter-banner">
+            <span>🛡 {text.insuranceRiskOnly}</span>
+            <button type="button" onClick={() => setInsuranceRiskOnly(false)}>{text.clearRisk}</button>
+          </div>
+        )}
+
         {loading ? <p className="dashboard-message">{text.loading}</p> : (
           <div className="fleet-table-wrap">
             <table className="fleet-vehicle-table">
@@ -410,20 +430,58 @@ export default function FleetPage({ onBack }) {
   );
 }
 
-function Field({ label, children, wide = false }) { return <label className={wide ? "fleet-field-wide" : ""}>{label}{children}</label>; }
-function FleetKpi({ icon, label, value, tone }) { return <article className={`fleet-kpi fleet-kpi-${tone}`}><span className="fleet-kpi-icon">{icon}</span><div><small>{label}</small><strong>{value}</strong></div></article>; }
-function getVehicleOperationalStatus(vehicle) { return vehicle?.operational_status || (vehicle?.is_active ? "active" : "inactive"); }
-function getSupplierLabel(vehicle) { return vehicle?.supplier_company?.company_name || vehicle?.supplier?.company_name || vehicle?.supplier_name || vehicle?.supplier?.name || ""; }
+function Field({ label, children, wide = false }) {
+  return <label className={wide ? "fleet-field-wide" : ""}>{label}{children}</label>;
+}
+
+function FleetKpi({ icon, label, value, tone, active = false, onClick = null }) {
+  const interactive = typeof onClick === "function";
+  return (
+    <article
+      className={`fleet-kpi fleet-kpi-${tone}${interactive ? " fleet-kpi-interactive" : ""}${active ? " is-active" : ""}`}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick || undefined}
+      onKeyDown={interactive ? (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      } : undefined}
+    >
+      <span className="fleet-kpi-icon">{icon}</span>
+      <div><small>{label}</small><strong>{value}</strong></div>
+    </article>
+  );
+}
+
+function getVehicleOperationalStatus(vehicle) {
+  return vehicle?.operational_status || (vehicle?.is_active ? "active" : "inactive");
+}
+
+function getSupplierLabel(vehicle) {
+  return vehicle?.supplier_company?.company_name
+    || vehicle?.supplierCompany?.company_name
+    || vehicle?.supplier?.company_name
+    || vehicle?.supplier_name
+    || vehicle?.supplier?.name
+    || "";
+}
+
 function getInsuranceState(value) {
   if (!value) return { risk: true, className: "unknown", labelKey: "notProvided" };
-  const expiry = new Date(value); if (Number.isNaN(expiry.getTime())) return { risk: true, className: "unknown", labelKey: "notProvided" };
+  const expiry = new Date(value);
+  if (Number.isNaN(expiry.getTime())) return { risk: true, className: "unknown", labelKey: "notProvided" };
   const days = Math.ceil((expiry.getTime() - Date.now()) / 86400000);
   if (days < 0) return { risk: true, className: "expired", labelKey: "expired" };
   if (days <= 60) return { risk: true, className: "warning", labelKey: "expiresSoon" };
   return { risk: false, className: "valid", labelKey: "valid" };
 }
+
 function formatDate(value, language) {
-  if (!value) return ""; const date = new Date(value); if (Number.isNaN(date.getTime())) return value;
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
   const locale = language === "tr" ? "tr-TR" : language === "ar" ? "ar-SA" : language === "es" ? "es-ES" : "en-GB";
   return date.toLocaleDateString(locale);
 }

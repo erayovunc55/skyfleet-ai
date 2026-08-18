@@ -143,10 +143,37 @@ export function useLanguage() {
 export function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
   return (
-    <div className="skyfleet-language-switcher" dir="ltr">
-      <span>🌐</span>
-      <select value={language} onChange={(event) => setLanguage(event.target.value)} aria-label="Language">
-        {LANGUAGES.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+    <div
+      dir="ltr"
+      style={{
+        position: "fixed",
+        top: 12,
+        right: 12,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        padding: "7px 9px",
+        border: "1px solid rgba(56,189,248,.28)",
+        borderRadius: 12,
+        background: "rgba(5,11,24,.92)",
+        boxShadow: "0 10px 30px rgba(0,0,0,.24)",
+      }}
+    >
+      <span aria-hidden="true">🌐</span>
+      <select
+        value={language}
+        onChange={(event) => setLanguage(event.target.value)}
+        aria-label="Language"
+        style={{
+          border: 0,
+          outline: 0,
+          color: "#e5eefb",
+          background: "transparent",
+          fontWeight: 800,
+        }}
+      >
+        {LANGUAGES.map((item) => <option key={item.code} value={item.code} style={{ color: "#0f172a" }}>{item.label}</option>)}
       </select>
     </div>
   );

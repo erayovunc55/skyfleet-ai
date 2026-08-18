@@ -1,4 +1,5 @@
 import apiClient from "../../../services/apiClient";
+import "../../../styles/modules/supplier-compliance.css";
 
 const supplierService = {
   async getSuppliers(params = {}) {

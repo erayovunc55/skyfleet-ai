@@ -108,6 +108,9 @@ class SupplierPortalAssignmentController extends Controller
 
                         'assigned_vehicle_id' =>
                             $vehicle->id,
+
+                        'status' =>
+                            'accepted',
                     ]);
 
                     return $transfer
@@ -128,7 +131,7 @@ class SupplierPortalAssignmentController extends Controller
 
         return response()->json([
             'message' =>
-                'Transfer sürücü ve araca atandı. Sürücü kabulü bekleniyor.',
+                'Transfer sürücü ve araca atandı. Atama operasyon için kesinleşti.',
 
             'data' =>
                 $this->formatTransfer(

@@ -36,6 +36,11 @@ const supplierService = {
     const response = await apiClient.delete(`/suppliers/${supplierId}/documents/${documentId}`);
     return response.data;
   },
+
+  async getActivity(supplierId, params = {}) {
+    const response = await apiClient.get(`/suppliers/${supplierId}/activity`, { params });
+    return response.data;
+  },
 };
 
 export default supplierService;

@@ -1,124 +1,532 @@
-﻿<?php
-use App\Http\Controllers\Api\TransferEvidenceController;
+<?php
+
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\DispatcherController;
+use App\Http\Controllers\Api\DispatcherTransferManagementController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\DriverLocationController;
+use App\Http\Controllers\Api\DriverPushTokenController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\OperationalAlertController;
+use App\Http\Controllers\Api\PassengerTrackingController;
 use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\SupplierAccountController;
+use App\Http\Controllers\Api\SupplierPortalAssignmentController;
+use App\Http\Controllers\Api\SupplierPortalController;
+use App\Http\Controllers\Api\SupplierPortalDriverController;
+use App\Http\Controllers\Api\SupplierPortalVehicleController;
 use App\Http\Controllers\Api\TransferController;
 use App\Http\Controllers\Api\TransferEventController;
+use App\Http\Controllers\Api\TransferEvidenceController;
+use App\Http\Controllers\Api\TransferExcelImportController;
+use App\Http\Controllers\Api\TransferRouteController;
 use App\Http\Controllers\Api\VehicleController;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Public
+|--------------------------------------------------------------------------
+*/
+
 Route::post(
     'login',
-    [AuthController::class, 'login']
+    [
+        AuthController::class,
+        'login',
+    ]
 );
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::get(
+    'public/tracking/{token}',
+    [
+        PassengerTrackingController::class,
+        'show',
+    ]
+)->middleware('throttle:120,1');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Authenticated User
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| Authenticated API
+|--------------------------------------------------------------------------
+*/
 
+Route::middleware(
+    'auth:sanctum'
+)->group(function (): void {
     Route::get(
         'user',
-        function (Request $request) {
-            return $request->user();
+        function (
+            Request $request
+        ) {
+            return $request
+                ->user()
+                ?->load(
+                    'supplierCompany'
+                );
         }
     );
 
     /*
     |--------------------------------------------------------------------------
-    | Vehicles
+    | Main Admin and Dispatcher
     |--------------------------------------------------------------------------
     */
 
-    Route::apiResource(
-        'vehicles',
-        VehicleController::class
-    );
+    Route::middleware(
+        'panel.role:dispatcher,admin,super_admin'
+    )->group(function (): void {
+        /*
+         * Vehicles
+         */
+        Route::apiResource(
+            'vehicles',
+            VehicleController::class
+        );
 
-    Route::patch(
-        'vehicles/{vehicle}/status',
-        [VehicleController::class, 'changeStatus']
-    );
+        Route::patch(
+            'vehicles/{vehicle}/status',
+            [
+                VehicleController::class,
+                'changeStatus',
+            ]
+        );
 
-    Route::post(
-        'vehicles/{vehicle}/photo',
-        [VehicleController::class, 'uploadPhoto']
-    );
+        Route::post(
+            'vehicles/{vehicle}/photo',
+            [
+                VehicleController::class,
+                'uploadPhoto',
+            ]
+        );
+
+        /*
+         * Drivers
+         */
+        Route::get(
+            'drivers',
+            [
+                DriverController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            'drivers',
+            [
+                DriverController::class,
+                'store',
+            ]
+        );
+
+        Route::patch(
+            'drivers/{driver}',
+            [
+                DriverController::class,
+                'update',
+            ]
+        );
+
+        Route::patch(
+            'drivers/{driver}/vehicle',
+            [
+                DriverController::class,
+                'assignVehicle',
+            ]
+        );
+
+        /*
+         * Dispatcher Transfers
+         */
+        Route::get(
+            'dispatcher/transfers',
+            [
+                DispatcherController::class,
+                'transfers',
+            ]
+        );
+
+        Route::post(
+            'dispatcher/transfers',
+            [
+                DispatcherController::class,
+                'store',
+            ]
+        );
+
+        Route::post(
+            'dispatcher/transfers/import',
+            [
+                TransferExcelImportController::class,
+                'store',
+            ]
+        );
+
+        Route::patch(
+            'dispatcher/transfers/{transfer}',
+            [
+                DispatcherTransferManagementController::class,
+                'update',
+            ]
+        );
+
+        Route::patch(
+            'dispatcher/transfers/{transfer}/cancel',
+            [
+                DispatcherTransferManagementController::class,
+                'cancel',
+            ]
+        );
+
+                Route::post(
+            'dispatcher/transfers/bulk-assign-supplier',
+            [
+                DispatcherController::class,
+                'bulkAssignSupplier',
+            ]
+        );
+Route::patch(
+            'dispatcher/transfers/{transfer}/assign',
+            [
+                DispatcherController::class,
+                'assign',
+            ]
+        );
+
+        Route::get(
+            'dispatcher/transfers/{transfer}/route',
+            [
+                TransferRouteController::class,
+                'show',
+            ]
+        );
+
+        /*
+         * Supplier Management
+         */
+        Route::post(
+            'suppliers/with-account',
+            [
+                SupplierAccountController::class,
+                'store',
+            ]
+        );
+
+        Route::get(
+            'suppliers',
+            [
+                SupplierController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            'suppliers',
+            [
+                SupplierController::class,
+                'store',
+            ]
+        );
+
+        Route::get(
+            'suppliers/{supplier}',
+            [
+                SupplierController::class,
+                'show',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}',
+            [
+                SupplierController::class,
+                'update',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}/submit',
+            [
+                SupplierController::class,
+                'submit',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}/approve',
+            [
+                SupplierController::class,
+                'approve',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}/request-revision',
+            [
+                SupplierController::class,
+                'requestRevision',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}/reject',
+            [
+                SupplierController::class,
+                'reject',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}/suspend',
+            [
+                SupplierController::class,
+                'suspend',
+            ]
+        );
+
+        Route::patch(
+            'suppliers/{supplier}/reactivate',
+            [
+                SupplierController::class,
+                'reactivate',
+            ]
+        );
+    });
 
     /*
     |--------------------------------------------------------------------------
-    | Drivers
+    | Supplier Portal
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix(
+        'supplier-portal'
+    )->group(function (): void {
+        /*
+         * Supplier profile and transfers
+         */
+        Route::get(
+            'profile',
+            [
+                SupplierPortalController::class,
+                'profile',
+            ]
+        );
+
+        Route::get(
+            'transfers',
+            [
+                SupplierPortalController::class,
+                'transfers',
+            ]
+        );
+
+        Route::get(
+            'transfers/{transfer}',
+            [
+                SupplierPortalController::class,
+                'show',
+            ]
+        );
+
+        /*
+         * Supplier vehicles
+         */
+        Route::get(
+            'vehicles',
+            [
+                SupplierPortalVehicleController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            'vehicles',
+            [
+                SupplierPortalVehicleController::class,
+                'store',
+            ]
+        );
+
+        Route::get(
+            'vehicles/{vehicle}',
+            [
+                SupplierPortalVehicleController::class,
+                'show',
+            ]
+        );
+
+        Route::patch(
+            'vehicles/{vehicle}',
+            [
+                SupplierPortalVehicleController::class,
+                'update',
+            ]
+        );
+
+        Route::patch(
+            'vehicles/{vehicle}/status',
+            [
+                SupplierPortalVehicleController::class,
+                'changeStatus',
+            ]
+        );
+
+        Route::delete(
+            'vehicles/{vehicle}',
+            [
+                SupplierPortalVehicleController::class,
+                'destroy',
+            ]
+        );
+
+        /*
+         * Supplier drivers
+         */
+        Route::get(
+            'drivers',
+            [
+                SupplierPortalDriverController::class,
+                'index',
+            ]
+        );
+
+        Route::post(
+            'drivers',
+            [
+                SupplierPortalDriverController::class,
+                'store',
+            ]
+        );
+
+        Route::get(
+            'drivers/{driver}',
+            [
+                SupplierPortalDriverController::class,
+                'show',
+            ]
+        );
+
+        Route::patch(
+            'drivers/{driver}',
+            [
+                SupplierPortalDriverController::class,
+                'update',
+            ]
+        );
+
+        Route::patch(
+            'drivers/{driver}/vehicle',
+            [
+                SupplierPortalDriverController::class,
+                'assignVehicle',
+            ]
+        );
+
+        Route::delete(
+            'drivers/{driver}',
+            [
+                SupplierPortalDriverController::class,
+                'destroy',
+            ]
+        );
+
+        /*
+         * Supplier transfer assignment
+         */
+        Route::patch(
+            'transfers/{transfer}/assignment',
+            [
+                SupplierPortalAssignmentController::class,
+                'assign',
+            ]
+        );
+
+        Route::patch(
+            'transfers/{transfer}/unassign',
+            [
+                SupplierPortalAssignmentController::class,
+                'unassign',
+            ]
+        );
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Driver Mobile Application
     |--------------------------------------------------------------------------
     */
 
     Route::get(
-        'drivers',
-        [DriverController::class, 'index']
+        'driver/dashboard',
+        [
+            DriverController::class,
+            'dashboard',
+        ]
     );
 
     Route::get(
         'driver/transfers',
-        [DriverController::class, 'myTransfers']
-    );
-    Route::get(
-    'driver/dashboard',
-    [DriverController::class, 'dashboard']
-);
-
-    Route::patch(
-        'drivers/{driver}/vehicle',
-        [DriverController::class, 'assignVehicle']
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Dispatcher
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        'dispatcher/transfers',
-        [DispatcherController::class, 'transfers']
+        [
+            DriverController::class,
+            'myTransfers',
+        ]
     );
 
     Route::post(
-        'dispatcher/transfers',
-        [DispatcherController::class, 'store']
+        'driver/push-token',
+        [
+            DriverPushTokenController::class,
+            'store',
+        ]
     );
-Route::patch(
-    'dispatcher/transfers/{transfer}/assign',
-    [DispatcherController::class, 'assign']
-);
+
+    Route::get(
+        'transfers/{transfer}/tracking-link',
+        [
+            PassengerTrackingController::class,
+            'link',
+        ]
+    );
+
     /*
     |--------------------------------------------------------------------------
-    | Transfers
+    | Transfer Operations
     |--------------------------------------------------------------------------
     */
 
     Route::get(
         'transfers',
-        [TransferController::class, 'index']
+        [
+            TransferController::class,
+            'index',
+        ]
     );
 
-Route::post(
-    'transfers/{transfer}/no-show-evidence',
-    [
-        TransferEvidenceController::class,
-        'storeNoShow',
-    ]
-);
+    Route::get(
+        'transfers/{transfer}/evidences',
+        [
+            TransferEvidenceController::class,
+            'index',
+        ]
+    );
+
+    Route::post(
+        'transfers/{transfer}/no-show-evidence',
+        [
+            TransferEvidenceController::class,
+            'storeNoShow',
+        ]
+    );
+
     Route::get(
         'transfers/{transfer}',
-        [TransferController::class, 'show']
+        [
+            TransferController::class,
+            'show',
+        ]
     );
 
     Route::patch(
@@ -139,107 +547,72 @@ Route::post(
 
     Route::post(
         'transfers/{transfer}/event',
-        [TransferEventController::class, 'store']
+        [
+            TransferEventController::class,
+            'store',
+        ]
     );
 
     Route::post(
         'transfers/{transfer}/location',
-        [DriverLocationController::class, 'store']
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Suppliers
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        'suppliers',
-        [SupplierController::class, 'index']
-    );
-
-    Route::post(
-        'suppliers',
-        [SupplierController::class, 'store']
-    );
-
-    Route::get(
-        'suppliers/{supplier}',
-        [SupplierController::class, 'show']
-    );
-
-    Route::patch(
-        'suppliers/{supplier}',
-        [SupplierController::class, 'update']
-    );
-
-    Route::patch(
-        'suppliers/{supplier}/submit',
-        [SupplierController::class, 'submit']
-    );
-
-    Route::patch(
-        'suppliers/{supplier}/approve',
-        [SupplierController::class, 'approve']
-    );
-
-    Route::patch(
-        'suppliers/{supplier}/request-revision',
         [
-            SupplierController::class,
-            'requestRevision',
+            DriverLocationController::class,
+            'store',
         ]
     );
 
-    Route::patch(
-        'suppliers/{supplier}/reject',
-        [SupplierController::class, 'reject']
-    );
-
-    Route::patch(
-        'suppliers/{supplier}/suspend',
-        [SupplierController::class, 'suspend']
-    );
-
-    Route::patch(
-        'suppliers/{supplier}/reactivate',
-        [SupplierController::class, 'reactivate']
-    );
-
     /*
     |--------------------------------------------------------------------------
-    | Location Master Data
+    | Locations
     |--------------------------------------------------------------------------
     */
 
     Route::get(
         'location-types',
-        [LocationController::class, 'locationTypes']
+        [
+            LocationController::class,
+            'locationTypes',
+        ]
     );
 
     Route::get(
         'countries',
-        [LocationController::class, 'countries']
+        [
+            LocationController::class,
+            'countries',
+        ]
     );
 
     Route::get(
         'countries/{country}/cities',
-        [LocationController::class, 'cities']
+        [
+            LocationController::class,
+            'cities',
+        ]
     );
 
     Route::get(
         'cities/{city}/locations',
-        [LocationController::class, 'locations']
+        [
+            LocationController::class,
+            'locations',
+        ]
     );
 
     Route::get(
         'locations/{location}',
-        [LocationController::class, 'show']
+        [
+            LocationController::class,
+            'show',
+        ]
     );
 
     Route::get(
         'locations/{location}/points',
-        [LocationController::class, 'points']
+        [
+            LocationController::class,
+            'points',
+        ]
     );
 
     /*
@@ -250,6 +623,52 @@ Route::post(
 
     Route::post(
         'logout',
-        [AuthController::class, 'logout']
+        [
+            AuthController::class,
+            'logout',
+        ]
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Executive Dashboard
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        'admin/dashboard',
+        AdminDashboardController::class
+    )->middleware(
+        'panel.role:dispatcher,admin,super_admin'
+    );
+
+    Route::get(
+        'admin/alerts',
+        [
+            OperationalAlertController::class,
+            'index',
+        ]
+    )->middleware(
+        'panel.role:dispatcher,admin,super_admin'
+    );
+
+    Route::post(
+        'admin/alerts/read',
+        [
+            OperationalAlertController::class,
+            'markRead',
+        ]
+    )->middleware(
+        'panel.role:dispatcher,admin,super_admin'
     );
 });
+
+require __DIR__ . '/finance.php';
+
+require __DIR__ . '/supplier-finance.php';
+
+
+require __DIR__ . '/supplier-invoices.php';
+
+
+require __DIR__ . '/admin-invoices.php';

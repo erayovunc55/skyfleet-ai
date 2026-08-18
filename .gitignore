@@ -25,3 +25,23 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Dependencies
+**/node_modules/
+
+# Build outputs
+**/dist/
+
+# Archives and local backups
+*.zip
+*.tar.gz
+**/*backup*/
+*.backup-*
+*.invoices-backup
+*.finance-backup
+
+# Secrets / local runtime
+**/.env
+**/.env.*
+!**/.env.example
+backend/storage/firebase/

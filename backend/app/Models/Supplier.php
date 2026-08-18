@@ -1,43 +1,36 @@
 <?php
 
 namespace App\Models;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    public function approvalLogs(): MorphMany
-{
-    return $this->morphMany(
-        ApprovalLog::class,
-        'approvable'
-    )->latest();
-}
-public function branches(): HasMany
-{
-    return $this->hasMany(
-        SupplierBranch::class
-    );
-}
 
-    public const STATUS_PENDING = 'pending';
+    public const STATUS_PENDING =
+        'pending';
 
-    public const STATUS_UNDER_REVIEW = 'under_review';
+    public const STATUS_UNDER_REVIEW =
+        'under_review';
 
     public const STATUS_REVISION_REQUESTED =
         'revision_requested';
 
-    public const STATUS_APPROVED = 'approved';
+    public const STATUS_APPROVED =
+        'approved';
 
-    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_REJECTED =
+        'rejected';
 
-    public const STATUS_SUSPENDED = 'suspended';
+    public const STATUS_SUSPENDED =
+        'suspended';
 
     public const STATUSES = [
         self::STATUS_PENDING,
@@ -83,22 +76,51 @@ public function branches(): HasMany
 
         'timezone',
         'default_currency',
-        'locale',
 
+        /*
+         * Tedarikçinin ana satış
+         * fiyatından alacağı yüzde.
+         */
+        'payout_percentage',
+
+        'locale',
         'is_active',
         'metadata',
+    ];
+
+    /*
+     * Tedarikçiye ait özel oran,
+     * API cevaplarında doğrudan
+     * gösterilmez.
+     */
+    protected $hidden = [
+        'payout_percentage',
+        'admin_note',
     ];
 
     protected function casts(): array
     {
         return [
-            'submitted_at' => 'datetime',
-            'approved_at' => 'datetime',
-            'rejected_at' => 'datetime',
-            'suspended_at' => 'datetime',
+            'submitted_at' =>
+                'datetime',
 
-            'is_active' => 'boolean',
-            'metadata' => 'array',
+            'approved_at' =>
+                'datetime',
+
+            'rejected_at' =>
+                'datetime',
+
+            'suspended_at' =>
+                'datetime',
+
+            'payout_percentage' =>
+                'decimal:2',
+
+            'is_active' =>
+                'boolean',
+
+            'metadata' =>
+                'array',
         ];
     }
 
@@ -108,6 +130,37 @@ public function branches(): HasMany
             User::class,
             'approved_by'
         );
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(
+            User::class,
+            'supplier_id'
+        );
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(
+            Transfer::class,
+            'supplier_id'
+        );
+    }
+
+    public function branches(): HasMany
+    {
+        return $this->hasMany(
+            SupplierBranch::class
+        );
+    }
+
+    public function approvalLogs(): MorphMany
+    {
+        return $this->morphMany(
+            ApprovalLog::class,
+            'approvable'
+        )->latest();
     }
 
     public function isApproved(): bool
@@ -131,7 +184,26 @@ public function branches(): HasMany
 
     public function canOperate(): bool
     {
-        return $this->isApproved() &&
-            $this->is_active;
+        return $this->isApproved()
+            && $this->is_active;
+    }
+
+    public function calculatePayableAmount(
+        int|float|string|null $price
+    ): float {
+        $amount = is_numeric($price)
+            ? (float) $price
+            : 0.0;
+
+        $percentage = is_numeric(
+            $this->payout_percentage
+        )
+            ? (float) $this->payout_percentage
+            : 90.0;
+
+        return round(
+            $amount * $percentage / 100,
+            2
+        );
     }
 }

@@ -1,14 +1,19 @@
 import { useState } from "react";
 import "./App.css";
-
+import DriversPage from "./pages/DriversPage";
+import DashboardPage from "./pages/DashboardPage";
 import AdminLayout from "./layouts/AdminLayout";
-
+import TransfersPage from "./pages/TransfersPage";
 import FleetPage from "./pages/FleetPage";
 import LoginPage from "./pages/LoginPage";
 import ModulePlaceholderPage from "./pages/ModulePlaceholderPage";
 
 import { TransferWorkspace } from "./modules/transfers";
 import { SupplierPage } from "./modules/suppliers";
+
+import { FinancePage } from "./modules/finance";
+
+import { AdminInvoicesPage } from "./modules/invoices";
 
 import { PAGES } from "./constants/pages";
 
@@ -18,12 +23,10 @@ import {
 } from "./services/authService";
 
 function App() {
-  const [user, setUser] = useState(
-    getStoredUser(),
+  const [user, setUser] = useState(getStoredUser());
+  const [currentPage, setCurrentPage] = useState(
+    PAGES.LIVE_OPERATIONS,
   );
-
-  const [currentPage, setCurrentPage] =
-    useState(PAGES.LIVE_OPERATIONS);
 
   function handleLogin(loggedInUser) {
     setUser(loggedInUser);
@@ -41,11 +44,7 @@ function App() {
   }
 
   if (!user) {
-    return (
-      <LoginPage
-        onLogin={handleLogin}
-      />
-    );
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   return (
@@ -63,34 +62,25 @@ function App() {
   );
 }
 
-function PageContent({
-  currentPage,
-  onNavigate,
-}) {
+function PageContent({ currentPage, onNavigate }) {
   switch (currentPage) {
     case PAGES.DASHBOARD:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="SKYFLEET AI"
-          title="Dashboard"
-          description="Platform özet ekranı sonraki sprintte hazırlanacak."
-        />
-      );
+  return (
+    <DashboardPage
+      onNavigate={onNavigate}
+    />
+  );
 
     case PAGES.LIVE_OPERATIONS:
       return <TransferWorkspace />;
 
     case PAGES.TRANSFERS:
-      return <TransferWorkspace />;
+  return <TransfersPage />;
 
     case PAGES.FLEET:
       return (
         <FleetPage
-          onBack={() =>
-            onNavigate(
-              PAGES.LIVE_OPERATIONS,
-            )
-          }
+          onBack={() => onNavigate(PAGES.LIVE_OPERATIONS)}
         />
       );
 
@@ -98,75 +88,21 @@ function PageContent({
       return <SupplierPage />;
 
     case PAGES.DRIVERS:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="OPERASYON"
-          title="Drivers"
-          description="Sürücü yönetim modülü hazırlanıyor."
-        />
-      );
-
+  return <DriversPage />;
     case PAGES.LOCATIONS:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="MASTER DATA"
-          title="Locations"
-          description="Ülke, şehir, havalimanı ve lokasyon yönetim ekranı hazırlanıyor."
-        />
-      );
-
+      return <ModulePlaceholderPage eyebrow="MASTER DATA" title="Locations" description="Ülke, şehir, havalimanı ve lokasyon yönetim ekranı hazırlanıyor." />;
     case PAGES.DOCUMENTS:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="QUALITY"
-          title="Documents"
-          description="Tedarikçi, araç ve sürücü belge yönetimi hazırlanıyor."
-        />
-      );
-
+      return <AdminInvoicesPage />;
     case PAGES.RATINGS:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="PERFORMANCE"
-          title="Ratings"
-          description="Tedarikçi performansı ve puanlama sistemi hazırlanıyor."
-        />
-      );
-
+      return <ModulePlaceholderPage eyebrow="PERFORMANCE" title="Ratings" description="Tedarikçi performansı ve puanlama sistemi hazırlanıyor." />;
     case PAGES.FINANCE:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="FINANCE"
-          title="Finance"
-          description="Ödeme, komisyon ve mutabakat modülü hazırlanıyor."
-        />
-      );
-
+      return <FinancePage />;
     case PAGES.AI_DISPATCHER:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="ARTIFICIAL INTELLIGENCE"
-          title="AI Dispatcher"
-          description="Akıllı atama ve operasyon öneri sistemi hazırlanıyor."
-        />
-      );
-
+      return <ModulePlaceholderPage eyebrow="ARTIFICIAL INTELLIGENCE" title="AI Dispatcher" description="Akıllı atama ve operasyon öneri sistemi hazırlanıyor." />;
     case PAGES.SETTINGS:
-      return (
-        <ModulePlaceholderPage
-          eyebrow="PLATFORM"
-          title="Settings"
-          description="Platform ayarları ve yetkilendirme modülü hazırlanıyor."
-        />
-      );
-
+      return <ModulePlaceholderPage eyebrow="PLATFORM" title="Settings" description="Platform ayarları ve yetkilendirme modülü hazırlanıyor." />;
     default:
-      return (
-        <ModulePlaceholderPage
-          title="Sayfa bulunamadı"
-          description="Seçilen modül tanımlı değil."
-        />
-      );
+      return <ModulePlaceholderPage title="Sayfa bulunamadı" description="Seçilen modül tanımlı değil." />;
   }
 }
 

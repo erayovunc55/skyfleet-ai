@@ -27,6 +27,7 @@ export default function AdminLayout({
       <div className="admin-layout-main">
         <Topbar
           user={user}
+          onNavigate={onNavigate}
           onOpenMenu={() =>
             setSidebarOpen(true)
           }

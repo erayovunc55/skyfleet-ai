@@ -1,4 +1,8 @@
-import { useMemo, useState } from "react";
+﻿import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import DriverGpsPanel from "../components/DriverGpsPanel";
 import NoShowEvidencePanel from "../components/NoShowEvidencePanel";
@@ -54,7 +58,18 @@ const NO_SHOW_ALLOWED_STATUSES = [
   "passenger_called",
 ];
 
+const TRACKING_SHARE_STATUSES = [
+  "on_the_way",
+  "arrived",
+  "passenger_called",
+  "passenger_on_board",
+  "trip_started",
+  "completed",
+  "no_show",
+];
+
 export default function DriverTransferDetailPage({
+  user,
   initialTransfer,
   onBack,
   onTransferUpdated,
@@ -65,6 +80,16 @@ export default function DriverTransferDetailPage({
   const [showNoShowEvidence, setShowNoShowEvidence] =
     useState(false);
 
+  const shouldEnableGps = Boolean(
+    transfer?.id &&
+    ![
+      "completed",
+      "cancelled",
+      "no_show",
+    ].includes(transfer.status)
+  );
+
+
   const [saving, setSaving] =
     useState(false);
 
@@ -73,6 +98,87 @@ export default function DriverTransferDetailPage({
 
   const [message, setMessage] =
     useState("");
+
+  const [trackingUrl, setTrackingUrl] =
+    useState(
+      initialTransfer?.tracking_url || "",
+    );
+
+  const [trackingLoading, setTrackingLoading] =
+    useState(false);
+
+  const canShareTracking =
+    TRACKING_SHARE_STATUSES.includes(
+      transfer.status,
+    );
+
+  useEffect(() => {
+    if (!canShareTracking) {
+      setTrackingUrl("");
+      return;
+    }
+
+    if (
+      transfer?.tracking_url &&
+      transfer.tracking_url !== trackingUrl
+    ) {
+      setTrackingUrl(
+        transfer.tracking_url,
+      );
+      return;
+    }
+
+    if (trackingUrl) {
+      return;
+    }
+
+    let active = true;
+
+    async function loadTrackingLink() {
+      setTrackingLoading(true);
+
+      try {
+        const data =
+          await transferService
+            .getTrackingLink(
+              transfer.id,
+            );
+
+        if (active) {
+          setTrackingUrl(
+            data?.tracking_url || "",
+          );
+        }
+      } catch (requestError) {
+        if (
+          active &&
+          ![409, 410].includes(
+            requestError?.response?.status,
+          )
+        ) {
+          setError(
+            requestError?.response?.data?.message ||
+              "Takip bağlantısı alınamadı.",
+          );
+        }
+      } finally {
+        if (active) {
+          setTrackingLoading(false);
+        }
+      }
+    }
+
+    loadTrackingLink();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    canShareTracking,
+    transfer.id,
+    transfer?.tracking_url,
+    trackingUrl,
+  ]);
 
   const nextAction = useMemo(
     () =>
@@ -106,6 +212,12 @@ export default function DriverTransferDetailPage({
 
       const updatedTransfer =
         response?.data || transfer;
+
+      if (updatedTransfer?.tracking_url) {
+        setTrackingUrl(
+          updatedTransfer.tracking_url,
+        );
+      }
 
       setTransfer(updatedTransfer);
 
@@ -143,7 +255,7 @@ export default function DriverTransferDetailPage({
     }
   }
 
-  function callPassenger() {
+  async function callPassenger() {
     setError("");
     setMessage("");
 
@@ -158,11 +270,22 @@ export default function DriverTransferDetailPage({
       return;
     }
 
-    window.location.href =
-      `tel:${phone}`;
+    const location = await getContactLocation();
+    try {
+      const response = await transferService.recordContactEvent(
+        transfer.id,
+        "passenger_call_attempted",
+        location,
+        "Sürücü yolcu arama düğmesine bastı.",
+      );
+      appendContactEvent(response?.data?.event);
+    } catch (requestError) {
+      setError("Arama açıldı ancak iletişim kaydı oluşturulamadı.");
+    }
+    window.location.href = `tel:${phone}`;
   }
 
-  function openWhatsApp() {
+  async function openWhatsApp() {
     setError("");
     setMessage("");
 
@@ -193,6 +316,151 @@ export default function DriverTransferDetailPage({
       "_blank",
       "noopener,noreferrer",
     );
+
+    const location = await getContactLocation();
+    try {
+      const response = await transferService.recordContactEvent(
+        transfer.id,
+        "passenger_whatsapp_opened",
+        location,
+        "Sürücü yolcu için WhatsApp görüşmesini açtı.",
+      );
+      appendContactEvent(response?.data?.event);
+    } catch (requestError) {
+      setError("WhatsApp açıldı ancak iletişim kaydı oluşturulamadı.");
+    }
+  }
+
+  async function shareTrackingWithPassenger() {
+    setError("");
+    setMessage("");
+
+    const phone = normalizePhone(
+      transfer.passenger_phone,
+    );
+
+    if (!phone) {
+      setError(
+        "Yolcu telefon bilgisi bulunmuyor.",
+      );
+      return;
+    }
+
+    let resolvedTrackingUrl =
+      trackingUrl;
+
+    if (!resolvedTrackingUrl) {
+      setTrackingLoading(true);
+
+      try {
+        const data =
+          await transferService
+            .getTrackingLink(
+              transfer.id,
+            );
+
+        resolvedTrackingUrl =
+          data?.tracking_url || "";
+
+        setTrackingUrl(
+          resolvedTrackingUrl,
+        );
+      } catch (requestError) {
+        setError(
+          requestError?.response?.data?.message ||
+            "Takip bağlantısı hazırlanamadı.",
+        );
+        return;
+      } finally {
+        setTrackingLoading(false);
+      }
+    }
+
+    if (!resolvedTrackingUrl) {
+      setError(
+        "Takip bağlantısı bulunamadı.",
+      );
+      return;
+    }
+
+    const whatsappMessage =
+      createTrackingWhatsAppMessage(
+        transfer,
+        resolvedTrackingUrl,
+      );
+
+    const url =
+      `https://wa.me/${phone}` +
+      `?text=${encodeURIComponent(
+        whatsappMessage,
+      )}`;
+
+    window.open(
+      url,
+      "_blank",
+      "noopener,noreferrer",
+    );
+
+    setMessage(
+      "Yolcu takip mesajı WhatsApp'ta hazırlandı.",
+    );
+
+    const location =
+      await getContactLocation();
+
+    try {
+      const response =
+        await transferService
+          .recordContactEvent(
+            transfer.id,
+            "passenger_whatsapp_opened",
+            location,
+            "Canlı takip bağlantısı yolcu için WhatsApp'ta açıldı.",
+          );
+
+      appendContactEvent(
+        response?.data?.event,
+      );
+    } catch (requestError) {
+      setMessage(
+        "Takip mesajı WhatsApp'ta açıldı; iletişim kaydı oluşturulamadı.",
+      );
+    }
+  }
+
+  async function copyTrackingLink() {
+    setError("");
+    setMessage("");
+
+    if (!trackingUrl) {
+      setError(
+        "Takip bağlantısı henüz hazır değil.",
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        trackingUrl,
+      );
+      setMessage(
+        "Takip bağlantısı kopyalandı.",
+      );
+    } catch (clipboardError) {
+      setError(
+        "Bağlantı kopyalanamadı.",
+      );
+    }
+  }
+
+  function appendContactEvent(event) {
+    if (!event) return;
+    const updatedTransfer = {
+      ...transfer,
+      events: [...(Array.isArray(transfer.events) ? transfer.events : []), event],
+    };
+    setTransfer(updatedTransfer);
+    onTransferUpdated?.(updatedTransfer);
   }
 
   function openNavigation(type) {
@@ -421,15 +689,6 @@ export default function DriverTransferDetailPage({
           />
 
           <InfoRow
-            label="Kaynak"
-            value={
-              transfer.ota_source ||
-              transfer.supplier ||
-              "Belirtilmedi"
-            }
-          />
-
-          <InfoRow
             label="Araç Tipi"
             value={
               transfer.vehicle_type ||
@@ -470,7 +729,78 @@ export default function DriverTransferDetailPage({
 
       <DriverGpsPanel
         transferId={transfer.id}
+        enabled={shouldEnableGps}
+        sendInterval={5000}
       />
+
+      {canShareTracking && (
+        <section className="driver-tracking-share-card">
+          <div className="driver-tracking-share-header">
+            <div>
+              <span>YOLCU CANLI TAKİBİ</span>
+              <h2>Takip Bağlantısını Paylaş</h2>
+              <p>
+                Yolcu uygulama yüklemeden aracın canlı konumunu görebilir.
+              </p>
+            </div>
+
+            <div
+              className={
+                trackingUrl
+                  ? "driver-tracking-link-state ready"
+                  : "driver-tracking-link-state"
+              }
+            >
+              <span />
+              {trackingLoading
+                ? "Hazırlanıyor"
+                : trackingUrl
+                  ? "Bağlantı Hazır"
+                  : "Bağlantı Bekleniyor"}
+            </div>
+          </div>
+
+          <div className="driver-tracking-share-preview">
+            <span>SF</span>
+            <div>
+              <strong>
+                {transfer.booking_reference ||
+                  `Transfer #${transfer.id}`}
+              </strong>
+              <small>
+                Güvenli, süreli ve yalnızca bu transfere özel bağlantı
+              </small>
+            </div>
+          </div>
+
+          <div className="driver-tracking-share-actions">
+            <button
+              type="button"
+              className="whatsapp"
+              disabled={
+                trackingLoading ||
+                !trackingUrl
+              }
+              onClick={
+                shareTrackingWithPassenger
+              }
+            >
+              💬 Yolcuya WhatsApp'tan Gönder
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                trackingLoading ||
+                !trackingUrl
+              }
+              onClick={copyTrackingLink}
+            >
+              🔗 Linki Kopyala
+            </button>
+          </div>
+        </section>
+      )}
 
       {showNoShowEvidence && (
         <NoShowEvidencePanel
@@ -672,6 +1002,25 @@ function getPassengerCount(
   return count > 0 ? count : 1;
 }
 
+function getContactLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
+    );
+  });
+}
+
 function normalizePhone(value) {
   if (!value) {
     return "";
@@ -757,6 +1106,30 @@ function createWhatsAppMessage(
     `Buluşma noktası: ${meetingPoint}`,
     "",
     "Transferiniz için sizinle iletişime geçiyorum.",
+  ] .join("\\n");
+}
+
+function createTrackingWhatsAppMessage(
+  transfer,
+  trackingUrl,
+) {
+  const passenger =
+    transfer.passenger_name ||
+    "Dear Guest";
+
+  return [
+    `Hello ${passenger},`,
+    "",
+    "Your SkyTrip Transfer driver is on the way.",
+    `Reservation: ${
+      transfer.booking_reference || "-"
+    }`,
+    "",
+    "You can follow your driver's live location securely using this link:",
+    trackingUrl,
+    "",
+    "No application download is required.",
+    "SkyTrip Transfer",
   ].join("\n");
 }
 

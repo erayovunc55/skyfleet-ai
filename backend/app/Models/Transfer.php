@@ -7,37 +7,52 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Transfer extends Model
 {
     use HasFactory;
 
     private const STATUS_TRANSITIONS = [
+        'pending' => [
+            'accepted',
+        ],
+
         'accepted' => [
             'on_the_way',
         ],
+
         'on_the_way' => [
             'arrived',
         ],
+
         'arrived' => [
             'passenger_called',
+            'no_show',
         ],
+
         'passenger_called' => [
             'passenger_on_board',
+            'no_show',
         ],
+
         'passenger_on_board' => [
             'trip_started',
         ],
+
         'trip_started' => [
             'completed',
         ],
+
         'completed' => [],
         'no_show' => [],
+        'cancelled' => [],
     ];
 
     private const TERMINAL_STATUSES = [
         'completed',
         'no_show',
+        'cancelled',
     ];
 
     protected $fillable = [
@@ -45,45 +60,118 @@ class Transfer extends Model
         'pickup_point_id',
         'dropoff_location_id',
         'dropoff_point_id',
+
+        'supplier_id',
         'driver_id',
+        'assigned_vehicle_id',
+
         'booking_reference',
+        'ota_booking_reference',
         'ota_source',
         'supplier',
+
         'passenger_name',
         'passenger_phone',
         'passenger_email',
+
         'flight_number',
         'airline',
         'terminal',
+
         'pickup',
         'pickup_lat',
         'pickup_lng',
+
         'dropoff',
         'dropoff_lat',
         'dropoff_lng',
+
         'pickup_time',
         'meet_point',
+
         'driver_note',
         'passenger_note',
+
         'adult',
         'child',
         'baby',
         'luggage_count',
+
         'vehicle_type',
         'price',
         'currency',
         'status',
+
+        'cancellation_reason',
+        'cancelled_at',
+        'cancelled_by',
+
+        'public_tracking_token',
+        'public_tracking_enabled_at',
+        'public_tracking_expires_at',
+        'public_tracking_last_viewed_at',
+    ];
+
+    /*
+     * Bu alanlar genel model çıktısında gizlidir.
+     *
+     * Ana yönetici controller'ı gerekli ticari
+     * alanları açıkça gösterebilir.
+     */
+    protected $hidden = [
+        'ota_booking_reference',
+        'price',
+        'currency',
+        'public_tracking_token',
+        'public_tracking_enabled_at',
+        'public_tracking_expires_at',
+        'public_tracking_last_viewed_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'pickup_time' => 'datetime',
-            'pickup_lat' => 'decimal:7',
-            'pickup_lng' => 'decimal:7',
-            'dropoff_lat' => 'decimal:7',
-            'dropoff_lng' => 'decimal:7',
-            'price' => 'decimal:2',
+            'pickup_time' =>
+                'datetime',
+
+            'cancelled_at' =>
+                'datetime',
+
+            'public_tracking_enabled_at' =>
+                'datetime',
+
+            'public_tracking_expires_at' =>
+                'datetime',
+
+            'public_tracking_last_viewed_at' =>
+                'datetime',
+
+            'pickup_lat' =>
+                'decimal:7',
+
+            'pickup_lng' =>
+                'decimal:7',
+
+            'dropoff_lat' =>
+                'decimal:7',
+
+            'dropoff_lng' =>
+                'decimal:7',
+
+            'price' =>
+                'decimal:2',
+
+            'adult' =>
+                'integer',
+
+            'child' =>
+                'integer',
+
+            'baby' =>
+                'integer',
+
+            'luggage_count' =>
+                'integer',
         ];
     }
 
@@ -113,11 +201,111 @@ class Transfer extends Model
         );
     }
 
+    public function enablePublicTracking(): string
+    {
+        if (!$this->public_tracking_token) {
+            do {
+                $token = Str::random(64);
+            } while (
+                self::query()
+                    ->where(
+                        'public_tracking_token',
+                        $token
+                    )
+                    ->exists()
+            );
+
+            $this->public_tracking_token = $token;
+        }
+
+        $this->public_tracking_enabled_at ??= now();
+        $this->public_tracking_expires_at = null;
+        $this->save();
+
+        return $this->public_tracking_token;
+    }
+
+    public function schedulePublicTrackingExpiry(): void
+    {
+        if (!$this->public_tracking_token) {
+            return;
+        }
+
+        $this->forceFill([
+            'public_tracking_expires_at' =>
+                now()->addHours(24),
+        ])->save();
+    }
+
+    public function publicTrackingIsAvailable(): bool
+    {
+        if (
+            !$this->public_tracking_token
+            || !$this->public_tracking_enabled_at
+        ) {
+            return false;
+        }
+
+        if (
+            $this->isTerminalStatus()
+            && !$this->public_tracking_expires_at
+        ) {
+            return $this->updated_at
+                ?->copy()
+                ->addHours(24)
+                ->isFuture() ?? false;
+        }
+
+        return !$this->public_tracking_expires_at
+            || $this->public_tracking_expires_at
+                ->isFuture();
+    }
+
+    public function publicTrackingUrl(): ?string
+    {
+        if (!$this->public_tracking_token) {
+            return null;
+        }
+
+        return rtrim(
+            config('passenger_tracking.web_url'),
+            '/'
+        ) . '/' . $this->public_tracking_token;
+    }
+
+    /*
+     * Transferin operasyonunu üstlenen
+     * tedarikçi şirket.
+     */
+    public function supplierCompany(): BelongsTo
+    {
+        return $this->belongsTo(
+            Supplier::class,
+            'supplier_id'
+        );
+    }
+
+    /*
+     * Transfer için seçilen sürücü.
+     */
     public function driver(): BelongsTo
     {
         return $this->belongsTo(
             User::class,
             'driver_id'
+        );
+    }
+
+    /*
+     * Transfer için ayrıca seçilen araç.
+     *
+     * Sürücünün sürekli aracından bağımsızdır.
+     */
+    public function assignedVehicle(): BelongsTo
+    {
+        return $this->belongsTo(
+            Vehicle::class,
+            'assigned_vehicle_id'
         );
     }
 
@@ -153,32 +341,52 @@ class Transfer extends Model
         );
     }
 
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'cancelled_by'
+        );
+    }
+
     public function events(): HasMany
     {
-        return $this->hasMany(
-            TransferEvent::class
-        )->orderBy('occurred_at');
+        return $this
+            ->hasMany(
+                TransferEvent::class
+            )
+            ->orderBy('occurred_at');
     }
 
     public function latestEvent(): HasOne
     {
-        return $this->hasOne(
-            TransferEvent::class
-        )->latestOfMany('occurred_at');
+        return $this
+            ->hasOne(
+                TransferEvent::class
+            )
+            ->latestOfMany(
+                'occurred_at'
+            );
     }
 
     public function locations(): HasMany
     {
-        return $this->hasMany(
-            DriverLocation::class
-        )->orderBy('recorded_at');
+        return $this
+            ->hasMany(
+                DriverLocation::class
+            )
+            ->orderBy('recorded_at');
     }
 
     public function latestLocation(): HasOne
     {
-        return $this->hasOne(
-            DriverLocation::class
-        )->latestOfMany('recorded_at');
+        return $this
+            ->hasOne(
+                DriverLocation::class
+            )
+            ->latestOfMany(
+                'recorded_at'
+            );
     }
 
     public function evidences(): HasMany

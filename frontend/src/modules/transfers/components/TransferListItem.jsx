@@ -25,7 +25,7 @@ export default function TransferListItem({
           </strong>
 
           <span>
-            {formatPickupTime(
+            {formatPickupDateTime(
               transfer.pickup_time,
             )}
           </span>
@@ -43,7 +43,9 @@ export default function TransferListItem({
 
       <div className="transfer-list-item-route">
         <span>
-          {getPickupLabel(transfer)}
+          {getPickupLabel(
+            transfer,
+          )}
         </span>
 
         <span className="transfer-list-item-arrow">
@@ -51,7 +53,9 @@ export default function TransferListItem({
         </span>
 
         <span>
-          {getDropoffLabel(transfer)}
+          {getDropoffLabel(
+            transfer,
+          )}
         </span>
       </div>
 
@@ -70,40 +74,67 @@ export default function TransferListItem({
   );
 }
 
-function getPickupLabel(transfer) {
+function getPickupLabel(
+  transfer,
+) {
   return (
-    transfer.pickup_location?.code ||
-    transfer.pickup_location?.name ||
+    transfer.pickup_location
+      ?.code ||
+    transfer.pickup_location
+      ?.name ||
     transfer.pickup ||
     "Alış noktası yok"
   );
 }
 
-function getDropoffLabel(transfer) {
+function getDropoffLabel(
+  transfer,
+) {
   return (
-    transfer.dropoff_location?.code ||
-    transfer.dropoff_location?.name ||
+    transfer.dropoff_location
+      ?.code ||
+    transfer.dropoff_location
+      ?.name ||
     transfer.dropoff ||
     "Bırakış noktası yok"
   );
 }
 
-function formatPickupTime(value) {
+function formatPickupDateTime(
+  value,
+) {
   if (!value) {
-    return "--:--";
+    return "Tarih belirtilmedi";
   }
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return "--:--";
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "Tarih belirtilmedi";
   }
 
-  return date.toLocaleTimeString(
-    "tr-TR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
+  const dateLabel =
+    date.toLocaleDateString(
+      "tr-TR",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      },
+    );
+
+  const timeLabel =
+    date.toLocaleTimeString(
+      "tr-TR",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    );
+
+  return `${dateLabel} · ${timeLabel}`;
 }

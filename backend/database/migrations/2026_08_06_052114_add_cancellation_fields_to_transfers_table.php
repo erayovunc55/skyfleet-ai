@@ -1,0 +1,54 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('transfers', function (Blueprint $table) {
+            $table
+                ->text('cancellation_reason')
+                ->nullable()
+                ->after('status');
+
+            $table
+                ->timestamp('cancelled_at')
+                ->nullable()
+                ->after('cancellation_reason');
+
+            $table
+                ->foreignId('cancelled_by')
+                ->nullable()
+                ->after('cancelled_at')
+                ->constrained('users')
+                ->nullOnDelete();
+
+            $table->index([
+                'status',
+                'cancelled_at',
+            ]);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('transfers', function (Blueprint $table) {
+            $table->dropIndex([
+                'status',
+                'cancelled_at',
+            ]);
+
+            $table->dropConstrainedForeignId(
+                'cancelled_by'
+            );
+
+            $table->dropColumn([
+                'cancellation_reason',
+                'cancelled_at',
+            ]);
+        });
+    }
+};

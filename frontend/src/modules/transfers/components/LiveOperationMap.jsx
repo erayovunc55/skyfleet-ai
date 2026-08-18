@@ -1,4 +1,8 @@
-import { useEffect, useMemo } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import L from "leaflet";
 
@@ -29,8 +33,19 @@ L.Icon.Default.mergeOptions({
 
 const DEFAULT_CENTER = [41.0082, 28.9784];
 
+const ROAD_ROUTING_ENDPOINTS = [
+  "https://router.project-osrm.org/route/v1/driving",
+  "https://routing.openstreetmap.de/routed-car/route/v1/driving",
+];
+
 export default function LiveOperationMap() {
   const { selectedTransfer } = useTransfer();
+
+  const [roadRoute, setRoadRoute] =
+    useState([]);
+
+  const [routeState, setRouteState] =
+    useState("idle");
 
   const pickup = useMemo(
     () =>
@@ -69,11 +84,65 @@ export default function LiveOperationMap() {
     driver,
   ].filter(Boolean);
 
-  const routePoints = [
-    driver || pickup,
-    pickup,
-    dropoff,
-  ].filter(Boolean);
+  const routeWaypoints = useMemo(
+    () =>
+      getRouteWaypoints({
+        status: selectedTransfer?.status,
+        driver,
+        pickup,
+        dropoff,
+      }),
+    [
+      selectedTransfer?.status,
+      driver,
+      pickup,
+      dropoff,
+    ],
+  );
+
+  const routeKey = routeWaypoints
+    .map(([latitude, longitude]) =>
+      `${latitude.toFixed(5)},${longitude.toFixed(5)}`,
+    )
+    .join(";");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    if (routeWaypoints.length < 2) {
+      setRoadRoute([]);
+      setRouteState("idle");
+
+      return () => controller.abort();
+    }
+
+    setRoadRoute([]);
+    setRouteState("loading");
+
+    loadRoadRoute(
+      routeWaypoints,
+      controller.signal,
+    )
+      .then((route) => {
+        if (!controller.signal.aborted) {
+          setRoadRoute(route);
+          setRouteState("ready");
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setRoadRoute([]);
+          setRouteState("error");
+        }
+      });
+
+    return () => controller.abort();
+  }, [routeKey]);
+
+  const fitPoints =
+    roadRoute.length > 1
+      ? [...availablePoints, ...roadRoute]
+      : availablePoints;
 
   const center =
     driver ||
@@ -94,7 +163,7 @@ export default function LiveOperationMap() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <FitMapBounds points={availablePoints} />
+        <FitMapBounds points={fitPoints} />
 
         {pickup && (
           <Marker position={pickup}>
@@ -133,12 +202,15 @@ export default function LiveOperationMap() {
           </Marker>
         )}
 
-        {routePoints.length >= 2 && (
+        {roadRoute.length >= 2 && (
           <Polyline
-            positions={routePoints}
+            positions={roadRoute}
             pathOptions={{
-              weight: 4,
-              opacity: 0.75,
+              color: "#24b8ff",
+              weight: 5,
+              opacity: 0.9,
+              lineCap: "round",
+              lineJoin: "round",
             }}
           />
         )}
@@ -147,6 +219,7 @@ export default function LiveOperationMap() {
       <MapMetrics
         transfer={selectedTransfer}
         driver={driver}
+        routeState={routeState}
       />
     </div>
   );
@@ -177,6 +250,7 @@ function FitMapBounds({ points }) {
 function MapMetrics({
   transfer,
   driver,
+  routeState,
 }) {
   const latestLocation =
     transfer?.latest_location;
@@ -240,6 +314,13 @@ function MapMetrics({
                 ).toFixed(1)} km/sa`
               : "Bilinmiyor"
           }
+        />
+
+        <Metric
+          label="Yol Rotası"
+          value={getRouteStateLabel(
+            routeState,
+          )}
         />
       </div>
     </>
@@ -405,4 +486,138 @@ function formatDateTime(value) {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+function getRouteWaypoints({
+  status,
+  driver,
+  pickup,
+  dropoff,
+}) {
+  if (
+    [
+      "passenger_on_board",
+      "trip_started",
+    ].includes(status)
+  ) {
+    return uniqueCoordinates([
+      driver || pickup,
+      dropoff,
+    ]);
+  }
+
+  if (
+    [
+      "completed",
+      "no_show",
+      "cancelled",
+    ].includes(status)
+  ) {
+    return uniqueCoordinates([
+      pickup,
+      dropoff,
+    ]);
+  }
+
+  return uniqueCoordinates([
+    driver,
+    pickup,
+    dropoff,
+  ]);
+}
+
+function uniqueCoordinates(points) {
+  const seen = new Set();
+
+  return points
+    .filter(Boolean)
+    .filter(([latitude, longitude]) => {
+      const key =
+        `${latitude.toFixed(5)},${longitude.toFixed(5)}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+}
+
+async function loadRoadRoute(
+  waypoints,
+  signal,
+) {
+  const coordinates = waypoints
+    .map(
+      ([latitude, longitude]) =>
+        `${longitude},${latitude}`,
+    )
+    .join(";");
+
+  let lastError = null;
+
+  for (const endpoint of ROAD_ROUTING_ENDPOINTS) {
+    try {
+      const response = await fetch(
+        `${endpoint}/${coordinates}` +
+          "?overview=full&geometries=geojson&steps=false",
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+          signal,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Rota servisi ${response.status} hatası döndürdü.`,
+        );
+      }
+
+      const payload = await response.json();
+      const coordinatesList =
+        payload?.routes?.[0]?.geometry
+          ?.coordinates;
+
+      if (
+        !Array.isArray(coordinatesList) ||
+        coordinatesList.length < 2
+      ) {
+        throw new Error(
+          "Rota geometrisi bulunamadı.",
+        );
+      }
+
+      return coordinatesList.map(
+        ([longitude, latitude]) => [
+          latitude,
+          longitude,
+        ],
+      );
+    } catch (error) {
+      if (signal.aborted) {
+        throw error;
+      }
+
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error(
+    "Yol güzergâhı alınamadı.",
+  );
+}
+
+function getRouteStateLabel(state) {
+  const labels = {
+    idle: "Koordinat bekleniyor",
+    loading: "Hesaplanıyor",
+    ready: "Karayolu rotası hazır",
+    error: "Rota servisine ulaşılamadı",
+  };
+
+  return labels[state] || labels.idle;
 }

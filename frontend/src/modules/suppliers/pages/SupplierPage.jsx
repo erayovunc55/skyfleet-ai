@@ -1,8 +1,13 @@
 import {
+  useState,
+} from "react";
+
+import {
   Button,
   Card,
 } from "../../../components/ui";
 
+import CreateSupplierModal from "../components/CreateSupplierModal";
 import SupplierList from "../components/SupplierList";
 import SupplierStats from "../components/SupplierStats";
 import useSuppliers from "../hooks/useSuppliers";
@@ -15,24 +20,52 @@ export default function SupplierPage() {
     reload,
   } = useSuppliers();
 
-  function handleSelectSupplier(supplier) {
+  const [
+    showCreateModal,
+    setShowCreateModal,
+  ] = useState(false);
+
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
+
+  function handleSelectSupplier(
+    supplier,
+  ) {
     console.log(
       "Seçilen tedarikçi:",
       supplier,
     );
   }
 
+  async function handleSupplierCreated() {
+    setSuccessMessage(
+      "Tedarikçi ve portal hesabı başarıyla oluşturuldu.",
+    );
+
+    await reload();
+
+    window.setTimeout(() => {
+      setSuccessMessage("");
+    }, 5000);
+  }
+
   return (
     <main className="supplier-page">
       <header className="supplier-page-header">
         <div>
-          <p>TEDARİKÇİ AĞI</p>
+          <small>
+            TEDARİKÇİ AĞI
+          </small>
 
-          <h1>Supplier Management</h1>
+          <h1>
+            Tedarikçi Yönetimi
+          </h1>
 
           <span>
-            Tedarikçi başvurularını, şubeleri ve
-            operasyon durumlarını yönetin.
+            Tedarikçileri, portal hesaplarını
+            ve operasyon durumlarını yönetin.
           </span>
         </div>
 
@@ -45,11 +78,22 @@ export default function SupplierPage() {
             Yenile
           </Button>
 
-          <Button variant="primary">
-            Yeni Tedarikçi
+          <Button
+            variant="primary"
+            onClick={() =>
+              setShowCreateModal(true)
+            }
+          >
+            + Yeni Tedarikçi
           </Button>
         </div>
       </header>
+
+      {successMessage && (
+        <div className="supplier-page-success">
+          {successMessage}
+        </div>
+      )}
 
       <SupplierStats
         suppliers={suppliers}
@@ -68,6 +112,17 @@ export default function SupplierPage() {
           }
         />
       </Card>
+
+      {showCreateModal && (
+        <CreateSupplierModal
+          onClose={() =>
+            setShowCreateModal(false)
+          }
+          onCreated={
+            handleSupplierCreated
+          }
+        />
+      )}
     </main>
   );
 }

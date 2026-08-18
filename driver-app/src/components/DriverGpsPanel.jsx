@@ -1,22 +1,22 @@
-import useDriverLocation from "../hooks/useDriverLocation";
+﻿import useDriverLocation from "../hooks/useDriverLocation";
 
 export default function DriverGpsPanel({
   transferId,
+  enabled = false,
+  sendInterval = 5000,
 }) {
   const {
     location,
     permissionState,
     tracking,
-    sending,
     error,
     lastSentAt,
     startTracking,
     stopTracking,
-    sendNow,
   } = useDriverLocation({
     transferId,
-    enabled: false,
-    sendInterval: 10000,
+    enabled,
+    sendInterval,
   });
 
   return (
@@ -38,44 +38,42 @@ export default function DriverGpsPanel({
 
           {tracking
             ? "Konum Paylaşılıyor"
-            : "GPS Kapalı"}
+            : enabled
+              ? "GPS Kapalı"
+              : "Takip Tamamlandı"}
         </div>
       </div>
 
       <div className="driver-gps-actions">
-        {!tracking ? (
+        <div className={
+          tracking
+            ? "driver-gps-status active"
+            : "driver-gps-status"
+        } aria-hidden="true">
+          <span />
+          {!enabled
+            ? "GPS takibi tamamlandı"
+            : permissionState === "prompt" || permissionState === "unknown"
+            ? "Konum izni bekleniyor"
+            : permissionState === "denied"
+            ? "Konum izni reddedildi"
+            : !navigator.geolocation || permissionState === "unsupported"
+            ? "GPS kullanılamıyor"
+            : tracking
+            ? "GPS aktif"
+            : "GPS Kapalı"}
+        </div>
+
+        {enabled && !tracking && (
           <button
-            className="driver-gps-start"
             type="button"
+            className="driver-gps-action-button"
             onClick={startTracking}
           >
-            📍 GPS Takibini Başlat
-          </button>
-        ) : (
-          <button
-            className="driver-gps-stop"
-            type="button"
-            onClick={stopTracking}
-          >
-            GPS Takibini Durdur
+            GPS&apos;i Başlat
           </button>
         )}
-
-        <button
-          className="driver-gps-send"
-          type="button"
-          disabled={
-            !location ||
-            sending
-          }
-          onClick={sendNow}
-        >
-          {sending
-            ? "Gönderiliyor..."
-            : "Konumu Şimdi Gönder"}
-        </button>
       </div>
-
       <div className="driver-gps-summary">
         <GpsRow
           label="Konum İzni"
@@ -163,10 +161,10 @@ function getPermissionLabel(
   state,
 ) {
   const labels = {
-    unknown: "Henüz Sorulmadı",
-    prompt: "İzin Bekleniyor",
-    granted: "İzin Verildi",
-    denied: "İzin Reddedildi",
+    unknown: "Konum izni bekleniyor",
+    prompt: "Konum izni bekleniyor",
+    granted: "Konum izni verildi",
+    denied: "Konum izni reddedildi",
   };
 
   return labels[state] || state;
@@ -196,3 +194,6 @@ function formatTime(value) {
     },
   );
 }
+
+
+

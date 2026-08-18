@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useRef,
@@ -7,7 +7,7 @@ import {
 
 import driverLocationService from "../services/driverLocationService";
 
-const DEFAULT_SEND_INTERVAL = 10000;
+const DEFAULT_SEND_INTERVAL = 5000;
 
 export default function useDriverLocation({
   transferId,
@@ -42,6 +42,9 @@ export default function useDriverLocation({
   const lastSendTimeRef =
     useRef(0);
 
+  // prevent overlapping network requests
+  const sendingRef = useRef(false);
+
   const mountedRef = useRef(true);
 
   const sendLocation = useCallback(
@@ -53,6 +56,18 @@ export default function useDriverLocation({
         !transferId ||
         !currentLocation
       ) {
+        return;
+      }
+
+      const lat = Number(
+        currentLocation.latitude,
+      );
+      const lng = Number(
+        currentLocation.longitude,
+      );
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        // invalid coordinates - skip sending
         return;
       }
 
@@ -68,6 +83,11 @@ export default function useDriverLocation({
         return;
       }
 
+      if (sendingRef.current && !force) {
+        return; // avoid overlapping sends
+      }
+
+      sendingRef.current = true;
       setSending(true);
       setError("");
 
@@ -90,11 +110,12 @@ export default function useDriverLocation({
           setError(
             requestError?.response
               ?.data?.message ||
-              requestError?.message ||
-              "Konum sunucuya gönderilemedi.",
+            requestError?.message ||
+            "Konum sunucuya gönderilemedi.",
           );
         }
       } finally {
+        sendingRef.current = false;
         if (mountedRef.current) {
           setSending(false);
         }
@@ -182,6 +203,15 @@ export default function useDriverLocation({
 
               latestLocationRef.current =
                 nextLocation;
+
+              try {
+                sessionStorage.setItem(
+                  "skyfleet_driver_last_location",
+                  JSON.stringify(nextLocation),
+                );
+              } catch {
+                // Konum paylaşımı depolama kapalı olsa da devam eder.
+              }
 
               if (
                 mountedRef.current

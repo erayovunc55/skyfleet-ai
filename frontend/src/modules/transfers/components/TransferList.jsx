@@ -1,11 +1,34 @@
 import TransferListItem from "./TransferListItem";
 import useTransfer from "../hooks/useTransfer";
+import { useLanguage } from "../../../i18n";
+
+const TEXT = {
+  tr: {
+    loading: "Transferler yükleniyor...",
+    empty: "Henüz transfer bulunmuyor.",
+  },
+  en: {
+    loading: "Loading transfers...",
+    empty: "No transfers found yet.",
+  },
+  ar: {
+    loading: "جارٍ تحميل التحويلات...",
+    empty: "لا توجد تحويلات حتى الآن.",
+  },
+  es: {
+    loading: "Cargando traslados...",
+    empty: "Aún no hay traslados.",
+  },
+};
 
 export default function TransferList({
   transfers = [],
   loading = false,
   error = "",
 }) {
+  const { language } = useLanguage();
+  const text = TEXT[language] || TEXT.en;
+
   const {
     selectedTransfer,
     selectTransfer,
@@ -14,7 +37,7 @@ export default function TransferList({
   if (loading) {
     return (
       <div className="transfer-list-state">
-        Transferler yükleniyor...
+        {text.loading}
       </div>
     );
   }
@@ -30,7 +53,7 @@ export default function TransferList({
   if (!Array.isArray(transfers) || transfers.length === 0) {
     return (
       <div className="transfer-list-state">
-        Henüz transfer bulunmuyor.
+        {text.empty}
       </div>
     );
   }

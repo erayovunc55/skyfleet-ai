@@ -1,59 +1,80 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import apiClient from "./apiClient";
 
-function getAuthHeaders(json = false) {
-  const token = localStorage.getItem("skyfleet_token");
-  return { Authorization: `Bearer ${token}`, Accept: "application/json", ...(json ? { "Content-Type": "application/json" } : {}) };
+function unwrapList(response) {
+  return Array.isArray(response?.data?.data)
+    ? response.data.data
+    : [];
 }
 
-async function parseResponse(response) {
-  let data = null;
-  try { data = await response.json(); } catch { throw new Error("The location service returned an invalid response."); }
-  if (response.status === 401) {
-    localStorage.removeItem("skyfleet_token"); localStorage.removeItem("skyfleet_user");
-    throw new Error("Your session has expired. Please sign in again.");
-  }
-  if (!response.ok) {
-    const validation = data?.errors ? Object.values(data.errors).flat().join(" ") : "";
-    throw new Error(validation || data?.message || "Location operation failed.");
-  }
-  return data;
+function unwrapItem(response) {
+  return response?.data?.data ?? null;
 }
 
-async function request(path, options = {}) {
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers: { ...getAuthHeaders(Boolean(options.body)), ...(options.headers || {}) } });
-  return parseResponse(response);
+export async function getLocationTypes() {
+  const response = await apiClient.get("/location-types");
+  return unwrapList(response);
 }
 
-export async function getLocationTypes() { const data = await request("/location-types"); return Array.isArray(data.data) ? data.data : []; }
-export async function getCountries() { const data = await request("/countries"); return Array.isArray(data.data) ? data.data : []; }
-export async function getCities(countryId) { if (!countryId) return []; const data = await request(`/countries/${countryId}/cities`); return Array.isArray(data.data) ? data.data : []; }
-export async function getAirports(cityId) { if (!cityId) return []; const data = await request(`/cities/${cityId}/airports`); return Array.isArray(data.data) ? data.data : []; }
+export async function getCountries() {
+  const response = await apiClient.get("/countries");
+  return unwrapList(response);
+}
+
+export async function getCities(countryId) {
+  if (!countryId) return [];
+  const response = await apiClient.get(`/countries/${countryId}/cities`);
+  return unwrapList(response);
+}
+
+export async function getAirports(cityId) {
+  if (!cityId) return [];
+  const response = await apiClient.get(`/cities/${cityId}/airports`);
+  return unwrapList(response);
+}
 
 export async function getLocations(cityId, filters = {}) {
   if (!cityId) return [];
-  const query = new URLSearchParams();
-  if (filters.type) query.set("type", filters.type);
-  if (filters.locationTypeId) query.set("location_type_id", String(filters.locationTypeId));
-  if (filters.search) query.set("search", filters.search);
-  if (filters.pickupOnly) query.set("pickup_only", "1");
-  if (filters.dropoffOnly) query.set("dropoff_only", "1");
-  const qs = query.toString();
-  const data = await request(`/cities/${cityId}/locations${qs ? `?${qs}` : ""}`);
-  return Array.isArray(data.data) ? data.data : [];
+
+  const params = {};
+  if (filters.type) params.type = filters.type;
+  if (filters.locationTypeId) params.location_type_id = filters.locationTypeId;
+  if (filters.search) params.search = filters.search;
+  if (filters.pickupOnly) params.pickup_only = 1;
+  if (filters.dropoffOnly) params.dropoff_only = 1;
+
+  const response = await apiClient.get(`/cities/${cityId}/locations`, { params });
+  return unwrapList(response);
 }
 
-export async function getLocation(locationId) { if (!locationId) return null; const data = await request(`/locations/${locationId}`); return data.data || null; }
-export async function createLocation(payload) { const data = await request("/locations", { method: "POST", body: JSON.stringify(payload) }); return data.data; }
-export async function updateLocation(locationId, payload) { const data = await request(`/locations/${locationId}`, { method: "PATCH", body: JSON.stringify(payload) }); return data.data; }
-export async function createLocationPoint(locationId, payload) { const data = await request(`/locations/${locationId}/points`, { method: "POST", body: JSON.stringify(payload) }); return data.data; }
+export async function getLocation(locationId) {
+  if (!locationId) return null;
+  const response = await apiClient.get(`/locations/${locationId}`);
+  return unwrapItem(response);
+}
+
+export async function createLocation(payload) {
+  const response = await apiClient.post("/locations", payload);
+  return unwrapItem(response);
+}
+
+export async function updateLocation(locationId, payload) {
+  const response = await apiClient.patch(`/locations/${locationId}`, payload);
+  return unwrapItem(response);
+}
+
+export async function createLocationPoint(locationId, payload) {
+  const response = await apiClient.post(`/locations/${locationId}/points`, payload);
+  return unwrapItem(response);
+}
 
 export async function getLocationPoints(locationId, filters = {}) {
   if (!locationId) return [];
-  const query = new URLSearchParams();
-  if (filters.pointType) query.set("point_type", filters.pointType);
-  if (filters.pickupOnly) query.set("pickup_only", "1");
-  if (filters.dropoffOnly) query.set("dropoff_only", "1");
-  const qs = query.toString();
-  const data = await request(`/locations/${locationId}/points${qs ? `?${qs}` : ""}`);
-  return Array.isArray(data.data) ? data.data : [];
+
+  const params = {};
+  if (filters.pointType) params.point_type = filters.pointType;
+  if (filters.pickupOnly) params.pickup_only = 1;
+  if (filters.dropoffOnly) params.dropoff_only = 1;
+
+  const response = await apiClient.get(`/locations/${locationId}/points`, { params });
+  return unwrapList(response);
 }

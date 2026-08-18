@@ -15,6 +15,8 @@ export default function SupplierComplianceCenter({ supplierId, text, language })
   const [loading,setLoading]=useState(false);
   const [form,setForm]=useState({type:"contract",title:"",document_number:"",issued_at:"",expires_at:"",note:"",file:null});
 
+  const resetForm=()=>setForm({type:"contract",title:"",document_number:"",issued_at:"",expires_at:"",note:"",file:null});
+
   const load=async(nextPage=page)=>{
     setLoading(true);
     try{setData(await supplierService.getDocuments(supplierId,{search:search||undefined,type:type||undefined,status:status||undefined,page:nextPage,per_page:perPage}));}
@@ -27,10 +29,15 @@ export default function SupplierComplianceCenter({ supplierId, text, language })
     e.preventDefault();
     if(!form.file||!form.title)return;
     await supplierService.uploadDocument(supplierId,form);
-    setForm({type:"contract",title:"",document_number:"",issued_at:"",expires_at:"",note:"",file:null});
+    resetForm();
     setShowForm(false);
     setPage(1);
     await load(1);
+  };
+
+  const toggleForm=()=>{
+    if(showForm) resetForm();
+    setShowForm(v=>!v);
   };
 
   const remove=async(id)=>{await supplierService.deleteDocument(supplierId,id);await load(page);};
@@ -49,7 +56,7 @@ export default function SupplierComplianceCenter({ supplierId, text, language })
       <select value={type} onChange={e=>setType(e.target.value)}><option value="">{label(language,"All types","Tüm türler","كل الأنواع","Todos los tipos")}</option>{TYPES.map(v=><option key={v} value={v}>{typeLabel(v,language)}</option>)}</select>
       <select value={status} onChange={e=>setStatus(e.target.value)}><option value="">{label(language,"All statuses","Tüm durumlar","كل الحالات","Todos los estados")}</option><option value="valid">{statusLabel("valid",language)}</option><option value="expiring">{statusLabel("expiring",language)}</option><option value="expired">{statusLabel("expired",language)}</option><option value="no_expiry">{statusLabel("no_expiry",language)}</option></select>
       <button type="button" onClick={()=>load(1)}>{label(language,"Search","Ara","بحث","Buscar")}</button>
-      <button type="button" className="primary" onClick={()=>setShowForm(v=>!v)}>+ {label(language,"Add Document","Belge Ekle","إضافة مستند","Añadir Documento")}</button>
+      <button type="button" className={showForm?"":"primary"} onClick={toggleForm}>{showForm?label(language,"Cancel","Vazgeç","إلغاء","Cancelar"):`+ ${label(language,"Add Document","Belge Ekle","إضافة مستند","Añadir Documento")}`}</button>
     </div>
 
     {showForm&&<form className="supplier-compliance-form" onSubmit={submit}>
@@ -58,7 +65,12 @@ export default function SupplierComplianceCenter({ supplierId, text, language })
       <input value={form.document_number} onChange={e=>setForm({...form,document_number:e.target.value})} placeholder={label(language,"Document number","Belge numarası","رقم المستند","Número de documento")}/>
       <label><span>{label(language,"Issue date","Düzenlenme","تاريخ الإصدار","Fecha de emisión")}</span><input type="date" value={form.issued_at} onChange={e=>setForm({...form,issued_at:e.target.value})}/></label>
       <label><span>{label(language,"Expiry date","Son kullanma","تاريخ الانتهاء","Fecha de caducidad")}</span><input type="date" value={form.expires_at} onChange={e=>setForm({...form,expires_at:e.target.value})}/></label>
-      <input type="file" required accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" onChange={e=>setForm({...form,file:e.target.files?.[0]||null})}/>
+      <label className="supplier-compliance-file-picker">
+        <span>{label(language,"Document file","Belge dosyası","ملف المستند","Archivo del documento")}</span>
+        <input type="file" required accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" onChange={e=>setForm({...form,file:e.target.files?.[0]||null})}/>
+        <span className="supplier-compliance-file-button">{label(language,"Choose File","Dosya Seç","اختر ملفًا","Elegir Archivo")}</span>
+        <strong>{form.file?.name||label(language,"No file selected","Dosya seçilmedi","لم يتم اختيار ملف","Ningún archivo seleccionado")}</strong>
+      </label>
       <textarea value={form.note} onChange={e=>setForm({...form,note:e.target.value})} placeholder={label(language,"Note","Not","ملاحظة","Nota")}/>
       <button type="submit" className="primary">{label(language,"Upload","Yükle","رفع","Subir")}</button>
     </form>}

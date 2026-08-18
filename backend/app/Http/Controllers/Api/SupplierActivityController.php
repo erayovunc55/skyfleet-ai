@@ -4,12 +4,31 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use App\Models\TransferFinancial;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class SupplierActivityController extends Controller
 {
+    private const MEANINGFUL_TRANSFER_STATUSES = [
+        'accepted',
+        'on_the_way',
+        'arrived',
+        'passenger_called',
+        'passenger_on_board',
+        'trip_started',
+        'completed',
+        'no_show',
+        'cancelled',
+    ];
+
+    private const MEANINGFUL_FINANCE_STATUSES = [
+        TransferFinancial::STATUS_APPROVED,
+        TransferFinancial::STATUS_PAID,
+        TransferFinancial::STATUS_DISPUTED,
+        TransferFinancial::STATUS_CANCELLED,
+    ];
+
     public function index(Request $request, Supplier $supplier): JsonResponse
     {
         $validated = $request->validate([
@@ -62,9 +81,6 @@ class SupplierActivityController extends Controller
         }
 
         foreach ($supplier->users as $driver) {
-            if ($driver->role ?? null) {
-                // role may be omitted from the selected columns in older schemas; keep feed tolerant.
-            }
             $items->push([
                 'id' => 'driver-' . $driver->id,
                 'type' => 'driver_linked',
@@ -91,15 +107,61 @@ class SupplierActivityController extends Controller
         }
 
         foreach ($supplier->transfers as $transfer) {
+            if (!in_array($transfer->status, self::MEANINGFUL_TRANSFER_STATUSES, true)) {
+                continue;
+            }
+
             $items->push([
                 'id' => 'transfer-' . $transfer->id,
-                'type' => 'transfer_linked',
+                'type' => 'transfer_' . $transfer->status,
                 'category' => 'transfer',
                 'title' => $transfer->booking_reference ?: ('#' . $transfer->id),
                 'description' => $transfer->passenger_name,
                 'actor' => null,
                 'occurred_at' => $transfer->updated_at?->toISOString() ?: $transfer->created_at?->toISOString(),
-                'metadata' => ['status' => $transfer->status],
+                'metadata' => [
+                    'status' => $transfer->status,
+                ],
+            ]);
+        }
+
+        $financials = TransferFinancial::query()
+            ->where('supplier_id', $supplier->id)
+            ->whereIn('status', self::MEANINGFUL_FINANCE_STATUSES)
+            ->with([
+                'transfer:id,booking_reference,passenger_name',
+                'approvedBy:id,name',
+                'paidBy:id,name',
+            ])
+            ->get();
+
+        foreach ($financials as $financial) {
+            $occurredAt = match ($financial->status) {
+                TransferFinancial::STATUS_PAID => $financial->paid_at,
+                TransferFinancial::STATUS_APPROVED => $financial->approved_at,
+                default => $financial->updated_at,
+            };
+
+            $actor = match ($financial->status) {
+                TransferFinancial::STATUS_PAID => $financial->paidBy?->name,
+                TransferFinancial::STATUS_APPROVED => $financial->approvedBy?->name,
+                default => null,
+            };
+
+            $items->push([
+                'id' => 'finance-' . $financial->id . '-' . $financial->status,
+                'type' => 'finance_' . $financial->status,
+                'category' => 'finance',
+                'title' => $financial->transfer?->booking_reference ?: ('#' . $financial->transfer_id),
+                'description' => $financial->transfer?->passenger_name,
+                'actor' => $actor,
+                'occurred_at' => $occurredAt?->toISOString(),
+                'metadata' => [
+                    'status' => $financial->status,
+                    'amount' => $financial->supplier_payable,
+                    'currency' => $financial->currency,
+                    'payment_reference' => $financial->payment_reference,
+                ],
             ]);
         }
 
@@ -117,7 +179,10 @@ class SupplierActivityController extends Controller
                     $item['description'] ?? null,
                     $item['actor'] ?? null,
                     $item['type'] ?? null,
+                    $item['metadata']['status'] ?? null,
+                    $item['metadata']['payment_reference'] ?? null,
                 ])));
+
                 return str_contains($haystack, $search);
             });
         }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../i18n";
 import AirportFinder from "../components/location/AirportFinder";
+import ProfessionalLocationOperationsPanel from "../components/location/ProfessionalLocationOperationsPanel";
 import {
   createLocation,
   createLocationPoint,
@@ -147,30 +148,9 @@ export default function LocationsPage(){
       <div className="location-form-checks"><label><input type="checkbox" checked={form.is_public} onChange={e=>patch("is_public",e.target.checked)}/>{text.public}</label><label><input type="checkbox" checked={form.is_active} onChange={e=>patch("is_active",e.target.checked)}/>{text.active}</label></div><button className="location-save" disabled={busy}>{busy?"…":text.save}</button>
     </form></aside></div>}
 
-    {selected&&<LocationDetailPanel selected={selected} text={text} pointOpen={pointOpen} setPointOpen={setPointOpen} pointForm={pointForm} setPointForm={setPointForm} savePoint={savePoint} busy={busy} close={()=>setSelected(null)}/>} 
+    {selected&&<ProfessionalLocationOperationsPanel initialLocation={selected} language={language} onClose={()=>setSelected(null)} onChanged={(fresh)=>{setSelected(fresh);loadLocations();}}/>}
   </main>;
 }
 
-function LocationDetailPanel({selected,text,pointOpen,setPointOpen,pointForm,setPointForm,savePoint,busy,close}){
-  const terminals=selected.airport?.terminals||[];
-  const points=selected.points||[];
-  const pickupCount=points.filter(p=>p.is_pickup_allowed).length;
-  const dropoffCount=points.filter(p=>p.is_dropoff_allowed).length;
-  const meetCount=points.filter(p=>p.requires_meet_and_greet).length;
-  return <div className="location-detail-backdrop" onMouseDown={e=>e.target===e.currentTarget&&close()}><aside className="location-detail-panel location-ops-panel">
-    <header className="location-ops-header"><div><span>{text.locationDetails}</span><h2>{selected.name}</h2><p>{selected.city?.name||"—"}, {selected.country?.name||"—"}</p></div><button onClick={close}>× {text.close}</button></header>
-    <div className="location-identity-bar"><div className="location-airport-badge">✈</div><div><span>{text.airportIdentity}</span><strong>{selected.airport?.iata_code||selected.code||"—"}</strong><small>{selected.airport?.icao_code||selected.type?.name||"—"}</small></div><span className={`location-status ${selected.is_active?"is-active":"is-inactive"}`}>{selected.is_active?text.active:text.inactive}</span></div>
-    <section className="location-readiness"><h3>{text.operationalReadiness}</h3><div className="location-readiness-grid"><MiniStat label={text.terminalCount} value={terminals.length}/><MiniStat label={text.pickupPoints} value={pickupCount}/><MiniStat label={text.dropoffPoints} value={dropoffCount}/><MiniStat label={text.meetGreetPoints} value={meetCount}/></div></section>
-    <section className="location-ops-section"><div className="section-title"><div><span>{text.masterData}</span><h3>{text.overview}</h3></div></div><div className="location-detail-grid"><Info label={text.type} value={selected.type?.name}/><Info label={text.scope} value={`${selected.country?.name||"—"} / ${selected.city?.name||"—"}`}/><Info label={text.address} value={selected.address}/><Info label={text.timezone} value={selected.timezone}/><Info label={text.radius} value={selected.geofence_radius_meters?`${selected.geofence_radius_meters} m`:null}/><Info label={text.coordinates} value={selected.latitude&&selected.longitude?`${selected.latitude}, ${selected.longitude}`:null}/></div></section>
-    {selected.airport&&<section className="location-ops-section"><div className="section-title"><div><span>{text.airport}</span><h3>{text.terminals}</h3></div><span className="location-count-badge">{terminals.length}</span></div>{terminals.length?<div className="terminal-cards">{terminals.map(t=><article key={t.id}><div><strong>{t.name}</strong><span>{t.type||"Passenger"}</span></div><b>{t.code||"—"}</b></article>)}</div>:<div className="location-inline-empty">{text.noTerminals}</div>}</section>}
-    <section className="location-ops-section"><div className="section-title"><div><span>{text.operationalReadiness}</span><h3>{text.pointCount}</h3></div><button onClick={()=>setPointOpen(v=>!v)}>+ {text.addPoint}</button></div>
-      {pointOpen&&<form className="point-form" onSubmit={savePoint}><input required placeholder={text.pointName} value={pointForm.name} onChange={e=>setPointForm(v=>({...v,name:e.target.value}))}/><select value={pointForm.point_type} onChange={e=>setPointForm(v=>({...v,point_type:e.target.value}))}>{POINT_TYPES.map(x=><option key={x} value={x}>{x.replaceAll("_"," ")}</option>)}</select>{terminals.length?<select value={pointForm.airport_terminal_id} onChange={e=>setPointForm(v=>({...v,airport_terminal_id:e.target.value}))}><option value="">{text.terminal}</option>{terminals.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>:null}<input type="number" step="any" placeholder={text.latitude} value={pointForm.latitude} onChange={e=>setPointForm(v=>({...v,latitude:e.target.value}))}/><input type="number" step="any" placeholder={text.longitude} value={pointForm.longitude} onChange={e=>setPointForm(v=>({...v,longitude:e.target.value}))}/><textarea placeholder={text.instructions} value={pointForm.instructions} onChange={e=>setPointForm(v=>({...v,instructions:e.target.value}))}/><div className="point-checks"><label><input type="checkbox" checked={pointForm.is_pickup_allowed} onChange={e=>setPointForm(v=>({...v,is_pickup_allowed:e.target.checked}))}/>{text.pickup}</label><label><input type="checkbox" checked={pointForm.is_dropoff_allowed} onChange={e=>setPointForm(v=>({...v,is_dropoff_allowed:e.target.checked}))}/>{text.dropoff}</label><label><input type="checkbox" checked={pointForm.requires_meet_and_greet} onChange={e=>setPointForm(v=>({...v,requires_meet_and_greet:e.target.checked}))}/>{text.meetGreet}</label></div><button className="location-save" disabled={busy}>{text.savePoint}</button></form>}
-      {points.length?<div className="location-point-list">{points.map(point=><article key={point.id}><div><strong>{point.name}</strong><span>{point.point_type?.replaceAll?.("_"," ")||point.point_type||"—"}</span></div><div className="point-badges">{point.is_pickup_allowed&&<b>P</b>}{point.is_dropoff_allowed&&<b>D</b>}{point.requires_meet_and_greet&&<b>M&G</b>}</div><small>{point.airport_terminal?.name||point.instructions||""}</small></article>)}</div>:!pointOpen&&<div className="location-inline-empty">{text.noPoints}</div>}
-    </section>
-  </aside></div>;
-}
-
 function Kpi({label,value,icon}){return <article className="location-kpi"><div>{icon}</div><span>{label}</span><strong>{value}</strong></article>}
-function Info({label,value}){return <div className="location-detail-info"><span>{label}</span><strong>{value||"—"}</strong></div>}
 function Field({label,children,wide=false}){return <label className={wide?"wide":""}><span>{label}</span>{children}</label>}
-function MiniStat({label,value}){return <article><span>{label}</span><strong>{value}</strong></article>}

@@ -1,8 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import CreateTransferPage from "./CreateTransferPage";
 import TransferCommercialSummary from "../modules/transfers/components/TransferCommercialSummary";
@@ -11,17 +7,15 @@ import supplierService from "../modules/suppliers/services/supplierService";
 import transferService from "../modules/transfers/services/transferService";
 import TransferDetail from "../modules/transfers/components/TransferDetail";
 import TransferEvidenceCard from "../modules/transfers/components/TransferEvidenceCard";
-
 import {
   CancelTransferModal,
   EditTransferModal,
 } from "../modules/transfers/components/TransferManagementModals";
-
 import useTransfer from "../modules/transfers/hooks/useTransfer";
 import useTransfers from "../modules/transfers/hooks/useTransfers";
 
-const ALERT_TRANSFER_KEY =
-  "skyfleet_pending_transfer_id";
+const ALERT_TRANSFER_KEY = "skyfleet_pending_transfer_id";
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Tüm durumlar" },
@@ -39,11 +33,7 @@ const STATUS_OPTIONS = [
 
 export default function TransfersPage() {
   const { transfers, loading, error, reload } = useTransfers();
-  const {
-    selectedTransfer,
-    selectTransfer,
-    clearSelectedTransfer,
-  } = useTransfer();
+  const { selectedTransfer, selectTransfer, clearSelectedTransfer } = useTransfer();
 
   const [showCreatePage, setShowCreatePage] = useState(false);
   const [selectedTransferIds, setSelectedTransferIds] = useState([]);
@@ -56,8 +46,11 @@ export default function TransfersPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [supplierFilter, setSupplierFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     let active = true;
@@ -68,13 +61,13 @@ export default function TransfersPage() {
 
       setSearch("");
       setStatus("all");
+      setSupplierFilter("all");
       setStartDate("");
       setEndDate("");
+      setCurrentPage(1);
       setShowCreatePage(false);
 
-      let transfer = transfers.find(
-        (item) => Number(item.id) === numericId,
-      );
+      let transfer = transfers.find((item) => Number(item.id) === numericId);
 
       if (!transfer) {
         try {
@@ -102,7 +95,6 @@ export default function TransfersPage() {
     }
 
     window.addEventListener("skyfleet:open-transfer", handleOpenTransfer);
-
     const pendingTransferId = sessionStorage.getItem(ALERT_TRANSFER_KEY);
     if (pendingTransferId) openTransfer(pendingTransferId);
 
@@ -111,73 +103,6 @@ export default function TransfersPage() {
       window.removeEventListener("skyfleet:open-transfer", handleOpenTransfer);
     };
   }, [transfers, selectTransfer]);
-
-  const filteredTransfers = useMemo(() => {
-    const searchValue = search.trim().toLocaleLowerCase("tr-TR");
-
-    return [...transfers]
-      .filter((transfer) => {
-        if (status !== "all" && transfer.status !== status) return false;
-
-        const pickupDate = getDateKey(transfer.pickup_time);
-        if (startDate && (!pickupDate || pickupDate < startDate)) return false;
-        if (endDate && (!pickupDate || pickupDate > endDate)) return false;
-        if (!searchValue) return true;
-
-        const searchableText = [
-          transfer.booking_reference,
-          transfer.ota_booking_reference,
-          transfer.passenger_name,
-          transfer.passenger_phone,
-          transfer.passenger_email,
-          transfer.flight_number,
-          transfer.pickup,
-          transfer.dropoff,
-          transfer.driver?.name,
-          transfer.supplier_company?.company_name,
-          transfer.supplier,
-          transfer.ota_source,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLocaleLowerCase("tr-TR");
-
-        return searchableText.includes(searchValue);
-      })
-      .sort(
-        (first, second) =>
-          getTimestamp(first.pickup_time) - getTimestamp(second.pickup_time),
-      );
-  }, [transfers, search, status, startDate, endDate]);
-
-  const statistics = useMemo(() => ({
-    total: transfers.length,
-    waiting: transfers.filter((transfer) => transfer.status === "pending").length,
-    active: transfers.filter((transfer) =>
-      [
-        "accepted",
-        "on_the_way",
-        "arrived",
-        "passenger_called",
-        "passenger_on_board",
-        "trip_started",
-      ].includes(transfer.status),
-    ).length,
-    completed: transfers.filter((transfer) => transfer.status === "completed").length,
-  }), [transfers]);
-
-  const selectableTransferIds = useMemo(
-    () => filteredTransfers
-      .filter((transfer) =>
-        !transfer.supplier_id && ["pending", "accepted"].includes(transfer.status),
-      )
-      .map((transfer) => Number(transfer.id)),
-    [filteredTransfers],
-  );
-
-  const allVisibleSelected =
-    selectableTransferIds.length > 0 &&
-    selectableTransferIds.every((id) => selectedTransferIds.includes(id));
 
   useEffect(() => {
     let active = true;
@@ -212,6 +137,99 @@ export default function TransfersPage() {
     return () => { active = false; };
   }, []);
 
+  const filteredTransfers = useMemo(() => {
+    const searchValue = search.trim().toLocaleLowerCase("tr-TR");
+
+    return [...transfers]
+      .filter((transfer) => {
+        if (status !== "all" && transfer.status !== status) return false;
+        if (
+          supplierFilter !== "all" &&
+          Number(transfer.supplier_id || 0) !== Number(supplierFilter)
+        ) return false;
+
+        const pickupDate = getDateKey(transfer.pickup_time);
+        if (startDate && (!pickupDate || pickupDate < startDate)) return false;
+        if (endDate && (!pickupDate || pickupDate > endDate)) return false;
+        if (!searchValue) return true;
+
+        const searchableText = [
+          transfer.booking_reference,
+          transfer.ota_booking_reference,
+          transfer.passenger_name,
+          transfer.passenger_phone,
+          transfer.passenger_email,
+          transfer.flight_number,
+          transfer.pickup,
+          transfer.dropoff,
+          transfer.driver?.name,
+          transfer.supplier_company?.company_name,
+          transfer.supplier,
+          transfer.ota_source,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLocaleLowerCase("tr-TR");
+
+        return searchableText.includes(searchValue);
+      })
+      .sort(
+        (first, second) =>
+          getTimestamp(first.pickup_time) - getTimestamp(second.pickup_time),
+      );
+  }, [
+    transfers,
+    search,
+    status,
+    supplierFilter,
+    startDate,
+    endDate,
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / pageSize));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, status, supplierFilter, startDate, endDate, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const paginatedTransfers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredTransfers.slice(startIndex, startIndex + pageSize);
+  }, [filteredTransfers, currentPage, pageSize]);
+
+  const statistics = useMemo(() => ({
+    total: transfers.length,
+    waiting: transfers.filter((transfer) => transfer.status === "pending").length,
+    active: transfers.filter((transfer) =>
+      [
+        "accepted",
+        "on_the_way",
+        "arrived",
+        "passenger_called",
+        "passenger_on_board",
+        "trip_started",
+      ].includes(transfer.status),
+    ).length,
+    completed: transfers.filter((transfer) => transfer.status === "completed").length,
+  }), [transfers]);
+
+  const selectableTransferIds = useMemo(
+    () => paginatedTransfers
+      .filter((transfer) =>
+        !transfer.supplier_id && ["pending", "accepted"].includes(transfer.status),
+      )
+      .map((transfer) => Number(transfer.id)),
+    [paginatedTransfers],
+  );
+
+  const allVisibleSelected =
+    selectableTransferIds.length > 0 &&
+    selectableTransferIds.every((id) => selectedTransferIds.includes(id));
+
   useEffect(() => {
     if (
       selectedTransfer &&
@@ -226,8 +244,10 @@ export default function TransfersPage() {
   function clearFilters() {
     setSearch("");
     setStatus("all");
+    setSupplierFilter("all");
     setStartDate("");
     setEndDate("");
+    setCurrentPage(1);
   }
 
   async function handleTransferSaved(updatedTransfer) {
@@ -282,7 +302,9 @@ export default function TransfersPage() {
   }
 
   function selectAllVisibleTransfers() {
-    setSelectedTransferIds(selectableTransferIds);
+    setSelectedTransferIds((current) => [
+      ...new Set([...current, ...selectableTransferIds]),
+    ]);
   }
 
   function clearTransferSelection() {
@@ -306,6 +328,11 @@ export default function TransfersPage() {
       />
     );
   }
+
+  const firstVisible = filteredTransfers.length === 0
+    ? 0
+    : (currentPage - 1) * pageSize + 1;
+  const lastVisible = Math.min(currentPage * pageSize, filteredTransfers.length);
 
   return (
     <main className="transfers-management-page">
@@ -343,7 +370,7 @@ export default function TransfersPage() {
         <StatisticCard label="Tamamlanan" value={statistics.completed} />
       </section>
 
-      <section className="transfers-filter-card">
+      <section className="transfers-filter-card transfers-filter-card-extended">
         <div className="transfers-filter-search">
           <label htmlFor="transfer-search">Transfer ara</label>
           <input
@@ -351,8 +378,24 @@ export default function TransfersPage() {
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="SF numarası, yolcu, telefon, uçuş veya adres..."
+            placeholder="Ref no, yolcu, telefon, uçuş veya adres..."
           />
+        </div>
+
+        <div className="transfers-filter-field">
+          <label htmlFor="transfer-supplier-filter">Tedarikçi</label>
+          <select
+            id="transfer-supplier-filter"
+            value={supplierFilter}
+            onChange={(event) => setSupplierFilter(event.target.value)}
+          >
+            <option value="all">Tüm tedarikçiler</option>
+            {bulkSuppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.id}>
+                {supplier.company_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="transfers-filter-field">
@@ -399,16 +442,16 @@ export default function TransfersPage() {
         </button>
       </section>
 
-      {error && (
-        <div className="transfers-management-error">{error}</div>
-      )}
+      {error && <div className="transfers-management-error">{error}</div>}
 
       <section className="transfers-management-content">
         <div className="transfers-table-card">
           <div className="transfers-table-heading">
             <div>
               <h2>Rezervasyonlar</h2>
-              <span>{filteredTransfers.length} kayıt gösteriliyor</span>
+              <span>
+                {filteredTransfers.length} kayıt • {firstVisible}-{lastVisible} gösteriliyor
+              </span>
             </div>
 
             <div className="transfers-bulk-assignment">
@@ -470,59 +513,103 @@ export default function TransfersPage() {
               Seçilen filtrelere uygun transfer bulunamadı.
             </div>
           ) : (
-            <div className="transfers-table-wrapper">
-              <table className="transfers-table">
-                <thead>
-                  <tr>
-                    <th className="transfers-select-column">
-                      <input
-                        type="checkbox"
-                        aria-label="Uygun transferlerin tümünü seç"
-                        checked={allVisibleSelected}
-                        disabled={selectableTransferIds.length === 0}
-                        onChange={(event) => {
-                          if (event.target.checked) selectAllVisibleTransfers();
-                          else clearTransferSelection();
-                        }}
-                        onClick={(event) => event.stopPropagation()}
-                      />
-                    </th>
-                    <th>Ref. No</th>
-                    <th>Tedarikçi</th>
-                    <th>Tür</th>
-                    <th>Tarih</th>
-                    <th>Saat</th>
-                    <th>Uçuş</th>
-                    <th>Nereden</th>
-                    <th>Nereye</th>
-                    <th>Yolcu</th>
-                    <th>Telefon</th>
-                    <th>Pax</th>
-                    <th>Çocuk</th>
-                    <th>Araç Tipi</th>
-                    <th>Fiyat</th>
-                    <th>Para Birimi</th>
-                    <th>Araç</th>
-                    <th>Sürücü</th>
-                    <th>Atama</th>
-                    <th>Durum</th>
-                  </tr>
-                </thead>
+            <>
+              <div className="transfers-table-wrapper">
+                <table className="transfers-table">
+                  <thead>
+                    <tr>
+                      <th className="transfers-select-column">
+                        <input
+                          type="checkbox"
+                          aria-label="Bu sayfadaki uygun transferlerin tümünü seç"
+                          checked={allVisibleSelected}
+                          disabled={selectableTransferIds.length === 0}
+                          onChange={(event) => {
+                            if (event.target.checked) selectAllVisibleTransfers();
+                            else clearTransferSelection();
+                          }}
+                          onClick={(event) => event.stopPropagation()}
+                        />
+                      </th>
+                      <th>Ref. No</th>
+                      <th>Tedarikçi</th>
+                      <th>Tür</th>
+                      <th>Tarih</th>
+                      <th>Saat</th>
+                      <th>Uçuş</th>
+                      <th>Nereden</th>
+                      <th>Nereye</th>
+                      <th>Yolcu</th>
+                      <th>Telefon</th>
+                      <th>Pax</th>
+                      <th>Çocuk</th>
+                      <th>Araç Tipi</th>
+                      <th>Fiyat</th>
+                      <th>Para Birimi</th>
+                      <th>Araç</th>
+                      <th>Sürücü</th>
+                      <th>Atama</th>
+                      <th>Durum</th>
+                    </tr>
+                  </thead>
 
-                <tbody>
-                  {filteredTransfers.map((transfer) => (
-                    <TransferTableRow
-                      key={transfer.id}
-                      transfer={transfer}
-                      active={Number(selectedTransfer?.id) === Number(transfer.id)}
-                      selected={selectedTransferIds.includes(Number(transfer.id))}
-                      onToggleSelection={() => toggleTransferSelection(transfer.id)}
-                      onSelect={() => selectTransfer(transfer)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  <tbody>
+                    {paginatedTransfers.map((transfer) => (
+                      <TransferTableRow
+                        key={transfer.id}
+                        transfer={transfer}
+                        active={Number(selectedTransfer?.id) === Number(transfer.id)}
+                        selected={selectedTransferIds.includes(Number(transfer.id))}
+                        onToggleSelection={() => toggleTransferSelection(transfer.id)}
+                        onSelect={() => selectTransfer(transfer)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="transfers-pagination">
+                <div className="transfers-page-size">
+                  <span>Sayfa başına</span>
+                  <select
+                    value={pageSize}
+                    onChange={(event) => setPageSize(Number(event.target.value))}
+                    aria-label="Sayfa başına transfer sayısı"
+                  >
+                    {PAGE_SIZE_OPTIONS.map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                  <span>transfer</span>
+                </div>
+
+                <div className="transfers-pagination-summary">
+                  {firstVisible}-{lastVisible} / {filteredTransfers.length}
+                </div>
+
+                <div className="transfers-pagination-actions">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    ‹ Önceki
+                  </button>
+
+                  <span>
+                    Sayfa <strong>{currentPage}</strong> / {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Sonraki ›
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -699,13 +786,8 @@ function TransferTableRow({
       <td className="transfers-price-cell"><strong>{formatPriceOnly(transfer.price)}</strong></td>
       <td className="transfers-currency-cell"><strong>{formatCurrency(transfer.currency)}</strong></td>
 
-      <td>
-        <strong>{getVehiclePlate(transfer)}</strong>
-      </td>
-
-      <td>
-        <strong>{getDriverName(transfer)}</strong>
-      </td>
+      <td><strong>{getVehiclePlate(transfer)}</strong></td>
+      <td><strong>{getDriverName(transfer)}</strong></td>
 
       <td>
         <span className={`transfers-assignment-state transfers-assignment-${assignmentState.key}`}>
@@ -735,15 +817,12 @@ function getAssignmentState(transfer) {
   if (!transfer.supplier_id) {
     return { key: "supplier", label: "Tedarikçi bekleniyor" };
   }
-
   if (!transfer.driver_id || !transfer.assigned_vehicle_id) {
     return { key: "resources", label: "Araç / sürücü bekleniyor" };
   }
-
   if (transfer.status === "pending") {
     return { key: "driver", label: "Sürücü kabulü bekleniyor" };
   }
-
   return { key: "ready", label: "Atama tamam" };
 }
 
@@ -786,9 +865,7 @@ function getPassengerCount(transfer) {
 }
 
 function getChildCount(transfer) {
-  const child = Number(transfer.child || 0);
-  const baby = Number(transfer.baby || 0);
-  return child + baby;
+  return Number(transfer.child || 0) + Number(transfer.baby || 0);
 }
 
 function formatPriceOnly(price) {

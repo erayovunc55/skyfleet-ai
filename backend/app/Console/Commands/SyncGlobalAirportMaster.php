@@ -26,7 +26,11 @@ class SyncGlobalAirportMaster extends Command
 
         $this->info('Downloading global airport master...');
         $airportCsv = $this->download(self::AIRPORTS_URL);
-        [$created, $updated, $skipped] = $this->syncAirports($airportCsv, $countryMap, (bool) $this->option('all'));
+        [$created, $updated, $skipped] = $this->syncAirports(
+            $airportCsv,
+            $countryMap,
+            (bool) $this->option('all')
+        );
 
         $this->newLine();
         $this->info('Global airport master synchronized.');
@@ -61,10 +65,9 @@ class SyncGlobalAirportMaster extends Command
 
     private function syncCountries(string $csv): array
     {
-        $rows = $this->csvRows($csv);
         $map = [];
 
-        foreach ($rows as $row) {
+        foreach ($this->csvRows($csv) as $row) {
             $code = strtoupper(trim((string) ($row['code'] ?? '')));
             $name = trim((string) ($row['name'] ?? ''));
 
@@ -144,12 +147,18 @@ class SyncGlobalAirportMaster extends Command
                 $airport = Airport::query()->where('icao_code', $icao)->first();
             }
 
+            $timezone = $airport?->timezone
+                ?: $city->timezone
+                ?: $country->default_timezone
+                ?: 'UTC';
+
             $payload = [
                 'country_id' => $country->id,
                 'city_id' => $city->id,
                 'name' => $name,
                 'iata_code' => $iata !== '' ? $iata : null,
                 'icao_code' => $icao !== '' ? $icao : null,
+                'timezone' => $timezone,
                 'latitude' => $this->numberOrNull($row['latitude_deg'] ?? null),
                 'longitude' => $this->numberOrNull($row['longitude_deg'] ?? null),
                 'is_active' => true,
@@ -167,7 +176,6 @@ class SyncGlobalAirportMaster extends Command
             ];
 
             if ($airport) {
-                $payload['timezone'] = $airport->timezone;
                 $airport->update($payload);
                 $updated++;
             } else {
@@ -195,6 +203,7 @@ class SyncGlobalAirportMaster extends Command
             if (count($values) !== count($headers)) {
                 continue;
             }
+
             yield array_combine($headers, $values);
         }
 

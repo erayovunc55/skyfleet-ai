@@ -8,8 +8,12 @@ import {
   logoutDriver,
 } from "./services/authService";
 
+import {
+  LanguageProvider,
+  LanguageSwitcher,
+} from "./i18n";
+
 import "./styles/driver-app.css";
-import "./styles/driver-transfer-tabs.css";
 
 export default function App() {
   const [user, setUser] = useState(
@@ -39,20 +43,20 @@ export default function App() {
     setUser(null);
   }
 
-  if (!user) {
-    return (
-      <DriverLoginPage
-        onLogin={setUser}
-      />
-    );
-  }
-
   return (
-    <DriverHomePage
-      user={user}
-      onLogout={handleLogout}
-    />
+    <LanguageProvider>
+      <LanguageSwitcher />
+
+      {!user ? (
+        <DriverLoginPage
+          onLogin={setUser}
+        />
+      ) : (
+        <DriverHomePage
+          user={user}
+          onLogout={handleLogout}
+        />
+      )}
+    </LanguageProvider>
   );
 }
-
-

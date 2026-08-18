@@ -90,14 +90,37 @@ function canonicalFor(value) {
   return null;
 }
 
-export function translate(value, language) {
-  if (!value || language === "tr") {
-    const canonical = canonicalFor(value);
-    return canonical || value;
+function translateDynamic(value, language) {
+  const text = String(value || "").trim();
+  if (!text || language === "tr") return text;
+
+  const greeting = text.match(/^Merhaba,\s*(.+)$/i);
+  if (greeting) {
+    const prefix = language === "en" ? "Hello" : language === "ar" ? "مرحباً" : "Hola";
+    return `${prefix}, ${greeting[1]}`;
   }
+
+  const notification = text.match(/^(🔔\s*)Bildirimler$/i);
+  if (notification) {
+    return `${notification[1]}${phrases["Bildirimler"][language]}`;
+  }
+
+  const logout = text.match(/^(🚪\s*)?Çıkış$/i);
+  if (logout) {
+    return `${logout[1] || ""}${phrases["Çıkış"][language]}`;
+  }
+
+  return text;
+}
+
+export function translate(value, language) {
+  if (!value) return value;
   const canonical = canonicalFor(value);
-  if (!canonical) return value;
-  return phrases[canonical]?.[language] || canonical;
+  if (canonical) {
+    if (language === "tr") return canonical;
+    return phrases[canonical]?.[language] || canonical;
+  }
+  return translateDynamic(value, language);
 }
 
 function translateDocument(language) {

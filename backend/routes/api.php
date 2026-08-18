@@ -58,10 +58,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('suppliers/{supplier}/suspend', [SupplierController::class, 'suspend']);
         Route::patch('suppliers/{supplier}/reactivate', [SupplierController::class, 'reactivate']);
 
+        Route::get('airports/search', [LocationController::class, 'airportSearch']);
+        Route::get('cities/{city}/airports', [LocationController::class, 'airports']);
         Route::post('locations', [LocationController::class, 'store']);
         Route::patch('locations/{location}', [LocationController::class, 'update']);
         Route::post('locations/{location}/points', [LocationController::class, 'storePoint']);
-        Route::get('cities/{city}/airports', [LocationController::class, 'airports']);
     });
 
     Route::prefix('supplier-portal')->group(function (): void {

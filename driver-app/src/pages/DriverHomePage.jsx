@@ -13,6 +13,7 @@ export default function DriverHomePage({ user, onLogout }) {
   const [dashboard, setDashboard] = useState({ assigned: 0, ongoing: 0, waiting: 0, completedToday: 0 });
   const [notifications, setNotifications] = useState(() => readNotifications(storageKey));
   const [activeView, setActiveView] = useState("transfers");
+  const [transferTab, setTransferTab] = useState("active");
   const [pushStatus, setPushStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,6 +56,20 @@ export default function DriverHomePage({ user, onLogout }) {
     () => notifications.filter((item) => !item.read).length,
     [notifications],
   );
+
+  const activeTransfers = useMemo(
+    () => transfers.filter((transfer) => !["completed", "no_show", "cancelled"].includes(transfer.status)),
+    [transfers],
+  );
+
+  const completedTransfers = useMemo(
+    () => transfers.filter((transfer) => transfer.status === "completed"),
+    [transfers],
+  );
+
+  const visibleTransfers = transferTab === "completed"
+    ? completedTransfers
+    : activeTransfers;
 
   async function loadData(showLoading) {
     if (showLoading) setLoading(true);
@@ -170,19 +185,42 @@ export default function DriverHomePage({ user, onLogout }) {
         <>
           <section className="driver-home-summary">
             <div className="driver-summary-grid">
-              <Summary label="Atanmış" value={dashboard.assigned} />
+              <Summary label="Atanmış" value={activeTransfers.length} />
               <Summary label="Devam Eden" value={dashboard.ongoing} />
               <Summary label="Bekleyen" value={dashboard.waiting} />
-              <Summary label="Tamamlanan" value={dashboard.completedToday} />
+              <Summary label="Tamamlanan" value={completedTransfers.length} />
             </div>
             <button type="button" disabled={loading} onClick={() => loadData(true)}>Yenile</button>
           </section>
+
+          <section className="driver-transfer-tabs">
+            <button
+              type="button"
+              className={transferTab === "active" ? "active" : ""}
+              onClick={() => setTransferTab("active")}
+            >
+              Aktif Transferler <span>{activeTransfers.length}</span>
+            </button>
+            <button
+              type="button"
+              className={transferTab === "completed" ? "active" : ""}
+              onClick={() => setTransferTab("completed")}
+            >
+              Tamamlananlar <span>{completedTransfers.length}</span>
+            </button>
+          </section>
+
           {loading && <div className="driver-page-state">Transferler yükleniyor...</div>}
           {error && <div className="driver-page-state error">{error}</div>}
-          {!loading && !error && transfers.length === 0 && <div className="driver-empty-card"><strong>Atanmış transfer yok</strong><p>Yeni transfer atandığında burada görünecek.</p></div>}
-          {!loading && !error && transfers.length > 0 && (
+          {!loading && !error && visibleTransfers.length === 0 && (
+            <div className="driver-empty-card">
+              <strong>{transferTab === "completed" ? "Tamamlanan transfer yok" : "Aktif transfer yok"}</strong>
+              <p>{transferTab === "completed" ? "Tamamlanan işler burada arşivlenecek." : "Yeni transfer atandığında burada görünecek."}</p>
+            </div>
+          )}
+          {!loading && !error && visibleTransfers.length > 0 && (
             <section className="driver-transfer-list">
-              {transfers.map((transfer) => <DriverTransferCard key={transfer.id} transfer={transfer} onOpen={setSelectedTransfer} />)}
+              {visibleTransfers.map((transfer) => <DriverTransferCard key={transfer.id} transfer={transfer} onOpen={setSelectedTransfer} />)}
             </section>
           )}
         </>

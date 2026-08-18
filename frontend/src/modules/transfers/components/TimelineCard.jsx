@@ -3,10 +3,21 @@ import {
   StatusBadge,
 } from "../../../components/ui";
 
+import { useLanguage } from "../../../i18n";
 import useTransfer from "../hooks/useTransfer";
+
+const NOTE_TRANSLATIONS = {
+  "Transfer tedarikçiye atandı.": {
+    tr: "Transfer tedarikçiye atandı.",
+    en: "Transfer assigned to supplier.",
+    ar: "تم تعيين التحويل للمورد.",
+    es: "Traslado asignado al proveedor.",
+  },
+};
 
 export default function TimelineCard() {
   const { selectedTransfer } = useTransfer();
+  const { language } = useLanguage();
 
   if (!selectedTransfer) {
     return null;
@@ -35,6 +46,7 @@ export default function TimelineCard() {
                 `${event.event_type}-${event.occurred_at}-${index}`
               }
               event={event}
+              language={language}
               isLast={index === events.length - 1}
             />
           ))}
@@ -46,6 +58,7 @@ export default function TimelineCard() {
 
 function TimelineItem({
   event,
+  language,
   isLast,
 }) {
   const type =
@@ -100,7 +113,7 @@ function TimelineItem({
 
         {event.note && (
           <p className="timeline-note">
-            {event.note}
+            {translateEventNote(event.note, language)}
           </p>
         )}
 
@@ -117,6 +130,20 @@ function TimelineItem({
         )}
       </div>
     </article>
+  );
+}
+
+function translateEventNote(note, language) {
+  const translations = NOTE_TRANSLATIONS[note];
+
+  if (!translations) {
+    return note;
+  }
+
+  return (
+    translations[language] ||
+    translations.en ||
+    note
   );
 }
 

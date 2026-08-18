@@ -1,128 +1,477 @@
-import {
-  useState,
-} from "react";
-
-import {
-  Button,
-  Card,
-} from "../../../components/ui";
+import { useEffect, useMemo, useState } from "react";
 
 import CreateSupplierModal from "../components/CreateSupplierModal";
-import SupplierList from "../components/SupplierList";
-import SupplierStats from "../components/SupplierStats";
-import useSuppliers from "../hooks/useSuppliers";
+import supplierService from "../services/supplierService";
+import { getDrivers } from "../../../services/driverService";
+import { getVehicles } from "../../../services/vehicleService";
+import { useLanguage } from "../../../i18n";
+
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
+
+const TEXT = {
+  tr: {
+    eyebrow: "TEDARİKÇİ OPERASYONU",
+    title: "Tedarikçi Kontrol Merkezi",
+    subtitle: "Global tedarikçi ağını, ekipleri, araçları ve operasyon uygunluğunu ölçeklenebilir tek ekrandan yönetin.",
+    add: "+ Tedarikçi Ekle",
+    refresh: "Yenile",
+    total: "Toplam Tedarikçi",
+    active: "Operasyona Açık",
+    approved: "Onaylı",
+    review: "İnceleme Bekleyen",
+    inventory: "TEDARİKÇİ AĞI",
+    suppliers: "Tedarikçiler",
+    searchPlaceholder: "Şirket, yetkili, e-posta, telefon veya vergi no ara...",
+    allStatuses: "Tüm durumlar",
+    country: "Ülke kodu",
+    city: "Şehir",
+    company: "Tedarikçi",
+    location: "Konum",
+    contact: "Yetkili / İletişim",
+    drivers: "Sürücü",
+    vehicles: "Araç",
+    currency: "Para Birimi",
+    status: "Durum",
+    operation: "Operasyon",
+    actions: "İşlem",
+    open: "Açık",
+    closed: "Kapalı",
+    details: "Detay",
+    pending: "Bekliyor",
+    under_review: "İncelemede",
+    revision_requested: "Revizyon",
+    approvedStatus: "Onaylı",
+    rejected: "Reddedildi",
+    suspended: "Askıda",
+    noLocation: "Konum belirtilmedi",
+    noContact: "Yetkili belirtilmedi",
+    noContactInfo: "İletişim bilgisi yok",
+    noCurrency: "—",
+    showing: "Gösterilen",
+    of: "/",
+    page: "Sayfa",
+    previous: "Önceki",
+    next: "Sonraki",
+    perPage: "sayfa başına",
+    loading: "Tedarikçiler yükleniyor...",
+    empty: "Filtrelere uyan tedarikçi bulunamadı.",
+    loadError: "Tedarikçiler yüklenemedi.",
+    created: "Tedarikçi ve portal hesabı başarıyla oluşturuldu.",
+  },
+  en: {
+    eyebrow: "SUPPLIER OPERATIONS",
+    title: "Supplier Control Center",
+    subtitle: "Manage the global supplier network, teams, vehicles and operational readiness from one scalable workspace.",
+    add: "+ Add Supplier",
+    refresh: "Refresh",
+    total: "Total Suppliers",
+    active: "Operational",
+    approved: "Approved",
+    review: "Awaiting Review",
+    inventory: "SUPPLIER NETWORK",
+    suppliers: "Suppliers",
+    searchPlaceholder: "Search company, contact, email, phone or tax number...",
+    allStatuses: "All statuses",
+    country: "Country code",
+    city: "City",
+    company: "Supplier",
+    location: "Location",
+    contact: "Contact",
+    drivers: "Drivers",
+    vehicles: "Vehicles",
+    currency: "Currency",
+    status: "Status",
+    operation: "Operation",
+    actions: "Actions",
+    open: "Open",
+    closed: "Closed",
+    details: "Details",
+    pending: "Pending",
+    under_review: "Under Review",
+    revision_requested: "Revision",
+    approvedStatus: "Approved",
+    rejected: "Rejected",
+    suspended: "Suspended",
+    noLocation: "Location not provided",
+    noContact: "Contact not provided",
+    noContactInfo: "No contact information",
+    noCurrency: "—",
+    showing: "Showing",
+    of: "of",
+    page: "Page",
+    previous: "Previous",
+    next: "Next",
+    perPage: "per page",
+    loading: "Loading suppliers...",
+    empty: "No suppliers match these filters.",
+    loadError: "Suppliers could not be loaded.",
+    created: "Supplier and portal account created successfully.",
+  },
+  ar: {
+    eyebrow: "عمليات الموردين",
+    title: "مركز التحكم بالموردين",
+    subtitle: "إدارة شبكة الموردين العالمية والفرق والمركبات والجاهزية التشغيلية من مساحة عمل قابلة للتوسع.",
+    add: "+ إضافة مورد",
+    refresh: "تحديث",
+    total: "إجمالي الموردين",
+    active: "جاهزون للتشغيل",
+    approved: "معتمدون",
+    review: "بانتظار المراجعة",
+    inventory: "شبكة الموردين",
+    suppliers: "الموردون",
+    searchPlaceholder: "ابحث بالشركة أو جهة الاتصال أو البريد أو الهاتف أو الرقم الضريبي...",
+    allStatuses: "كل الحالات",
+    country: "رمز الدولة",
+    city: "المدينة",
+    company: "المورد",
+    location: "الموقع",
+    contact: "جهة الاتصال",
+    drivers: "السائقون",
+    vehicles: "المركبات",
+    currency: "العملة",
+    status: "الحالة",
+    operation: "التشغيل",
+    actions: "الإجراءات",
+    open: "مفتوح",
+    closed: "مغلق",
+    details: "تفاصيل",
+    pending: "قيد الانتظار",
+    under_review: "قيد المراجعة",
+    revision_requested: "مطلوب تعديل",
+    approvedStatus: "معتمد",
+    rejected: "مرفوض",
+    suspended: "معلق",
+    noLocation: "الموقع غير محدد",
+    noContact: "جهة الاتصال غير محددة",
+    noContactInfo: "لا توجد بيانات اتصال",
+    noCurrency: "—",
+    showing: "عرض",
+    of: "من",
+    page: "صفحة",
+    previous: "السابق",
+    next: "التالي",
+    perPage: "لكل صفحة",
+    loading: "جارٍ تحميل الموردين...",
+    empty: "لا توجد موردون مطابقون للفلاتر.",
+    loadError: "تعذر تحميل الموردين.",
+    created: "تم إنشاء المورد وحساب البوابة بنجاح.",
+  },
+  es: {
+    eyebrow: "OPERACIONES DE PROVEEDORES",
+    title: "Centro de Control de Proveedores",
+    subtitle: "Gestiona la red global de proveedores, equipos, vehículos y preparación operativa desde un espacio escalable.",
+    add: "+ Añadir Proveedor",
+    refresh: "Actualizar",
+    total: "Proveedores Totales",
+    active: "Operativos",
+    approved: "Aprobados",
+    review: "Pendientes de Revisión",
+    inventory: "RED DE PROVEEDORES",
+    suppliers: "Proveedores",
+    searchPlaceholder: "Buscar empresa, contacto, correo, teléfono o identificación fiscal...",
+    allStatuses: "Todos los estados",
+    country: "Código de país",
+    city: "Ciudad",
+    company: "Proveedor",
+    location: "Ubicación",
+    contact: "Contacto",
+    drivers: "Conductores",
+    vehicles: "Vehículos",
+    currency: "Moneda",
+    status: "Estado",
+    operation: "Operación",
+    actions: "Acciones",
+    open: "Abierta",
+    closed: "Cerrada",
+    details: "Detalles",
+    pending: "Pendiente",
+    under_review: "En revisión",
+    revision_requested: "Revisión solicitada",
+    approvedStatus: "Aprobado",
+    rejected: "Rechazado",
+    suspended: "Suspendido",
+    noLocation: "Ubicación no indicada",
+    noContact: "Contacto no indicado",
+    noContactInfo: "Sin información de contacto",
+    noCurrency: "—",
+    showing: "Mostrando",
+    of: "de",
+    page: "Página",
+    previous: "Anterior",
+    next: "Siguiente",
+    perPage: "por página",
+    loading: "Cargando proveedores...",
+    empty: "No hay proveedores que coincidan con los filtros.",
+    loadError: "No se pudieron cargar los proveedores.",
+    created: "Proveedor y cuenta del portal creados correctamente.",
+  },
+};
 
 export default function SupplierPage() {
-  const {
-    suppliers,
-    loading,
-    error,
-    reload,
-  } = useSuppliers();
+  const { language } = useLanguage();
+  const text = TEXT[language] || TEXT.en;
 
-  const [
-    showCreateModal,
-    setShowCreateModal,
-  ] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState("");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [city, setCity] = useState("");
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, last_page: 1, from: 0, to: 0 });
+  const [stats, setStats] = useState({ total: 0, active: 0, approved: 0, review: 0 });
 
-  function handleSelectSupplier(
-    supplier,
-  ) {
-    console.log(
-      "Seçilen tedarikçi:",
-      supplier,
-    );
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, status, countryCode, city, pageSize]);
+
+  useEffect(() => {
+    loadPage();
+  }, [currentPage, pageSize, debouncedSearch, status, countryCode, city]);
+
+  useEffect(() => {
+    loadSupportingData();
+    loadStats();
+  }, []);
+
+  async function loadSupportingData() {
+    try {
+      const [driverItems, vehicleItems] = await Promise.all([getDrivers(), getVehicles()]);
+      setDrivers(Array.isArray(driverItems) ? driverItems : []);
+      setVehicles(Array.isArray(vehicleItems) ? vehicleItems : []);
+    } catch {
+      // Supplier list remains usable even if supporting counts cannot be loaded.
+    }
+  }
+
+  async function loadStats() {
+    try {
+      const [all, active, approved, pending, underReview] = await Promise.all([
+        supplierService.getSuppliers({ per_page: 1 }),
+        supplierService.getSuppliers({ per_page: 1, is_active: 1 }),
+        supplierService.getSuppliers({ per_page: 1, status: "approved" }),
+        supplierService.getSuppliers({ per_page: 1, status: "pending" }),
+        supplierService.getSuppliers({ per_page: 1, status: "under_review" }),
+      ]);
+      setStats({
+        total: Number(all?.total || 0),
+        active: Number(active?.total || 0),
+        approved: Number(approved?.total || 0),
+        review: Number(pending?.total || 0) + Number(underReview?.total || 0),
+      });
+    } catch {
+      // Stats are supplementary; the main table still loads independently.
+    }
+  }
+
+  async function loadPage() {
+    setLoading(true);
+    setError("");
+    try {
+      const params = {
+        page: currentPage,
+        per_page: pageSize,
+      };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (status) params.status = status;
+      if (countryCode.trim()) params.country_code = countryCode.trim().toUpperCase();
+      if (city.trim()) params.city = city.trim();
+
+      const response = await supplierService.getSuppliers(params);
+      const rows = Array.isArray(response?.data) ? response.data : [];
+      setSuppliers(rows);
+      setMeta({
+        total: Number(response?.total || rows.length),
+        last_page: Math.max(1, Number(response?.last_page || 1)),
+        from: Number(response?.from || (rows.length ? 1 : 0)),
+        to: Number(response?.to || rows.length),
+      });
+    } catch (requestError) {
+      setSuppliers([]);
+      setError(requestError?.response?.data?.message || requestError?.message || text.loadError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function refreshAll() {
+    await Promise.all([loadPage(), loadStats(), loadSupportingData()]);
   }
 
   async function handleSupplierCreated() {
-    setSuccessMessage(
-      "Tedarikçi ve portal hesabı başarıyla oluşturuldu.",
-    );
-
-    await reload();
-
-    window.setTimeout(() => {
-      setSuccessMessage("");
-    }, 5000);
+    setShowCreateModal(false);
+    setSuccessMessage(text.created);
+    await refreshAll();
+    window.setTimeout(() => setSuccessMessage(""), 5000);
   }
 
+  const countsBySupplier = useMemo(() => {
+    const map = new Map();
+    for (const driver of drivers) {
+      const supplierId = Number(driver.supplier_id || driver.supplier_company?.id || 0);
+      if (!supplierId) continue;
+      const current = map.get(supplierId) || { drivers: 0, vehicles: 0 };
+      current.drivers += 1;
+      map.set(supplierId, current);
+    }
+    for (const vehicle of vehicles) {
+      const supplierId = Number(vehicle.supplier_id || vehicle.supplier_company?.id || 0);
+      if (!supplierId) continue;
+      const current = map.get(supplierId) || { drivers: 0, vehicles: 0 };
+      current.vehicles += 1;
+      map.set(supplierId, current);
+    }
+    return map;
+  }, [drivers, vehicles]);
+
   return (
-    <main className="supplier-page">
-      <header className="supplier-page-header">
+    <main className="supplier-page supplier-control-center">
+      <header className="supplier-page-header supplier-control-header">
         <div>
-          <small>
-            TEDARİKÇİ AĞI
-          </small>
-
-          <h1>
-            Tedarikçi Yönetimi
-          </h1>
-
-          <span>
-            Tedarikçileri, portal hesaplarını
-            ve operasyon durumlarını yönetin.
-          </span>
+          <small>{text.eyebrow}</small>
+          <h1>{text.title}</h1>
+          <span>{text.subtitle}</span>
         </div>
-
         <div className="supplier-page-actions">
-          <Button
-            variant="ghost"
-            loading={loading}
-            onClick={reload}
-          >
-            Yenile
-          </Button>
-
-          <Button
-            variant="primary"
-            onClick={() =>
-              setShowCreateModal(true)
-            }
-          >
-            + Yeni Tedarikçi
-          </Button>
+          <button type="button" className="supplier-secondary-button" onClick={refreshAll} disabled={loading}>↻ {text.refresh}</button>
+          <button type="button" className="supplier-primary-button" onClick={() => setShowCreateModal(true)}>{text.add}</button>
         </div>
       </header>
 
-      {successMessage && (
-        <div className="supplier-page-success">
-          {successMessage}
+      <section className="supplier-kpi-grid">
+        <SupplierKpi icon="🏢" label={text.total} value={stats.total} tone="blue" />
+        <SupplierKpi icon="✓" label={text.active} value={stats.active} tone="green" />
+        <SupplierKpi icon="🛡" label={text.approved} value={stats.approved} tone="cyan" />
+        <SupplierKpi icon="◷" label={text.review} value={stats.review} tone="orange" />
+      </section>
+
+      {successMessage && <div className="supplier-page-success">{successMessage}</div>}
+      {error && <div className="supplier-page-error">{error}</div>}
+
+      <section className="supplier-table-panel">
+        <div className="supplier-table-heading">
+          <div><small>{text.inventory}</small><h2>{text.suppliers}</h2></div>
+          <strong>{meta.total}</strong>
         </div>
-      )}
 
-      <SupplierStats
-        suppliers={suppliers}
-      />
+        <div className="supplier-filter-bar">
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={text.searchPlaceholder} />
+          <select value={status} onChange={(event) => setStatus(event.target.value)}>
+            <option value="">{text.allStatuses}</option>
+            <option value="approved">{text.approvedStatus}</option>
+            <option value="pending">{text.pending}</option>
+            <option value="under_review">{text.under_review}</option>
+            <option value="revision_requested">{text.revision_requested}</option>
+            <option value="suspended">{text.suspended}</option>
+            <option value="rejected">{text.rejected}</option>
+          </select>
+          <input value={countryCode} maxLength={2} onChange={(event) => setCountryCode(event.target.value)} placeholder={text.country} />
+          <input value={city} onChange={(event) => setCity(event.target.value)} placeholder={text.city} />
+        </div>
 
-      <Card
-        title="Tedarikçiler"
-        subtitle={`${suppliers.length} kayıt görüntüleniyor`}
-      >
-        <SupplierList
-          suppliers={suppliers}
-          loading={loading}
-          error={error}
-          onSelectSupplier={
-            handleSelectSupplier
-          }
-        />
-      </Card>
+        {loading ? (
+          <div className="supplier-table-state">{text.loading}</div>
+        ) : suppliers.length === 0 ? (
+          <div className="supplier-table-state">{text.empty}</div>
+        ) : (
+          <div className="supplier-table-wrap">
+            <table className="supplier-control-table">
+              <thead>
+                <tr>
+                  <th>{text.company}</th>
+                  <th>{text.location}</th>
+                  <th>{text.contact}</th>
+                  <th>{text.drivers}</th>
+                  <th>{text.vehicles}</th>
+                  <th>{text.currency}</th>
+                  <th>{text.status}</th>
+                  <th>{text.operation}</th>
+                  <th>{text.actions}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {suppliers.map((supplier) => {
+                  const counts = countsBySupplier.get(Number(supplier.id)) || { drivers: 0, vehicles: 0 };
+                  return (
+                    <tr key={supplier.id}>
+                      <td>
+                        <div className="supplier-company-cell">
+                          <span className="supplier-avatar">{getInitials(supplier.company_name)}</span>
+                          <div>
+                            <strong>{supplier.company_name}</strong>
+                            <small>{supplier.legal_name || `ID #${supplier.id}`}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td><strong>{formatLocation(supplier, text.noLocation)}</strong></td>
+                      <td>
+                        <div className="supplier-contact-cell">
+                          <strong>{supplier.contact_name || text.noContact}</strong>
+                          <small>{supplier.email || supplier.phone || text.noContactInfo}</small>
+                        </div>
+                      </td>
+                      <td><span className="supplier-number-cell">{counts.drivers}</span></td>
+                      <td><span className="supplier-number-cell">{counts.vehicles}</span></td>
+                      <td><strong className="supplier-currency-cell">{supplier.default_currency || text.noCurrency}</strong></td>
+                      <td><span className={`supplier-status-badge status-${supplier.status || "pending"}`}>{getStatusLabel(supplier.status, text)}</span></td>
+                      <td><span className={`supplier-operation-badge ${supplier.is_active ? "is-open" : "is-closed"}`}>{supplier.is_active ? text.open : text.closed}</span></td>
+                      <td><button type="button" className="supplier-detail-button" onClick={() => console.log("supplier", supplier)}>{text.details}</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="supplier-pagination">
+          <div>{text.showing} <strong>{meta.from}-{meta.to}</strong> {text.of} <strong>{meta.total}</strong></div>
+          <div className="supplier-page-controls">
+            <button type="button" disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>‹ {text.previous}</button>
+            <span>{text.page} <strong>{currentPage}</strong> / {meta.last_page}</span>
+            <button type="button" disabled={currentPage >= meta.last_page || loading} onClick={() => setCurrentPage((page) => Math.min(meta.last_page, page + 1))}>{text.next} ›</button>
+          </div>
+          <label><select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))}>{PAGE_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size}</option>)}</select><span>{text.perPage}</span></label>
+        </div>
+      </section>
 
       {showCreateModal && (
         <CreateSupplierModal
-          onClose={() =>
-            setShowCreateModal(false)
-          }
-          onCreated={
-            handleSupplierCreated
-          }
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handleSupplierCreated}
         />
       )}
     </main>
   );
+}
+
+function SupplierKpi({ icon, label, value, tone }) {
+  return <article className={`supplier-kpi supplier-kpi-${tone}`}><span>{icon}</span><div><small>{label}</small><strong>{value}</strong></div></article>;
+}
+
+function getInitials(value) {
+  return String(value || "SF").trim().split(/\s+/).map((part) => part.charAt(0)).join("").slice(0, 2).toUpperCase();
+}
+
+function formatLocation(supplier, fallback) {
+  const parts = [supplier.city, supplier.country_name || supplier.country_code].filter(Boolean);
+  return parts.length ? parts.join(", ") : fallback;
+}
+
+function getStatusLabel(status, text) {
+  if (status === "approved") return text.approvedStatus;
+  return text[status] || text.pending;
 }

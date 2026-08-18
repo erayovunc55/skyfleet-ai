@@ -6,6 +6,7 @@ import SupplierFinancePage from "./pages/SupplierFinancePage";
 import SupplierInvoicesPage from "./pages/SupplierInvoicesPage";
 import SupplierLoginPage from "./pages/SupplierLoginPage";
 import SupplierVehiclesPage from "./pages/SupplierVehiclesPage";
+import { LanguageSwitcher } from "./i18n.jsx";
 import { clearStoredAuth, getStoredUser, logout } from "./services/authService";
 
 const NAVIGATION_ITEMS = [
@@ -38,12 +39,17 @@ export default function App() {
 
   if (!user) {
     return (
-      <SupplierLoginPage
-        onLogin={(loggedInUser) => {
-          setUser(loggedInUser);
-          setCurrentPage("transfers");
-        }}
-      />
+      <>
+        <div style={{ position: "fixed", top: 16, right: 16, zIndex: 1000 }}>
+          <LanguageSwitcher />
+        </div>
+        <SupplierLoginPage
+          onLogin={(loggedInUser) => {
+            setUser(loggedInUser);
+            setCurrentPage("transfers");
+          }}
+        />
+      </>
     );
   }
 
@@ -71,6 +77,7 @@ export default function App() {
         </nav>
 
         <div className="supplier-header-user">
+          <LanguageSwitcher />
           <div><strong>{company?.company_name || user?.name}</strong><small>Tedarikçi</small></div>
           <button type="button" onClick={handleLogout}>Çıkış</button>
         </div>

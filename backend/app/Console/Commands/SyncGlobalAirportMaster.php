@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Airport;
 use App\Models\City;
 use App\Models\Country;
+use DateTimeZone;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -17,6 +18,8 @@ class SyncGlobalAirportMaster extends Command
 
     private const COUNTRIES_URL = 'https://davidmegginson.github.io/ourairports-data/countries.csv';
     private const AIRPORTS_URL = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
+
+    private array $timezoneCache = [];
 
     public function handle(): int
     {
@@ -147,10 +150,21 @@ class SyncGlobalAirportMaster extends Command
                 $airport = Airport::query()->where('icao_code', $icao)->first();
             }
 
-            $timezone = $airport?->timezone
-                ?: $city->timezone
-                ?: $country->default_timezone
-                ?: 'UTC';
+            $latitude = $this->numberOrNull($row['latitude_deg'] ?? null);
+            $longitude = $this->numberOrNull($row['longitude_deg'] ?? null);
+
+            $timezone = $this->resolveTimezone(
+                $countryCode,
+                $latitude,
+                $longitude,
+                $airport?->timezone,
+                $city->timezone,
+                $country->default_timezone,
+            );
+
+            if ((!$city->timezone || $city->timezone === 'UTC') && $timezone !== 'UTC') {
+                $city->update(['timezone' => $timezone]);
+            }
 
             $payload = [
                 'country_id' => $country->id,
@@ -159,8 +173,8 @@ class SyncGlobalAirportMaster extends Command
                 'iata_code' => $iata !== '' ? $iata : null,
                 'icao_code' => $icao !== '' ? $icao : null,
                 'timezone' => $timezone,
-                'latitude' => $this->numberOrNull($row['latitude_deg'] ?? null),
-                'longitude' => $this->numberOrNull($row['longitude_deg'] ?? null),
+                'latitude' => $latitude,
+                'longitude' => $longitude,
                 'is_active' => true,
                 'sort_order' => 0,
                 'metadata' => [
@@ -185,6 +199,87 @@ class SyncGlobalAirportMaster extends Command
         }
 
         return [$created, $updated, $skipped];
+    }
+
+    private function resolveTimezone(
+        string $countryCode,
+        ?float $latitude,
+        ?float $longitude,
+        ?string $airportTimezone,
+        ?string $cityTimezone,
+        ?string $countryTimezone,
+    ): string {
+        foreach ([$airportTimezone, $cityTimezone, $countryTimezone] as $timezone) {
+            if ($timezone && $timezone !== 'UTC') {
+                return $timezone;
+            }
+        }
+
+        if ($latitude === null || $longitude === null || strlen($countryCode) !== 2) {
+            return 'UTC';
+        }
+
+        $cacheKey = $countryCode . '|' . round($latitude, 2) . '|' . round($longitude, 2);
+        if (isset($this->timezoneCache[$cacheKey])) {
+            return $this->timezoneCache[$cacheKey];
+        }
+
+        try {
+            $identifiers = DateTimeZone::listIdentifiers(
+                DateTimeZone::PER_COUNTRY,
+                strtoupper($countryCode)
+            );
+        } catch (\Throwable) {
+            return 'UTC';
+        }
+
+        if (!$identifiers) {
+            return 'UTC';
+        }
+
+        if (count($identifiers) === 1) {
+            return $this->timezoneCache[$cacheKey] = $identifiers[0];
+        }
+
+        $bestTimezone = null;
+        $bestDistance = INF;
+
+        foreach ($identifiers as $identifier) {
+            try {
+                $location = (new DateTimeZone($identifier))->getLocation();
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if (!$location || !isset($location['latitude'], $location['longitude'])) {
+                continue;
+            }
+
+            $distance = $this->haversineKm(
+                $latitude,
+                $longitude,
+                (float) $location['latitude'],
+                (float) $location['longitude'],
+            );
+
+            if ($distance < $bestDistance) {
+                $bestDistance = $distance;
+                $bestTimezone = $identifier;
+            }
+        }
+
+        return $this->timezoneCache[$cacheKey] = ($bestTimezone ?: 'UTC');
+    }
+
+    private function haversineKm(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371.0088;
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lonDelta = deg2rad($lon2 - $lon1);
+        $a = sin($latDelta / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lonDelta / 2) ** 2;
+
+        return 2 * $earthRadius * asin(min(1, sqrt($a)));
     }
 
     private function csvRows(string $csv): iterable

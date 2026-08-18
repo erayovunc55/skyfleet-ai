@@ -10,8 +10,9 @@ const TEXT = {
     overview: "Genel Bakış", drivers: "Sürücüler", vehicles: "Araçlar", operations: "Operasyonlar", finance: "Finans", documents: "Belgeler & Uygunluk", activity: "Aktivite Geçmişi",
     operational: "Operasyona Açık", closed: "Operasyona Kapalı", approved: "Onaylı", status: "Durum", location: "Konum", contact: "Yetkili", email: "E-posta", phone: "Telefon", whatsapp: "WhatsApp", website: "Web Sitesi", tax: "Vergi No", registration: "Kayıt No", currency: "Para Birimi", timezone: "Saat Dilimi", branches: "Şubeler",
     noData: "Bilgi bulunmuyor", noDrivers: "Bu tedarikçiye bağlı sürücü yok.", noVehicles: "Bu tedarikçiye bağlı araç yok.", noOperations: "Bu tedarikçiye atanmış transfer bulunmuyor.", noDocuments: "Bu tedarikçi için henüz belge kaydı bulunmuyor.", noActivity: "Henüz aktivite kaydı bulunmuyor.",
-    driver: "Sürücü", vehicle: "Araç", plate: "Plaka", assignment: "Araç Ataması", active: "Aktif", passive: "Pasif", booking: "Rezervasyon", passenger: "Yolcu", pickup: "Alış", dropoff: "Bırakış", date: "Tarih", amount: "Tutar", operationStatus: "Operasyon Durumu",
+    driver: "Sürücü", vehicle: "Araç", plate: "Plaka", assignment: "Araç Ataması", active: "Aktif", passive: "Pasif", booking: "Rezervasyon", passenger: "Yolcu", pickup: "Alış", dropoff: "Bırakış", date: "Tarih", amount: "Tutar", operationStatus: "Operasyon Durumu", capacity: "Kapasite", insurance: "Sigorta",
     totalTransfers: "Toplam Transfer", activeTransfers: "Aktif Operasyon", completed: "Tamamlanan", recordedSales: "Kayıtlı Satış", financeNote: "Bu özet yalnız sistemdeki gerçek rezervasyon fiyatlarından hesaplanır.",
+    companyProfile: "Şirket Profili", operationalSnapshot: "Operasyon Özeti", contactProfile: "İletişim & Kurumsal Bilgiler", readiness: "Operasyon Hazırlığı", driverCoverage: "Sürücü Kapsamı", vehicleCoverage: "Araç Kapsamı", branchCoverage: "Şube Ağı", approvalState: "Onay Durumu",
     branchesTitle: "Şube & Lokasyon", complianceTitle: "Belge Durumu", activityTitle: "Onay & Aktivite Logu", action: "İşlem", changedBy: "İşlemi Yapan", note: "Not", notConnected: "Belge yönetimi veri kaynağı henüz bu tedarikçiye bağlanmamış.",
   },
   en: {
@@ -19,8 +20,9 @@ const TEXT = {
     overview: "Overview", drivers: "Drivers", vehicles: "Vehicles", operations: "Operations", finance: "Finance", documents: "Documents & Compliance", activity: "Activity Log",
     operational: "Operational", closed: "Closed", approved: "Approved", status: "Status", location: "Location", contact: "Contact", email: "Email", phone: "Phone", whatsapp: "WhatsApp", website: "Website", tax: "Tax No", registration: "Registration No", currency: "Currency", timezone: "Timezone", branches: "Branches",
     noData: "Not provided", noDrivers: "No drivers belong to this supplier.", noVehicles: "No vehicles belong to this supplier.", noOperations: "No transfers are assigned to this supplier.", noDocuments: "No document records are available for this supplier yet.", noActivity: "No activity records yet.",
-    driver: "Driver", vehicle: "Vehicle", plate: "Plate", assignment: "Vehicle Assignment", active: "Active", passive: "Inactive", booking: "Booking", passenger: "Passenger", pickup: "Pickup", dropoff: "Dropoff", date: "Date", amount: "Amount", operationStatus: "Operation Status",
+    driver: "Driver", vehicle: "Vehicle", plate: "Plate", assignment: "Vehicle Assignment", active: "Active", passive: "Inactive", booking: "Booking", passenger: "Passenger", pickup: "Pickup", dropoff: "Dropoff", date: "Date", amount: "Amount", operationStatus: "Operation Status", capacity: "Capacity", insurance: "Insurance",
     totalTransfers: "Total Transfers", activeTransfers: "Active Operations", completed: "Completed", recordedSales: "Recorded Sales", financeNote: "This summary is calculated only from real booking prices stored in the system.",
+    companyProfile: "Company Profile", operationalSnapshot: "Operational Snapshot", contactProfile: "Contact & Corporate Information", readiness: "Operational Readiness", driverCoverage: "Driver Coverage", vehicleCoverage: "Vehicle Coverage", branchCoverage: "Branch Network", approvalState: "Approval Status",
     branchesTitle: "Branches & Locations", complianceTitle: "Document Status", activityTitle: "Approval & Activity Log", action: "Action", changedBy: "Changed By", note: "Note", notConnected: "The document management data source has not yet been connected for this supplier.",
   },
   ar: {
@@ -28,8 +30,9 @@ const TEXT = {
     overview: "نظرة عامة", drivers: "السائقون", vehicles: "المركبات", operations: "العمليات", finance: "المالية", documents: "المستندات والامتثال", activity: "سجل النشاط",
     operational: "تشغيلي", closed: "مغلق", approved: "معتمد", status: "الحالة", location: "الموقع", contact: "جهة الاتصال", email: "البريد", phone: "الهاتف", whatsapp: "واتساب", website: "الموقع الإلكتروني", tax: "الرقم الضريبي", registration: "رقم التسجيل", currency: "العملة", timezone: "المنطقة الزمنية", branches: "الفروع",
     noData: "غير محدد", noDrivers: "لا يوجد سائقون تابعون لهذا المورد.", noVehicles: "لا توجد مركبات تابعة لهذا المورد.", noOperations: "لا توجد رحلات معينة لهذا المورد.", noDocuments: "لا توجد مستندات مسجلة لهذا المورد بعد.", noActivity: "لا يوجد سجل نشاط بعد.",
-    driver: "السائق", vehicle: "المركبة", plate: "اللوحة", assignment: "تعيين المركبة", active: "نشط", passive: "غير نشط", booking: "الحجز", passenger: "الراكب", pickup: "الاستلام", dropoff: "التوصيل", date: "التاريخ", amount: "المبلغ", operationStatus: "حالة العملية",
+    driver: "السائق", vehicle: "المركبة", plate: "اللوحة", assignment: "تعيين المركبة", active: "نشط", passive: "غير نشط", booking: "الحجز", passenger: "الراكب", pickup: "الاستلام", dropoff: "التوصيل", date: "التاريخ", amount: "المبلغ", operationStatus: "حالة العملية", capacity: "السعة", insurance: "التأمين",
     totalTransfers: "إجمالي الرحلات", activeTransfers: "العمليات النشطة", completed: "المكتملة", recordedSales: "المبيعات المسجلة", financeNote: "يتم حساب هذا الملخص فقط من أسعار الحجوزات الحقيقية المسجلة في النظام.",
+    companyProfile: "ملف الشركة", operationalSnapshot: "ملخص العمليات", contactProfile: "بيانات الاتصال والشركة", readiness: "الجاهزية التشغيلية", driverCoverage: "تغطية السائقين", vehicleCoverage: "تغطية المركبات", branchCoverage: "شبكة الفروع", approvalState: "حالة الاعتماد",
     branchesTitle: "الفروع والمواقع", complianceTitle: "حالة المستندات", activityTitle: "سجل الاعتماد والنشاط", action: "الإجراء", changedBy: "تم بواسطة", note: "ملاحظة", notConnected: "لم يتم ربط مصدر بيانات إدارة المستندات لهذا المورد بعد.",
   },
   es: {
@@ -37,8 +40,9 @@ const TEXT = {
     overview: "Resumen", drivers: "Conductores", vehicles: "Vehículos", operations: "Operaciones", finance: "Finanzas", documents: "Documentos y Cumplimiento", activity: "Registro de Actividad",
     operational: "Operativo", closed: "Cerrado", approved: "Aprobado", status: "Estado", location: "Ubicación", contact: "Contacto", email: "Correo", phone: "Teléfono", whatsapp: "WhatsApp", website: "Sitio web", tax: "N.º fiscal", registration: "N.º de registro", currency: "Moneda", timezone: "Zona horaria", branches: "Sucursales",
     noData: "No indicado", noDrivers: "No hay conductores asociados a este proveedor.", noVehicles: "No hay vehículos asociados a este proveedor.", noOperations: "No hay traslados asignados a este proveedor.", noDocuments: "Aún no hay documentos registrados para este proveedor.", noActivity: "Aún no hay registros de actividad.",
-    driver: "Conductor", vehicle: "Vehículo", plate: "Matrícula", assignment: "Asignación de Vehículo", active: "Activo", passive: "Inactivo", booking: "Reserva", passenger: "Pasajero", pickup: "Recogida", dropoff: "Destino", date: "Fecha", amount: "Importe", operationStatus: "Estado Operativo",
+    driver: "Conductor", vehicle: "Vehículo", plate: "Matrícula", assignment: "Asignación de Vehículo", active: "Activo", passive: "Inactivo", booking: "Reserva", passenger: "Pasajero", pickup: "Recogida", dropoff: "Destino", date: "Fecha", amount: "Importe", operationStatus: "Estado Operativo", capacity: "Capacidad", insurance: "Seguro",
     totalTransfers: "Traslados Totales", activeTransfers: "Operaciones Activas", completed: "Completados", recordedSales: "Ventas Registradas", financeNote: "Este resumen se calcula únicamente con precios reales de reservas guardados en el sistema.",
+    companyProfile: "Perfil de Empresa", operationalSnapshot: "Resumen Operativo", contactProfile: "Contacto e Información Corporativa", readiness: "Preparación Operativa", driverCoverage: "Cobertura de Conductores", vehicleCoverage: "Cobertura de Vehículos", branchCoverage: "Red de Sucursales", approvalState: "Estado de Aprobación",
     branchesTitle: "Sucursales y Ubicaciones", complianceTitle: "Estado de Documentos", activityTitle: "Registro de Aprobación y Actividad", action: "Acción", changedBy: "Realizado por", note: "Nota", notConnected: "La fuente de datos de gestión documental aún no está conectada para este proveedor.",
   },
 };
@@ -76,7 +80,7 @@ export default function SupplierDetailCenter({ supplierId, drivers = [], vehicle
     }
     load();
     return () => { mounted = false; };
-  }, [supplierId]);
+  }, [supplierId, text.loadError]);
 
   const supplierDrivers = useMemo(() => drivers.filter((item) => Number(item.supplier_id || item.supplier_company?.id) === Number(supplierId)), [drivers, supplierId]);
   const supplierVehicles = useMemo(() => vehicles.filter((item) => Number(item.supplier_id || item.supplier_company?.id) === Number(supplierId)), [vehicles, supplierId]);
@@ -113,7 +117,7 @@ export default function SupplierDetailCenter({ supplierId, drivers = [], vehicle
           {error && <div className="supplier-detail-state error">{error}</div>}
           {!loading && !error && supplier && (
             <>
-              {tab === "overview" && <Overview supplier={supplier} text={text} drivers={supplierDrivers.length} vehicles={supplierVehicles.length} transfers={transfers.length} />}
+              {tab === "overview" && <Overview supplier={supplier} text={text} drivers={supplierDrivers.length} vehicles={supplierVehicles.length} transfers={transfers.length} finance={finance} />}
               {tab === "drivers" && <Drivers rows={supplierDrivers} text={text} />}
               {tab === "vehicles" && <Vehicles rows={supplierVehicles} text={text} />}
               {tab === "operations" && <Operations rows={transfers} text={text} language={language} />}
@@ -128,13 +132,49 @@ export default function SupplierDetailCenter({ supplierId, drivers = [], vehicle
   );
 }
 
-function Overview({ supplier, text, drivers, vehicles, transfers }) {
-  return <div className="supplier-detail-stack">
-    <div className="supplier-detail-kpis"><MiniKpi label={text.drivers} value={drivers}/><MiniKpi label={text.vehicles} value={vehicles}/><MiniKpi label={text.totalTransfers} value={transfers}/><MiniKpi label={text.branches} value={supplier.branches?.length || supplier.branches_count || 0}/></div>
-    <div className="supplier-detail-info-grid">
-      <Info label={text.status} value={supplier.status}/><Info label={text.location} value={formatLocation(supplier)}/><Info label={text.contact} value={supplier.contact_name}/><Info label={text.email} value={supplier.email}/><Info label={text.phone} value={supplier.phone}/><Info label={text.whatsapp} value={supplier.whatsapp}/><Info label={text.website} value={supplier.website}/><Info label={text.tax} value={supplier.tax_number}/><Info label={text.registration} value={supplier.registration_number}/><Info label={text.currency} value={supplier.default_currency}/><Info label={text.timezone} value={supplier.timezone}/><Info label={text.branches} value={supplier.branches?.length || supplier.branches_count || 0}/>
+function Overview({ supplier, text, drivers, vehicles, transfers, finance }) {
+  const branchCount = supplier.branches?.length || supplier.branches_count || 0;
+  return (
+    <div className="supplier-detail-stack">
+      <section className="supplier-detail-section">
+        <h3>{text.operationalSnapshot}</h3>
+        <div className="supplier-detail-kpis">
+          <MiniKpi label={text.totalTransfers} value={transfers} />
+          <MiniKpi label={text.activeTransfers} value={finance.active} />
+          <MiniKpi label={text.completed} value={finance.completed} />
+          <MiniKpi label={text.recordedSales} value={`${finance.sales.toFixed(2)} ${supplier.default_currency || ""}`} />
+        </div>
+      </section>
+
+      <section className="supplier-detail-section">
+        <h3>{text.readiness}</h3>
+        <div className="supplier-detail-kpis">
+          <MiniKpi label={text.driverCoverage} value={drivers} />
+          <MiniKpi label={text.vehicleCoverage} value={vehicles} />
+          <MiniKpi label={text.branchCoverage} value={branchCount} />
+          <MiniKpi label={text.approvalState} value={supplier.status || text.noData} />
+        </div>
+      </section>
+
+      <section className="supplier-detail-section">
+        <h3>{text.contactProfile}</h3>
+        <div className="supplier-detail-info-grid">
+          <Info label={text.status} value={supplier.status} />
+          <Info label={text.location} value={formatLocation(supplier)} />
+          <Info label={text.contact} value={supplier.contact_name} />
+          <Info label={text.email} value={supplier.email} />
+          <Info label={text.phone} value={supplier.phone} />
+          <Info label={text.whatsapp} value={supplier.whatsapp} />
+          <Info label={text.website} value={supplier.website} />
+          <Info label={text.tax} value={supplier.tax_number} />
+          <Info label={text.registration} value={supplier.registration_number} />
+          <Info label={text.currency} value={supplier.default_currency} />
+          <Info label={text.timezone} value={supplier.timezone} />
+          <Info label={text.branches} value={branchCount} />
+        </div>
+      </section>
     </div>
-  </div>;
+  );
 }
 
 function Drivers({ rows, text }) {
@@ -144,7 +184,7 @@ function Drivers({ rows, text }) {
 
 function Vehicles({ rows, text }) {
   if (!rows.length) return <div className="supplier-detail-state">{text.noVehicles}</div>;
-  return <div className="supplier-detail-table-wrap"><table><thead><tr><th>{text.plate}</th><th>{text.vehicle}</th><th>{text.status}</th><th>Capacity</th><th>Insurance</th></tr></thead><tbody>{rows.map((item) => <tr key={item.id}><td><strong>{item.plate}</strong></td><td>{[item.brand,item.model].filter(Boolean).join(" ") || "—"}</td><td>{item.is_active ? text.active : text.passive}</td><td>{item.passenger_capacity ?? "—"}</td><td>{item.insurance_expiry_date || "—"}</td></tr>)}</tbody></table></div>;
+  return <div className="supplier-detail-table-wrap"><table><thead><tr><th>{text.plate}</th><th>{text.vehicle}</th><th>{text.status}</th><th>{text.capacity}</th><th>{text.insurance}</th></tr></thead><tbody>{rows.map((item) => <tr key={item.id}><td><strong>{item.plate}</strong></td><td>{[item.brand,item.model].filter(Boolean).join(" ") || "—"}</td><td>{item.is_active ? text.active : text.passive}</td><td>{item.passenger_capacity ?? "—"}</td><td>{item.insurance_expiry_date || "—"}</td></tr>)}</tbody></table></div>;
 }
 
 function Operations({ rows, text, language }) {

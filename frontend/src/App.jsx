@@ -5,6 +5,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminLayout from "./layouts/AdminLayout";
 import TransfersPage from "./pages/TransfersPage";
 import FleetPage from "./pages/FleetPage";
+import LocationsPage from "./pages/LocationsPage";
 import LoginPage from "./pages/LoginPage";
 import ModulePlaceholderPage from "./pages/ModulePlaceholderPage";
 
@@ -65,32 +66,19 @@ function App() {
 function PageContent({ currentPage, onNavigate }) {
   switch (currentPage) {
     case PAGES.DASHBOARD:
-  return (
-    <DashboardPage
-      onNavigate={onNavigate}
-    />
-  );
-
+      return <DashboardPage onNavigate={onNavigate} />;
     case PAGES.LIVE_OPERATIONS:
       return <TransferWorkspace />;
-
     case PAGES.TRANSFERS:
-  return <TransfersPage />;
-
+      return <TransfersPage />;
     case PAGES.FLEET:
-      return (
-        <FleetPage
-          onBack={() => onNavigate(PAGES.LIVE_OPERATIONS)}
-        />
-      );
-
+      return <FleetPage onBack={() => onNavigate(PAGES.LIVE_OPERATIONS)} />;
     case PAGES.SUPPLIERS:
       return <SupplierPage />;
-
     case PAGES.DRIVERS:
-  return <DriversPage />;
+      return <DriversPage />;
     case PAGES.LOCATIONS:
-      return <ModulePlaceholderPage eyebrow="MASTER DATA" title="Locations" description="Ülke, şehir, havalimanı ve lokasyon yönetim ekranı hazırlanıyor." />;
+      return <LocationsPage />;
     case PAGES.DOCUMENTS:
       return <AdminInvoicesPage />;
     case PAGES.RATINGS:

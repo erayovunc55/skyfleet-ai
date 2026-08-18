@@ -18,6 +18,7 @@ import "./styles/modules/transfer-table-polish.css";
 import "./styles/modules/transfer-column-filters.css";
 import "./styles/modules/suppliers.css";
 import "./styles/modules/drivers.css";
+import "./styles/fleet.css";
 
 createRoot(
   document.getElementById("root"),

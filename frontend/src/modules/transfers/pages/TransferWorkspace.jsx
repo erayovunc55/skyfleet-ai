@@ -10,6 +10,7 @@ import {
   StatusBadge,
 } from "../../../components/ui";
 
+import { useLanguage } from "../../../i18n";
 import LiveOperationMap from "../components/LiveOperationMap";
 import LiveTransferSync from "../components/LiveTransferSync";
 import TimelineCard from "../components/TimelineCard";
@@ -20,7 +21,85 @@ import TransferList from "../components/TransferList";
 import useTransfer from "../hooks/useTransfer";
 import useTransfers from "../hooks/useTransfers";
 
+const TEXT = {
+  tr: {
+    operations: "Günün Operasyonları",
+    transfer: "transfer",
+    importExcel: "Excel’den Aktar",
+    refresh: "Yenile",
+    previousDay: "Önceki gün",
+    operationDate: "Operasyon tarihi",
+    nextDay: "Sonraki gün",
+    today: "Bugün",
+    detail: "Transfer Detayı",
+    notSelected: "Transfer seçilmedi",
+    emptyDetail: "Seçilen tarihte görüntülenecek transfer bulunmuyor.",
+    map: "Canlı Operasyon Haritası",
+    mapSubtitle: "GPS, pickup ve dropoff bilgileri",
+    noDate: "Tarih seçilmedi",
+  },
+  en: {
+    operations: "Today's Operations",
+    transfer: "transfers",
+    importExcel: "Import from Excel",
+    refresh: "Refresh",
+    previousDay: "Previous day",
+    operationDate: "Operation date",
+    nextDay: "Next day",
+    today: "Today",
+    detail: "Transfer Details",
+    notSelected: "No transfer selected",
+    emptyDetail: "No transfers are available for the selected date.",
+    map: "Live Operations Map",
+    mapSubtitle: "GPS, pickup and dropoff information",
+    noDate: "No date selected",
+  },
+  ar: {
+    operations: "عمليات اليوم",
+    transfer: "تحويلات",
+    importExcel: "استيراد من Excel",
+    refresh: "تحديث",
+    previousDay: "اليوم السابق",
+    operationDate: "تاريخ العملية",
+    nextDay: "اليوم التالي",
+    today: "اليوم",
+    detail: "تفاصيل التحويل",
+    notSelected: "لم يتم اختيار تحويل",
+    emptyDetail: "لا توجد تحويلات للعرض في التاريخ المحدد.",
+    map: "خريطة العمليات المباشرة",
+    mapSubtitle: "معلومات GPS ونقطة الاستلام والوجهة",
+    noDate: "لم يتم اختيار تاريخ",
+  },
+  es: {
+    operations: "Operaciones de hoy",
+    transfer: "traslados",
+    importExcel: "Importar desde Excel",
+    refresh: "Actualizar",
+    previousDay: "Día anterior",
+    operationDate: "Fecha de operación",
+    nextDay: "Día siguiente",
+    today: "Hoy",
+    detail: "Detalles del traslado",
+    notSelected: "Ningún traslado seleccionado",
+    emptyDetail: "No hay traslados para la fecha seleccionada.",
+    map: "Mapa de operaciones en vivo",
+    mapSubtitle: "Información de GPS, recogida y destino",
+    noDate: "No se seleccionó fecha",
+  },
+};
+
+const LOCALES = {
+  tr: "tr-TR",
+  en: "en-GB",
+  ar: "ar-SA",
+  es: "es-ES",
+};
+
 export default function TransferWorkspace() {
+  const { language } = useLanguage();
+  const text = TEXT[language] || TEXT.en;
+  const locale = LOCALES[language] || LOCALES.en;
+
   const [
     showExcelImport,
     setShowExcelImport,
@@ -139,8 +218,8 @@ export default function TransferWorkspace() {
       <main className="transfer-workspace">
         <Card
           className="transfer-workspace-list"
-          title="Günün Operasyonları"
-          subtitle={`${filteredTransfers.length} transfer`}
+          title={text.operations}
+          subtitle={`${filteredTransfers.length} ${text.transfer}`}
           actions={
             <div className="transfer-workspace-actions">
               <Button
@@ -151,7 +230,7 @@ export default function TransferWorkspace() {
                   )
                 }
               >
-                Excel’den Aktar
+                {text.importExcel}
               </Button>
 
               <Button
@@ -160,7 +239,7 @@ export default function TransferWorkspace() {
                 loading={loading}
                 onClick={reload}
               >
-                Yenile
+                {text.refresh}
               </Button>
             </div>
           }
@@ -171,14 +250,14 @@ export default function TransferWorkspace() {
               onClick={
                 goToPreviousDay
               }
-              aria-label="Önceki gün"
+              aria-label={text.previousDay}
             >
               ‹
             </button>
 
             <label>
               <span>
-                Operasyon tarihi
+                {text.operationDate}
               </span>
 
               <input
@@ -196,7 +275,7 @@ export default function TransferWorkspace() {
             <button
               type="button"
               onClick={goToNextDay}
-              aria-label="Sonraki gün"
+              aria-label={text.nextDay}
             >
               ›
             </button>
@@ -206,7 +285,7 @@ export default function TransferWorkspace() {
               type="button"
               onClick={goToToday}
             >
-              Bugün
+              {text.today}
             </button>
           </div>
 
@@ -214,6 +293,8 @@ export default function TransferWorkspace() {
             <strong>
               {formatSelectedDate(
                 selectedDate,
+                locale,
+                text.noDate,
               )}
             </strong>
 
@@ -221,7 +302,7 @@ export default function TransferWorkspace() {
               {
                 filteredTransfers.length
               }{" "}
-              transfer
+              {text.transfer}
             </span>
           </div>
 
@@ -236,12 +317,12 @@ export default function TransferWorkspace() {
 
         <Card
           className="transfer-workspace-detail"
-          title="Transfer Detayı"
+          title={text.detail}
           subtitle={
             selectedTransfer
               ? selectedTransfer
                   .booking_reference
-              : "Transfer seçilmedi"
+              : text.notSelected
           }
           actions={
             selectedTransfer ? (
@@ -258,17 +339,15 @@ export default function TransferWorkspace() {
             <TransferDetail />
           ) : (
             <div className="transfer-detail-empty">
-              Seçilen tarihte
-              görüntülenecek transfer
-              bulunmuyor.
+              {text.emptyDetail}
             </div>
           )}
         </Card>
 
         <Card
           className="transfer-workspace-map"
-          title="Canlı Operasyon Haritası"
-          subtitle="GPS, pickup ve dropoff bilgileri"
+          title={text.map}
+          subtitle={text.mapSubtitle}
         >
           <LiveTransferSync />
 
@@ -336,6 +415,8 @@ function shiftDate(
 
 function formatSelectedDate(
   dateKey,
+  locale,
+  fallback,
 ) {
   const date = new Date(
     `${dateKey}T12:00:00`,
@@ -344,11 +425,11 @@ function formatSelectedDate(
   if (
     Number.isNaN(date.getTime())
   ) {
-    return "Tarih seçilmedi";
+    return fallback;
   }
 
   return date.toLocaleDateString(
-    "tr-TR",
+    locale,
     {
       weekday: "long",
       day: "2-digit",

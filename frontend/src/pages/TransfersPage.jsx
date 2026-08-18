@@ -32,23 +32,23 @@ const STATUS_OPTIONS = [
 ];
 
 const EMPTY_COLUMN_FILTERS = {
-  ref: "",
-  supplier: "",
+  ref: "all",
+  supplier: "all",
   type: "all",
-  date: "",
-  time: "",
-  flight: "",
-  from: "",
-  to: "",
-  passenger: "",
-  phone: "",
-  pax: "",
-  child: "",
-  vehicleType: "",
-  price: "",
-  currency: "",
-  vehicle: "",
-  driver: "",
+  date: "all",
+  time: "all",
+  flight: "all",
+  from: "all",
+  to: "all",
+  passenger: "all",
+  phone: "all",
+  pax: "all",
+  child: "all",
+  vehicleType: "all",
+  price: "all",
+  currency: "all",
+  vehicle: "all",
+  driver: "all",
   assignment: "all",
   status: "all",
 };
@@ -73,7 +73,6 @@ export default function TransfersPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [columnFilters, setColumnFilters] = useState(EMPTY_COLUMN_FILTERS);
-
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -160,6 +159,39 @@ export default function TransfersPage() {
     return () => { active = false; };
   }, []);
 
+  const columnOptions = useMemo(() => ({
+    ref: makeOptions(transfers, (t) => t.booking_reference),
+    supplier: makeOptions(transfers, getSupplierLabel),
+    type: [
+      ["all", "Tümü"],
+      ["airport-pickup", "Airport Pickup"],
+      ["airport-dropoff", "Airport Dropoff"],
+      ["standard", "Point to Point"],
+    ],
+    date: makeOptions(transfers, (t) => getDateKey(t.pickup_time), (value) => formatDate(value)),
+    time: makeOptions(transfers, (t) => formatTime(t.pickup_time)),
+    flight: makeOptions(transfers, (t) => t.flight_number || "—"),
+    from: makeOptions(transfers, (t) => t.pickup || "—"),
+    to: makeOptions(transfers, (t) => t.dropoff || "—"),
+    passenger: makeOptions(transfers, (t) => t.passenger_name || "—"),
+    phone: makeOptions(transfers, (t) => t.passenger_phone || "—"),
+    pax: makeOptions(transfers, getPassengerCount),
+    child: makeOptions(transfers, getChildCount),
+    vehicleType: makeOptions(transfers, (t) => t.vehicle_type || "—"),
+    price: makeOptions(transfers, (t) => formatPriceOnly(t.price)),
+    currency: makeOptions(transfers, (t) => formatCurrency(t.currency)),
+    vehicle: makeOptions(transfers, getVehiclePlate),
+    driver: makeOptions(transfers, getDriverName),
+    assignment: [
+      ["all", "Tümü"],
+      ["supplier", "Tedarikçi bekleniyor"],
+      ["resources", "Araç / sürücü bekleniyor"],
+      ["driver", "Sürücü kabulü bekleniyor"],
+      ["ready", "Atama tamam"],
+    ],
+    status: STATUS_OPTIONS.map((item) => [item.value, item.label]),
+  }), [transfers]);
+
   const filteredTransfers = useMemo(() => {
     const searchValue = normalize(search);
 
@@ -199,15 +231,7 @@ export default function TransfersPage() {
         (first, second) =>
           getTimestamp(first.pickup_time) - getTimestamp(second.pickup_time),
       );
-  }, [
-    transfers,
-    search,
-    status,
-    supplierFilter,
-    startDate,
-    endDate,
-    columnFilters,
-  ]);
+  }, [transfers, search, status, supplierFilter, startDate, endDate, columnFilters]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / pageSize));
 
@@ -491,29 +515,25 @@ export default function TransfersPage() {
                     </tr>
                     <tr className="transfers-column-filter-row">
                       <th />
-                      <FilterInput value={columnFilters.ref} onChange={(value) => setColumnFilter("ref", value)} placeholder="Rez. no" />
-                      <FilterInput value={columnFilters.supplier} onChange={(value) => setColumnFilter("supplier", value)} placeholder="Tedarikçi" />
-                      <FilterSelect value={columnFilters.type} onChange={(value) => setColumnFilter("type", value)} options={[
-                        ["all", "Tümü"], ["airport-pickup", "Pickup"], ["airport-dropoff", "Dropoff"], ["standard", "Point to Point"],
-                      ]} />
-                      <FilterDate value={columnFilters.date} onChange={(value) => setColumnFilter("date", value)} />
-                      <FilterInput value={columnFilters.time} onChange={(value) => setColumnFilter("time", value)} placeholder="Saat" />
-                      <FilterInput value={columnFilters.flight} onChange={(value) => setColumnFilter("flight", value)} placeholder="Uçuş" />
-                      <FilterInput value={columnFilters.from} onChange={(value) => setColumnFilter("from", value)} placeholder="Nereden" />
-                      <FilterInput value={columnFilters.to} onChange={(value) => setColumnFilter("to", value)} placeholder="Nereye" />
-                      <FilterInput value={columnFilters.passenger} onChange={(value) => setColumnFilter("passenger", value)} placeholder="Yolcu" />
-                      <FilterInput value={columnFilters.phone} onChange={(value) => setColumnFilter("phone", value)} placeholder="Telefon" />
-                      <FilterInput value={columnFilters.pax} onChange={(value) => setColumnFilter("pax", value)} placeholder="Pax" />
-                      <FilterInput value={columnFilters.child} onChange={(value) => setColumnFilter("child", value)} placeholder="Çocuk" />
-                      <FilterInput value={columnFilters.vehicleType} onChange={(value) => setColumnFilter("vehicleType", value)} placeholder="Araç tipi" />
-                      <FilterInput value={columnFilters.price} onChange={(value) => setColumnFilter("price", value)} placeholder="Fiyat" />
-                      <FilterInput value={columnFilters.currency} onChange={(value) => setColumnFilter("currency", value)} placeholder="PB" />
-                      <FilterInput value={columnFilters.vehicle} onChange={(value) => setColumnFilter("vehicle", value)} placeholder="Plaka" />
-                      <FilterInput value={columnFilters.driver} onChange={(value) => setColumnFilter("driver", value)} placeholder="Sürücü" />
-                      <FilterSelect value={columnFilters.assignment} onChange={(value) => setColumnFilter("assignment", value)} options={[
-                        ["all", "Tümü"], ["supplier", "Tedarikçi"], ["resources", "Araç/Sürücü"], ["driver", "Kabul"], ["ready", "Tamam"],
-                      ]} />
-                      <FilterSelect value={columnFilters.status} onChange={(value) => setColumnFilter("status", value)} options={STATUS_OPTIONS.map((item) => [item.value, item.label])} />
+                      <FilterSelect value={columnFilters.ref} onChange={(value) => setColumnFilter("ref", value)} options={columnOptions.ref} />
+                      <FilterSelect value={columnFilters.supplier} onChange={(value) => setColumnFilter("supplier", value)} options={columnOptions.supplier} />
+                      <FilterSelect value={columnFilters.type} onChange={(value) => setColumnFilter("type", value)} options={columnOptions.type} />
+                      <FilterSelect value={columnFilters.date} onChange={(value) => setColumnFilter("date", value)} options={columnOptions.date} />
+                      <FilterSelect value={columnFilters.time} onChange={(value) => setColumnFilter("time", value)} options={columnOptions.time} />
+                      <FilterSelect value={columnFilters.flight} onChange={(value) => setColumnFilter("flight", value)} options={columnOptions.flight} />
+                      <FilterSelect value={columnFilters.from} onChange={(value) => setColumnFilter("from", value)} options={columnOptions.from} />
+                      <FilterSelect value={columnFilters.to} onChange={(value) => setColumnFilter("to", value)} options={columnOptions.to} />
+                      <FilterSelect value={columnFilters.passenger} onChange={(value) => setColumnFilter("passenger", value)} options={columnOptions.passenger} />
+                      <FilterSelect value={columnFilters.phone} onChange={(value) => setColumnFilter("phone", value)} options={columnOptions.phone} />
+                      <FilterSelect value={columnFilters.pax} onChange={(value) => setColumnFilter("pax", value)} options={columnOptions.pax} />
+                      <FilterSelect value={columnFilters.child} onChange={(value) => setColumnFilter("child", value)} options={columnOptions.child} />
+                      <FilterSelect value={columnFilters.vehicleType} onChange={(value) => setColumnFilter("vehicleType", value)} options={columnOptions.vehicleType} />
+                      <FilterSelect value={columnFilters.price} onChange={(value) => setColumnFilter("price", value)} options={columnOptions.price} />
+                      <FilterSelect value={columnFilters.currency} onChange={(value) => setColumnFilter("currency", value)} options={columnOptions.currency} />
+                      <FilterSelect value={columnFilters.vehicle} onChange={(value) => setColumnFilter("vehicle", value)} options={columnOptions.vehicle} />
+                      <FilterSelect value={columnFilters.driver} onChange={(value) => setColumnFilter("driver", value)} options={columnOptions.driver} />
+                      <FilterSelect value={columnFilters.assignment} onChange={(value) => setColumnFilter("assignment", value)} options={columnOptions.assignment} />
+                      <FilterSelect value={columnFilters.status} onChange={(value) => setColumnFilter("status", value)} options={columnOptions.status} />
                     </tr>
                   </thead>
                   <tbody>
@@ -596,34 +616,12 @@ export default function TransfersPage() {
   );
 }
 
-function FilterInput({ value, onChange, placeholder }) {
-  return (
-    <th className="transfers-column-filter-cell">
-      <input
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        onClick={(event) => event.stopPropagation()}
-      />
-    </th>
-  );
-}
-
-function FilterDate({ value, onChange }) {
-  return (
-    <th className="transfers-column-filter-cell">
-      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} onClick={(event) => event.stopPropagation()} />
-    </th>
-  );
-}
-
 function FilterSelect({ value, onChange, options }) {
   return (
     <th className="transfers-column-filter-cell">
       <select value={value} onChange={(event) => onChange(event.target.value)} onClick={(event) => event.stopPropagation()}>
         {options.map(([optionValue, label]) => (
-          <option key={optionValue} value={optionValue}>{label}</option>
+          <option key={`${optionValue}-${label}`} value={optionValue}>{label}</option>
         ))}
       </select>
     </th>
@@ -674,30 +672,36 @@ function TransferTableRow({ transfer, active, selected, onToggleSelection, onSel
 function matchesColumnFilters(transfer, filters) {
   const direction = getTransferDirection(transfer);
   const assignment = getAssignmentState(transfer);
-  const checks = [
+  const exactChecks = [
     [filters.ref, transfer.booking_reference],
     [filters.supplier, getSupplierLabel(transfer)],
+    [filters.date, getDateKey(transfer.pickup_time)],
     [filters.time, formatTime(transfer.pickup_time)],
-    [filters.flight, transfer.flight_number],
-    [filters.from, transfer.pickup],
-    [filters.to, transfer.dropoff],
-    [filters.passenger, transfer.passenger_name],
-    [filters.phone, transfer.passenger_phone],
-    [filters.pax, getPassengerCount(transfer)],
-    [filters.child, getChildCount(transfer)],
-    [filters.vehicleType, transfer.vehicle_type],
+    [filters.flight, transfer.flight_number || "—"],
+    [filters.from, transfer.pickup || "—"],
+    [filters.to, transfer.dropoff || "—"],
+    [filters.passenger, transfer.passenger_name || "—"],
+    [filters.phone, transfer.passenger_phone || "—"],
+    [filters.pax, String(getPassengerCount(transfer))],
+    [filters.child, String(getChildCount(transfer))],
+    [filters.vehicleType, transfer.vehicle_type || "—"],
     [filters.price, formatPriceOnly(transfer.price)],
     [filters.currency, formatCurrency(transfer.currency)],
     [filters.vehicle, getVehiclePlate(transfer)],
     [filters.driver, getDriverName(transfer)],
   ];
 
-  if (checks.some(([needle, haystack]) => needle && !normalize(haystack).includes(normalize(needle)))) return false;
+  if (exactChecks.some(([selected, actual]) => selected !== "all" && String(actual ?? "") !== String(selected))) return false;
   if (filters.type !== "all" && direction !== filters.type) return false;
-  if (filters.date && getDateKey(transfer.pickup_time) !== filters.date) return false;
   if (filters.assignment !== "all" && assignment.key !== filters.assignment) return false;
   if (filters.status !== "all" && transfer.status !== filters.status) return false;
   return true;
+}
+
+function makeOptions(items, getValue, getLabel = (value) => value) {
+  const values = [...new Set(items.map(getValue).filter((value) => value !== null && value !== undefined && value !== ""))];
+  values.sort((a, b) => String(getLabel(a)).localeCompare(String(getLabel(b)), "tr-TR", { numeric: true }));
+  return [["all", "Tümü"], ...values.map((value) => [String(value), String(getLabel(value))])];
 }
 
 function normalize(value) {

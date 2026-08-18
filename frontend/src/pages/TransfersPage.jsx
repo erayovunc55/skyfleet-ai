@@ -31,6 +31,28 @@ const STATUS_OPTIONS = [
   { value: "cancelled", label: "İptal" },
 ];
 
+const EMPTY_COLUMN_FILTERS = {
+  ref: "",
+  supplier: "",
+  type: "all",
+  date: "",
+  time: "",
+  flight: "",
+  from: "",
+  to: "",
+  passenger: "",
+  phone: "",
+  pax: "",
+  child: "",
+  vehicleType: "",
+  price: "",
+  currency: "",
+  vehicle: "",
+  driver: "",
+  assignment: "all",
+  status: "all",
+};
+
 export default function TransfersPage() {
   const { transfers, loading, error, reload } = useTransfers();
   const { selectedTransfer, selectTransfer, clearSelectedTransfer } = useTransfer();
@@ -44,11 +66,14 @@ export default function TransfersPage() {
   const [bulkAssignError, setBulkAssignError] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [columnFilters, setColumnFilters] = useState(EMPTY_COLUMN_FILTERS);
+
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -64,11 +89,11 @@ export default function TransfersPage() {
       setSupplierFilter("all");
       setStartDate("");
       setEndDate("");
+      setColumnFilters(EMPTY_COLUMN_FILTERS);
       setCurrentPage(1);
       setShowCreatePage(false);
 
       let transfer = transfers.find((item) => Number(item.id) === numericId);
-
       if (!transfer) {
         try {
           transfer = await transferService.getTransfer(numericId);
@@ -79,14 +104,14 @@ export default function TransfersPage() {
       }
 
       if (!active || !transfer) return;
-
       selectTransfer(transfer);
       sessionStorage.removeItem(ALERT_TRANSFER_KEY);
 
       window.requestAnimationFrame(() => {
-        document
-          .querySelector(".transfers-detail-panel")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.querySelector(".transfers-detail-panel")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       });
     }
 
@@ -114,13 +139,11 @@ export default function TransfersPage() {
           is_active: 1,
           per_page: 100,
         });
-
         const items = Array.isArray(response?.data)
           ? response.data
           : Array.isArray(response)
             ? response
             : [];
-
         if (active) setBulkSuppliers(items);
       } catch (requestError) {
         if (active) {
@@ -138,7 +161,7 @@ export default function TransfersPage() {
   }, []);
 
   const filteredTransfers = useMemo(() => {
-    const searchValue = search.trim().toLocaleLowerCase("tr-TR");
+    const searchValue = normalize(search);
 
     return [...transfers]
       .filter((transfer) => {
@@ -151,27 +174,26 @@ export default function TransfersPage() {
         const pickupDate = getDateKey(transfer.pickup_time);
         if (startDate && (!pickupDate || pickupDate < startDate)) return false;
         if (endDate && (!pickupDate || pickupDate > endDate)) return false;
-        if (!searchValue) return true;
 
-        const searchableText = [
-          transfer.booking_reference,
-          transfer.ota_booking_reference,
-          transfer.passenger_name,
-          transfer.passenger_phone,
-          transfer.passenger_email,
-          transfer.flight_number,
-          transfer.pickup,
-          transfer.dropoff,
-          transfer.driver?.name,
-          transfer.supplier_company?.company_name,
-          transfer.supplier,
-          transfer.ota_source,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLocaleLowerCase("tr-TR");
+        if (searchValue) {
+          const searchableText = normalize([
+            transfer.booking_reference,
+            transfer.ota_booking_reference,
+            transfer.passenger_name,
+            transfer.passenger_phone,
+            transfer.passenger_email,
+            transfer.flight_number,
+            transfer.pickup,
+            transfer.dropoff,
+            transfer.driver?.name,
+            transfer.supplier_company?.company_name,
+            transfer.supplier,
+            transfer.ota_source,
+          ].filter(Boolean).join(" "));
+          if (!searchableText.includes(searchValue)) return false;
+        }
 
-        return searchableText.includes(searchValue);
+        return matchesColumnFilters(transfer, columnFilters);
       })
       .sort(
         (first, second) =>
@@ -184,13 +206,14 @@ export default function TransfersPage() {
     supplierFilter,
     startDate,
     endDate,
+    columnFilters,
   ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTransfers.length / pageSize));
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, status, supplierFilter, startDate, endDate, pageSize]);
+  }, [search, status, supplierFilter, startDate, endDate, columnFilters, pageSize]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -204,16 +227,14 @@ export default function TransfersPage() {
   const statistics = useMemo(() => ({
     total: transfers.length,
     waiting: transfers.filter((transfer) => transfer.status === "pending").length,
-    active: transfers.filter((transfer) =>
-      [
-        "accepted",
-        "on_the_way",
-        "arrived",
-        "passenger_called",
-        "passenger_on_board",
-        "trip_started",
-      ].includes(transfer.status),
-    ).length,
+    active: transfers.filter((transfer) => [
+      "accepted",
+      "on_the_way",
+      "arrived",
+      "passenger_called",
+      "passenger_on_board",
+      "trip_started",
+    ].includes(transfer.status)).length,
     completed: transfers.filter((transfer) => transfer.status === "completed").length,
   }), [transfers]);
 
@@ -241,12 +262,17 @@ export default function TransfersPage() {
     }
   }, [filteredTransfers, selectedTransfer, clearSelectedTransfer]);
 
+  function setColumnFilter(key, value) {
+    setColumnFilters((current) => ({ ...current, [key]: value }));
+  }
+
   function clearFilters() {
     setSearch("");
     setStatus("all");
     setSupplierFilter("all");
     setStartDate("");
     setEndDate("");
+    setColumnFilters(EMPTY_COLUMN_FILTERS);
     setCurrentPage(1);
   }
 
@@ -274,10 +300,7 @@ export default function TransfersPage() {
         selectedTransferIds,
         bulkSupplierId,
       );
-
-      setBulkAssignMessage(
-        `${result?.updated_count || 0} transfer tedarikçiye atandı.`,
-      );
+      setBulkAssignMessage(`${result?.updated_count || 0} transfer tedarikçiye atandı.`);
       setSelectedTransferIds([]);
       setBulkSupplierId("");
       await reload();
@@ -342,22 +365,11 @@ export default function TransfersPage() {
           <h1>Transfer Yönetimi</h1>
           <p>Geçmiş ve ileri tarihli bütün rezervasyonları tek ekrandan yönetin.</p>
         </div>
-
         <div className="transfers-management-actions">
-          <button
-            type="button"
-            className="transfers-secondary-button"
-            onClick={reload}
-            disabled={loading}
-          >
+          <button type="button" className="transfers-secondary-button" onClick={reload} disabled={loading}>
             {loading ? "Yükleniyor..." : "Yenile"}
           </button>
-
-          <button
-            type="button"
-            className="transfers-primary-button"
-            onClick={() => setShowCreatePage(true)}
-          >
+          <button type="button" className="transfers-primary-button" onClick={() => setShowCreatePage(true)}>
             + Yeni Transfer
           </button>
         </div>
@@ -381,65 +393,32 @@ export default function TransfersPage() {
             placeholder="Ref no, yolcu, telefon, uçuş veya adres..."
           />
         </div>
-
         <div className="transfers-filter-field">
           <label htmlFor="transfer-supplier-filter">Tedarikçi</label>
-          <select
-            id="transfer-supplier-filter"
-            value={supplierFilter}
-            onChange={(event) => setSupplierFilter(event.target.value)}
-          >
+          <select id="transfer-supplier-filter" value={supplierFilter} onChange={(event) => setSupplierFilter(event.target.value)}>
             <option value="all">Tüm tedarikçiler</option>
             {bulkSuppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.company_name}
-              </option>
+              <option key={supplier.id} value={supplier.id}>{supplier.company_name}</option>
             ))}
           </select>
         </div>
-
         <div className="transfers-filter-field">
           <label htmlFor="transfer-status">Durum</label>
-          <select
-            id="transfer-status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
+          <select id="transfer-status" value={status} onChange={(event) => setStatus(event.target.value)}>
             {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+              <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </div>
-
         <div className="transfers-filter-field">
           <label htmlFor="transfer-start-date">Başlangıç</label>
-          <input
-            id="transfer-start-date"
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
+          <input id="transfer-start-date" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
         </div>
-
         <div className="transfers-filter-field">
           <label htmlFor="transfer-end-date">Bitiş</label>
-          <input
-            id="transfer-end-date"
-            type="date"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-          />
+          <input id="transfer-end-date" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
         </div>
-
-        <button
-          type="button"
-          className="transfers-clear-button"
-          onClick={clearFilters}
-        >
-          Filtreleri Temizle
-        </button>
+        <button type="button" className="transfers-clear-button" onClick={clearFilters}>Filtreleri Temizle</button>
       </section>
 
       {error && <div className="transfers-management-error">{error}</div>}
@@ -449,11 +428,8 @@ export default function TransfersPage() {
           <div className="transfers-table-heading">
             <div>
               <h2>Rezervasyonlar</h2>
-              <span>
-                {filteredTransfers.length} kayıt • {firstVisible}-{lastVisible} gösteriliyor
-              </span>
+              <span>{filteredTransfers.length} kayıt • {firstVisible}-{lastVisible} gösteriliyor</span>
             </div>
-
             <div className="transfers-bulk-assignment">
               <span>{selectedTransferIds.length} transfer seçildi</span>
               <select
@@ -469,49 +445,30 @@ export default function TransfersPage() {
                 <option value="">Tedarikçi seçin</option>
                 {bulkSuppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
-                    {supplier.company_name}
-                    {supplier.city ? ` — ${supplier.city}` : ""}
+                    {supplier.company_name}{supplier.city ? ` — ${supplier.city}` : ""}
                   </option>
                 ))}
               </select>
-
               <button
                 type="button"
-                disabled={
-                  bulkAssigning ||
-                  selectedTransferIds.length === 0 ||
-                  !bulkSupplierId
-                }
+                disabled={bulkAssigning || selectedTransferIds.length === 0 || !bulkSupplierId}
                 onClick={handleBulkAssignSupplier}
               >
                 {bulkAssigning ? "Atanıyor..." : "Toplu Ata"}
               </button>
-
               {selectedTransferIds.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearTransferSelection}
-                  disabled={bulkAssigning}
-                >
-                  Seçimi Temizle
-                </button>
+                <button type="button" onClick={clearTransferSelection} disabled={bulkAssigning}>Seçimi Temizle</button>
               )}
             </div>
           </div>
 
-          {bulkAssignMessage && (
-            <div className="transfers-bulk-message success">{bulkAssignMessage}</div>
-          )}
-          {bulkAssignError && (
-            <div className="transfers-bulk-message error">{bulkAssignError}</div>
-          )}
+          {bulkAssignMessage && <div className="transfers-bulk-message success">{bulkAssignMessage}</div>}
+          {bulkAssignError && <div className="transfers-bulk-message error">{bulkAssignError}</div>}
 
           {loading ? (
             <div className="transfers-table-state">Transferler yükleniyor...</div>
           ) : filteredTransfers.length === 0 ? (
-            <div className="transfers-table-state">
-              Seçilen filtrelere uygun transfer bulunamadı.
-            </div>
+            <div className="transfers-table-state">Seçilen filtrelere uygun transfer bulunamadı.</div>
           ) : (
             <>
               <div className="transfers-table-wrapper">
@@ -524,35 +481,41 @@ export default function TransfersPage() {
                           aria-label="Bu sayfadaki uygun transferlerin tümünü seç"
                           checked={allVisibleSelected}
                           disabled={selectableTransferIds.length === 0}
-                          onChange={(event) => {
-                            if (event.target.checked) selectAllVisibleTransfers();
-                            else clearTransferSelection();
-                          }}
+                          onChange={(event) => event.target.checked ? selectAllVisibleTransfers() : clearTransferSelection()}
                           onClick={(event) => event.stopPropagation()}
                         />
                       </th>
-                      <th>Ref. No</th>
-                      <th>Tedarikçi</th>
-                      <th>Tür</th>
-                      <th>Tarih</th>
-                      <th>Saat</th>
-                      <th>Uçuş</th>
-                      <th>Nereden</th>
-                      <th>Nereye</th>
-                      <th>Yolcu</th>
-                      <th>Telefon</th>
-                      <th>Pax</th>
-                      <th>Çocuk</th>
-                      <th>Araç Tipi</th>
-                      <th>Fiyat</th>
-                      <th>Para Birimi</th>
-                      <th>Araç</th>
-                      <th>Sürücü</th>
-                      <th>Atama</th>
-                      <th>Durum</th>
+                      <th>Ref. No</th><th>Tedarikçi</th><th>Tür</th><th>Tarih</th><th>Saat</th><th>Uçuş</th>
+                      <th>Nereden</th><th>Nereye</th><th>Yolcu</th><th>Telefon</th><th>Pax</th><th>Çocuk</th>
+                      <th>Araç Tipi</th><th>Fiyat</th><th>Para Birimi</th><th>Araç</th><th>Sürücü</th><th>Atama</th><th>Durum</th>
+                    </tr>
+                    <tr className="transfers-column-filter-row">
+                      <th />
+                      <FilterInput value={columnFilters.ref} onChange={(value) => setColumnFilter("ref", value)} placeholder="Rez. no" />
+                      <FilterInput value={columnFilters.supplier} onChange={(value) => setColumnFilter("supplier", value)} placeholder="Tedarikçi" />
+                      <FilterSelect value={columnFilters.type} onChange={(value) => setColumnFilter("type", value)} options={[
+                        ["all", "Tümü"], ["airport-pickup", "Pickup"], ["airport-dropoff", "Dropoff"], ["standard", "Point to Point"],
+                      ]} />
+                      <FilterDate value={columnFilters.date} onChange={(value) => setColumnFilter("date", value)} />
+                      <FilterInput value={columnFilters.time} onChange={(value) => setColumnFilter("time", value)} placeholder="Saat" />
+                      <FilterInput value={columnFilters.flight} onChange={(value) => setColumnFilter("flight", value)} placeholder="Uçuş" />
+                      <FilterInput value={columnFilters.from} onChange={(value) => setColumnFilter("from", value)} placeholder="Nereden" />
+                      <FilterInput value={columnFilters.to} onChange={(value) => setColumnFilter("to", value)} placeholder="Nereye" />
+                      <FilterInput value={columnFilters.passenger} onChange={(value) => setColumnFilter("passenger", value)} placeholder="Yolcu" />
+                      <FilterInput value={columnFilters.phone} onChange={(value) => setColumnFilter("phone", value)} placeholder="Telefon" />
+                      <FilterInput value={columnFilters.pax} onChange={(value) => setColumnFilter("pax", value)} placeholder="Pax" />
+                      <FilterInput value={columnFilters.child} onChange={(value) => setColumnFilter("child", value)} placeholder="Çocuk" />
+                      <FilterInput value={columnFilters.vehicleType} onChange={(value) => setColumnFilter("vehicleType", value)} placeholder="Araç tipi" />
+                      <FilterInput value={columnFilters.price} onChange={(value) => setColumnFilter("price", value)} placeholder="Fiyat" />
+                      <FilterInput value={columnFilters.currency} onChange={(value) => setColumnFilter("currency", value)} placeholder="PB" />
+                      <FilterInput value={columnFilters.vehicle} onChange={(value) => setColumnFilter("vehicle", value)} placeholder="Plaka" />
+                      <FilterInput value={columnFilters.driver} onChange={(value) => setColumnFilter("driver", value)} placeholder="Sürücü" />
+                      <FilterSelect value={columnFilters.assignment} onChange={(value) => setColumnFilter("assignment", value)} options={[
+                        ["all", "Tümü"], ["supplier", "Tedarikçi"], ["resources", "Araç/Sürücü"], ["driver", "Kabul"], ["ready", "Tamam"],
+                      ]} />
+                      <FilterSelect value={columnFilters.status} onChange={(value) => setColumnFilter("status", value)} options={STATUS_OPTIONS.map((item) => [item.value, item.label])} />
                     </tr>
                   </thead>
-
                   <tbody>
                     {paginatedTransfers.map((transfer) => (
                       <TransferTableRow
@@ -571,42 +534,16 @@ export default function TransfersPage() {
               <div className="transfers-pagination">
                 <div className="transfers-page-size">
                   <span>Sayfa başına</span>
-                  <select
-                    value={pageSize}
-                    onChange={(event) => setPageSize(Number(event.target.value))}
-                    aria-label="Sayfa başına transfer sayısı"
-                  >
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
+                  <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} aria-label="Sayfa başına transfer sayısı">
+                    {PAGE_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size}</option>)}
                   </select>
                   <span>transfer</span>
                 </div>
-
-                <div className="transfers-pagination-summary">
-                  {firstVisible}-{lastVisible} / {filteredTransfers.length}
-                </div>
-
+                <div className="transfers-pagination-summary">{firstVisible}-{lastVisible} / {filteredTransfers.length}</div>
                 <div className="transfers-pagination-actions">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    ‹ Önceki
-                  </button>
-
-                  <span>
-                    Sayfa <strong>{currentPage}</strong> / {totalPages}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Sonraki ›
-                  </button>
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>‹ Önceki</button>
+                  <span>Sayfa <strong>{currentPage}</strong> / {totalPages}</span>
+                  <button type="button" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages}>Sonraki ›</button>
                 </div>
               </div>
             </>
@@ -618,62 +555,31 @@ export default function TransfersPage() {
             <div className="transfers-detail-panel-header">
               <div className="transfers-detail-panel-title">
                 <span>TRANSFER DETAYI</span>
-                <h2>
-                  {selectedTransfer.booking_reference || `Transfer #${selectedTransfer.id}`}
-                </h2>
+                <h2>{selectedTransfer.booking_reference || `Transfer #${selectedTransfer.id}`}</h2>
               </div>
-
               <div className="transfers-detail-panel-actions">
                 {canEditTransfer(selectedTransfer) && (
-                  <button
-                    type="button"
-                    className="transfers-detail-edit-button"
-                    onClick={() => setShowEditModal(true)}
-                  >
-                    Düzenle
-                  </button>
+                  <button type="button" className="transfers-detail-edit-button" onClick={() => setShowEditModal(true)}>Düzenle</button>
                 )}
-
                 {canCancelTransfer(selectedTransfer) && (
-                  <button
-                    type="button"
-                    className="transfers-detail-cancel-button"
-                    onClick={() => setShowCancelModal(true)}
-                  >
-                    İptal Et
-                  </button>
+                  <button type="button" className="transfers-detail-cancel-button" onClick={() => setShowCancelModal(true)}>İptal Et</button>
                 )}
-
-                <button
-                  type="button"
-                  className="transfers-detail-close-button"
-                  aria-label="Transfer detayını kapat"
-                  onClick={handleCloseDetail}
-                >
-                  ×
-                </button>
+                <button type="button" className="transfers-detail-close-button" aria-label="Transfer detayını kapat" onClick={handleCloseDetail}>×</button>
               </div>
             </div>
 
             {selectedTransfer.status === "cancelled" && (
               <div className="transfer-cancelled-notice">
                 <strong>Bu transfer iptal edilmiştir.</strong>
-                <span>
-                  {selectedTransfer.cancellation_reason || "İptal nedeni belirtilmedi."}
-                </span>
-                {selectedTransfer.cancelled_at && (
-                  <small>{formatDateTime(selectedTransfer.cancelled_at)}</small>
-                )}
+                <span>{selectedTransfer.cancellation_reason || "İptal nedeni belirtilmedi."}</span>
+                {selectedTransfer.cancelled_at && <small>{formatDateTime(selectedTransfer.cancelled_at)}</small>}
               </div>
             )}
 
             <>
               <TransferCommercialSummary transfer={selectedTransfer} />
               <TransferEvidenceCard transfer={selectedTransfer} />
-              <TransferSupplierAssignment
-                transfer={selectedTransfer}
-                onAssigned={handleTransferSaved}
-              />
+              <TransferSupplierAssignment transfer={selectedTransfer} onAssigned={handleTransferSaved} />
               <TransferDetail />
             </>
           </aside>
@@ -681,45 +587,57 @@ export default function TransfersPage() {
       </section>
 
       {showEditModal && selectedTransfer && (
-        <EditTransferModal
-          transfer={selectedTransfer}
-          onClose={() => setShowEditModal(false)}
-          onSaved={handleTransferSaved}
-        />
+        <EditTransferModal transfer={selectedTransfer} onClose={() => setShowEditModal(false)} onSaved={handleTransferSaved} />
       )}
-
       {showCancelModal && selectedTransfer && (
-        <CancelTransferModal
-          transfer={selectedTransfer}
-          onClose={() => setShowCancelModal(false)}
-          onCancelled={handleTransferCancelled}
-        />
+        <CancelTransferModal transfer={selectedTransfer} onClose={() => setShowCancelModal(false)} onCancelled={handleTransferCancelled} />
       )}
     </main>
   );
 }
 
-function StatisticCard({ label, value }) {
+function FilterInput({ value, onChange, placeholder }) {
   return (
-    <article className="transfers-statistic-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
+    <th className="transfers-column-filter-cell">
+      <input
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        onClick={(event) => event.stopPropagation()}
+      />
+    </th>
   );
 }
 
-function TransferTableRow({
-  transfer,
-  active,
-  selected,
-  onToggleSelection,
-  onSelect,
-}) {
-  const selectable =
-    !transfer.supplier_id && ["pending", "accepted"].includes(transfer.status);
+function FilterDate({ value, onChange }) {
+  return (
+    <th className="transfers-column-filter-cell">
+      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} onClick={(event) => event.stopPropagation()} />
+    </th>
+  );
+}
+
+function FilterSelect({ value, onChange, options }) {
+  return (
+    <th className="transfers-column-filter-cell">
+      <select value={value} onChange={(event) => onChange(event.target.value)} onClick={(event) => event.stopPropagation()}>
+        {options.map(([optionValue, label]) => (
+          <option key={optionValue} value={optionValue}>{label}</option>
+        ))}
+      </select>
+    </th>
+  );
+}
+
+function StatisticCard({ label, value }) {
+  return <article className="transfers-statistic-card"><span>{label}</span><strong>{value}</strong></article>;
+}
+
+function TransferTableRow({ transfer, active, selected, onToggleSelection, onSelect }) {
+  const selectable = !transfer.supplier_id && ["pending", "accepted"].includes(transfer.status);
   const transferDirection = getTransferDirection(transfer);
   const assignmentState = getAssignmentState(transfer);
-
   const rowClassName = [
     "transfers-table-row",
     `transfers-table-row-${transferDirection}`,
@@ -729,100 +647,71 @@ function TransferTableRow({
 
   return (
     <tr className={rowClassName} onClick={onSelect}>
-      <td className="transfers-select-column">
-        <input
-          type="checkbox"
-          checked={selected}
-          disabled={!selectable}
-          aria-label={`${transfer.booking_reference || `Transfer ${transfer.id}`} seç`}
-          onChange={onToggleSelection}
-          onClick={(event) => event.stopPropagation()}
-        />
-      </td>
-
-      <td>
-        <button
-          type="button"
-          className="transfers-reference-button"
-          onClick={onSelect}
-        >
-          {transfer.booking_reference || `#${transfer.id}`}
-        </button>
-      </td>
-
-      <td>
-        <strong>{getSupplierLabel(transfer)}</strong>
-        <small>{transfer.ota_source || "Manuel"}</small>
-      </td>
-
-      <td>
-        <span className={`transfers-service-type transfers-service-type-${transferDirection}`}>
-          {getTransferDirectionLabel(transferDirection)}
-        </span>
-      </td>
-
+      <td className="transfers-select-column"><input type="checkbox" checked={selected} disabled={!selectable} aria-label={`${transfer.booking_reference || `Transfer ${transfer.id}`} seç`} onChange={onToggleSelection} onClick={(event) => event.stopPropagation()} /></td>
+      <td><button type="button" className="transfers-reference-button" onClick={onSelect}>{transfer.booking_reference || `#${transfer.id}`}</button></td>
+      <td><strong>{getSupplierLabel(transfer)}</strong><small>{transfer.ota_source || "Manuel"}</small></td>
+      <td><span className={`transfers-service-type transfers-service-type-${transferDirection}`}>{getTransferDirectionLabel(transferDirection)}</span></td>
       <td className="transfers-date-cell"><strong>{formatDate(transfer.pickup_time)}</strong></td>
       <td className="transfers-time-cell"><strong>{formatTime(transfer.pickup_time)}</strong></td>
       <td><strong>{transfer.flight_number || "—"}</strong></td>
-
-      <td className="transfers-address-cell">
-        <span title={transfer.pickup || ""}>{transfer.pickup || "Alış noktası yok"}</span>
-      </td>
-      <td className="transfers-address-cell">
-        <span title={transfer.dropoff || ""}>{transfer.dropoff || "Bırakış noktası yok"}</span>
-      </td>
-
-      <td className="transfers-passenger-cell">
-        <strong>{transfer.passenger_name || "Yolcu belirtilmedi"}</strong>
-      </td>
+      <td className="transfers-address-cell"><span title={transfer.pickup || ""}>{transfer.pickup || "Alış noktası yok"}</span></td>
+      <td className="transfers-address-cell"><span title={transfer.dropoff || ""}>{transfer.dropoff || "Bırakış noktası yok"}</span></td>
+      <td className="transfers-passenger-cell"><strong>{transfer.passenger_name || "Yolcu belirtilmedi"}</strong></td>
       <td className="transfers-phone-cell"><span>{transfer.passenger_phone || "—"}</span></td>
       <td className="transfers-pax-cell"><strong>{getPassengerCount(transfer)}</strong></td>
       <td className="transfers-pax-cell"><strong>{getChildCount(transfer)}</strong></td>
-
-      <td className="transfers-vehicle-type-cell">
-        <span title={transfer.vehicle_type || ""}>{transfer.vehicle_type || "Belirtilmedi"}</span>
-      </td>
-
+      <td className="transfers-vehicle-type-cell"><span title={transfer.vehicle_type || ""}>{transfer.vehicle_type || "Belirtilmedi"}</span></td>
       <td className="transfers-price-cell"><strong>{formatPriceOnly(transfer.price)}</strong></td>
       <td className="transfers-currency-cell"><strong>{formatCurrency(transfer.currency)}</strong></td>
-
       <td><strong>{getVehiclePlate(transfer)}</strong></td>
       <td><strong>{getDriverName(transfer)}</strong></td>
-
-      <td>
-        <span className={`transfers-assignment-state transfers-assignment-${assignmentState.key}`}>
-          {assignmentState.label}
-        </span>
-      </td>
-
-      <td>
-        <span className={`transfers-status transfers-status-${transfer.status}`}>
-          {getStatusLabel(transfer.status)}
-        </span>
-      </td>
+      <td><span className={`transfers-assignment-state transfers-assignment-${assignmentState.key}`}>{assignmentState.label}</span></td>
+      <td><span className={`transfers-status transfers-status-${transfer.status}`}>{getStatusLabel(transfer.status)}</span></td>
     </tr>
   );
 }
 
+function matchesColumnFilters(transfer, filters) {
+  const direction = getTransferDirection(transfer);
+  const assignment = getAssignmentState(transfer);
+  const checks = [
+    [filters.ref, transfer.booking_reference],
+    [filters.supplier, getSupplierLabel(transfer)],
+    [filters.time, formatTime(transfer.pickup_time)],
+    [filters.flight, transfer.flight_number],
+    [filters.from, transfer.pickup],
+    [filters.to, transfer.dropoff],
+    [filters.passenger, transfer.passenger_name],
+    [filters.phone, transfer.passenger_phone],
+    [filters.pax, getPassengerCount(transfer)],
+    [filters.child, getChildCount(transfer)],
+    [filters.vehicleType, transfer.vehicle_type],
+    [filters.price, formatPriceOnly(transfer.price)],
+    [filters.currency, formatCurrency(transfer.currency)],
+    [filters.vehicle, getVehiclePlate(transfer)],
+    [filters.driver, getDriverName(transfer)],
+  ];
+
+  if (checks.some(([needle, haystack]) => needle && !normalize(haystack).includes(normalize(needle)))) return false;
+  if (filters.type !== "all" && direction !== filters.type) return false;
+  if (filters.date && getDateKey(transfer.pickup_time) !== filters.date) return false;
+  if (filters.assignment !== "all" && assignment.key !== filters.assignment) return false;
+  if (filters.status !== "all" && transfer.status !== filters.status) return false;
+  return true;
+}
+
+function normalize(value) {
+  return String(value ?? "").trim().toLocaleLowerCase("tr-TR");
+}
+
 function getSupplierLabel(transfer) {
-  return (
-    transfer.supplier_company?.company_name ||
-    transfer.supplier ||
-    transfer.ota_source ||
-    "Atanmadı"
-  );
+  return transfer.supplier_company?.company_name || transfer.supplier || transfer.ota_source || "Atanmadı";
 }
 
 function getAssignmentState(transfer) {
-  if (!transfer.supplier_id) {
-    return { key: "supplier", label: "Tedarikçi bekleniyor" };
-  }
-  if (!transfer.driver_id || !transfer.assigned_vehicle_id) {
-    return { key: "resources", label: "Araç / sürücü bekleniyor" };
-  }
-  if (transfer.status === "pending") {
-    return { key: "driver", label: "Sürücü kabulü bekleniyor" };
-  }
+  if (!transfer.supplier_id) return { key: "supplier", label: "Tedarikçi bekleniyor" };
+  if (!transfer.driver_id || !transfer.assigned_vehicle_id) return { key: "resources", label: "Araç / sürücü bekleniyor" };
+  if (transfer.status === "pending") return { key: "driver", label: "Sürücü kabulü bekleniyor" };
   return { key: "ready", label: "Atama tamam" };
 }
 
@@ -843,11 +732,7 @@ function isAirportPoint(location, address) {
     location?.type?.slug,
     address,
   ].filter(Boolean).join(" ");
-
-  return (
-    /airport|havaliman|aeroport|aéroport|aeropuerto|aeroporto|flughafen|مطار|机场|空港/iu.test(searchableText) ||
-    /\([A-Z]{3}\)/u.test(searchableText)
-  );
+  return /airport|havaliman|aeroport|aéroport|aeropuerto|aeroporto|flughafen|مطار|机场|空港/iu.test(searchableText) || /\([A-Z]{3}\)/u.test(searchableText);
 }
 
 function getTransferDirectionLabel(direction) {
@@ -858,9 +743,7 @@ function getTransferDirectionLabel(direction) {
 
 function getPassengerCount(transfer) {
   const values = [transfer.adult, transfer.child, transfer.baby];
-  if (values.every((value) => value === null || value === undefined || value === "")) {
-    return "—";
-  }
+  if (values.every((value) => value === null || value === undefined || value === "")) return "—";
   return values.reduce((total, value) => total + Number(value || 0), 0);
 }
 
@@ -880,12 +763,7 @@ function formatCurrency(currency) {
 
 function getVehiclePlate(transfer) {
   if (!transfer.supplier_id) return "—";
-  return (
-    transfer.assigned_vehicle?.plate ||
-    transfer.driver?.vehicle?.plate ||
-    transfer.driver?.vehicle_plate ||
-    "Tedarikçi atayacak"
-  );
+  return transfer.assigned_vehicle?.plate || transfer.driver?.vehicle?.plate || transfer.driver?.vehicle_plate || "Tedarikçi atayacak";
 }
 
 function getDriverName(transfer) {
@@ -920,21 +798,14 @@ function formatDate(value) {
   if (!value) return "Tarih yok";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Tarih yok";
-  return date.toLocaleDateString("tr-TR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return date.toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function formatTime(value) {
   if (!value) return "--:--";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "--:--";
-  return date.toLocaleTimeString("tr-TR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDateTime(value) {
@@ -963,6 +834,5 @@ function getStatusLabel(status) {
     no_show: "No Show",
     cancelled: "İptal",
   };
-
   return labels[status] || status || "Bilinmiyor";
 }

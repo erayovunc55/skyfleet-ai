@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\SupplierActivityController;
 use App\Http\Controllers\Api\SupplierDocumentController;
 use App\Http\Controllers\Api\SupplierPortalFinanceController;
 use Illuminate\Support\Facades\Route;
@@ -16,4 +17,5 @@ Route::middleware([
     Route::get('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
     Route::post('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store']);
     Route::delete('suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy']);
+    Route::get('suppliers/{supplier}/activity', [SupplierActivityController::class, 'index']);
 });

@@ -19,7 +19,7 @@ const phrases = {
   "Tümünü Okundu Yap": { en: "Mark All Read", ar: "تحديد الكل كمقروء", es: "Marcar todo como leído" },
   "Tümü": { en: "All", ar: "الكل", es: "Todos" },
   "Okunmamış": { en: "Unread", ar: "غير المقروءة", es: "No leídos" },
-  "Bildirimler yükleniyor...": { en: "Loading notifications...", ar: "جارٍ تحميل الإشعارات...", es: "Cargando notificaciones..." },
+  "Bildirimler yükleniyor...": { en: "Loading notifications...", ar: "جارٍ تحميل الإشارات...", es: "Cargando notificaciones..." },
   "Okunmamış bildiriminiz yok.": { en: "No unread notifications.", ar: "لا توجد إشعارات غير مقروءة.", es: "No hay notificaciones sin leer." },
   "Aktif operasyon bildirimi yok.": { en: "No active operation alerts.", ar: "لا توجد تنبيهات تشغيل نشطة.", es: "No hay alertas operativas activas." },
   "Her 30 saniyede otomatik güncellenir": { en: "Updates automatically every 30 seconds", ar: "يتم التحديث تلقائياً كل 30 ثانية", es: "Se actualiza automáticamente cada 30 segundos" },
@@ -78,7 +78,6 @@ const phrases = {
   "TRANSFER DETAYI": { en: "TRANSFER DETAILS", ar: "تفاصيل التحويل", es: "DETALLES DEL TRASLADO" },
   "Düzenle": { en: "Edit", ar: "تعديل", es: "Editar" },
   "İptal Et": { en: "Cancel", ar: "إلغاء", es: "Cancelar" },
-
   "GPS Durumu": { en: "GPS Status", ar: "حالة GPS", es: "Estado GPS" },
   "Konum alındı": { en: "Location received", ar: "تم استلام الموقع", es: "Ubicación recibida" },
   "Konum bekleniyor": { en: "Waiting for location", ar: "بانتظار الموقع", es: "Esperando ubicación" },
@@ -102,7 +101,6 @@ const phrases = {
   "Pickup noktası": { en: "Pickup point", ar: "نقطة الاستلام", es: "Punto de recogida" },
   "Dropoff noktası": { en: "Dropoff point", ar: "نقطة الوصول", es: "Punto de destino" },
   "Son GPS:": { en: "Last GPS:", ar: "آخر GPS:", es: "Último GPS:" },
-
   "Operasyon Zaman Çizelgesi": { en: "Operation Timeline", ar: "الخط الزمني للعملية", es: "Cronología de la operación" },
   "Henüz operasyon kaydı bulunmuyor.": { en: "No operation records yet.", ar: "لا توجد سجلات تشغيل حتى الآن.", es: "Aún no hay registros de operación." },
   "İşlemi yapan sürücü:": { en: "Driver who performed the action:", ar: "السائق الذي نفذ الإجراء:", es: "Conductor que realizó la acción:" },
@@ -133,7 +131,30 @@ function canonicalFor(value) {
 }
 
 function translateValue(value, language) {
-  const canonical = canonicalFor(value);
+  const raw = String(value || "");
+  const normalized = raw.trim();
+
+  const previousMatch = normalized.match(/^([‹<]\s*)?(Önceki|Previous|السابق|Anterior)$/i);
+  if (previousMatch) {
+    const prefix = previousMatch[1] || "";
+    const translated = language === "tr" ? "Önceki" : language === "ar" ? "السابق" : language === "es" ? "Anterior" : "Previous";
+    return `${prefix}${translated}`;
+  }
+
+  const nextMatch = normalized.match(/^(Sonraki|Next|التالي|Siguiente)(\s*[›>])?$/i);
+  if (nextMatch) {
+    const suffix = nextMatch[2] || "";
+    const translated = language === "tr" ? "Sonraki" : language === "ar" ? "التالي" : language === "es" ? "Siguiente" : "Next";
+    return `${translated}${suffix}`;
+  }
+
+  const pageMatch = normalized.match(/^(Sayfa|Page|صفحة|Página)\s+(\d+)\s*\/\s*(\d+)$/i);
+  if (pageMatch) {
+    const label = language === "tr" ? "Sayfa" : language === "ar" ? "صفحة" : language === "es" ? "Página" : "Page";
+    return `${label} ${pageMatch[2]} / ${pageMatch[3]}`;
+  }
+
+  const canonical = canonicalFor(normalized);
   if (!canonical) return value;
   if (language === "tr") return canonical;
   return phrases[canonical]?.[language] || canonical;

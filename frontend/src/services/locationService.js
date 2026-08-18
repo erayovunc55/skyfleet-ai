@@ -32,6 +32,15 @@ export async function getAirports(cityId) {
   return unwrapList(response);
 }
 
+export async function searchAirports(query, limit = 12) {
+  const q = String(query || "").trim();
+  if (q.length < 2) return [];
+  const response = await apiClient.get("/airports/search", {
+    params: { q, limit },
+  });
+  return unwrapList(response);
+}
+
 export async function getLocations(cityId, filters = {}) {
   if (!cityId) return [];
 

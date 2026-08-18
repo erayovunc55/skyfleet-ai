@@ -73,10 +73,6 @@ class SupplierPortalAssignmentController extends Controller
                     $vehicle,
                     $supplierUser
                 ): Transfer {
-                    /*
-                     * Aynı araç başka bir sürücüye
-                     * bağlıysa eski bağlantı kaldırılır.
-                     */
                     User::query()
                         ->where(
                             'role',
@@ -101,38 +97,18 @@ class SupplierPortalAssignmentController extends Controller
                                 null,
                         ]);
 
-                    /*
-                     * Seçilen araç sürücüye
-                     * sürekli araç olarak da bağlanır.
-                     */
                     $driver->update([
                         'vehicle_id' =>
                             $vehicle->id,
                     ]);
 
-                    $payload = [
+                    $transfer->update([
                         'driver_id' =>
                             $driver->id,
 
                         'assigned_vehicle_id' =>
                             $vehicle->id,
-                    ];
-
-                    /*
-                     * Sürücüye atanan bekleyen
-                     * transfer otomatik kabul edilir.
-                     */
-                    if (
-                        $transfer->status ===
-                        'pending'
-                    ) {
-                        $payload['status'] =
-                            'accepted';
-                    }
-
-                    $transfer->update(
-                        $payload
-                    );
+                    ]);
 
                     return $transfer
                         ->fresh()
@@ -152,7 +128,7 @@ class SupplierPortalAssignmentController extends Controller
 
         return response()->json([
             'message' =>
-                'Transfer sürücü ve araca atandı.',
+                'Transfer sürücü ve araca atandı. Sürücü kabulü bekleniyor.',
 
             'data' =>
                 $this->formatTransfer(
@@ -191,16 +167,19 @@ class SupplierPortalAssignmentController extends Controller
             ], 422);
         }
 
-        $transfer->update([
+        $payload = [
             'driver_id' =>
                 null,
 
             'assigned_vehicle_id' =>
                 null,
+        ];
 
-            'status' =>
-                'pending',
-        ]);
+        if ($transfer->status === 'accepted') {
+            $payload['status'] = 'pending';
+        }
+
+        $transfer->update($payload);
 
         $updatedTransfer =
             $transfer

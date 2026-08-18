@@ -2,12 +2,14 @@
 import DriverTransferCard from "../components/DriverTransferCard";
 import DriverTransferDetailPage from "./DriverTransferDetailPage";
 import transferService from "../services/transferService";
+import { useLanguage } from "../i18n";
 import {
   listenForForegroundMessages,
   registerForPushNotifications,
 } from "../services/firebaseMessagingService";
 
 export default function DriverHomePage({ user, onLogout }) {
+  const { t } = useLanguage();
   const storageKey = `skyfleet_driver_notifications_${user?.id || "driver"}`;
   const [transfers, setTransfers] = useState([]);
   const [dashboard, setDashboard] = useState({ assigned: 0, ongoing: 0, waiting: 0, completedToday: 0 });
@@ -171,13 +173,13 @@ export default function DriverHomePage({ user, onLogout }) {
   return (
     <main className="driver-home-page">
       <header>
-        <div><small>SKYFLEET AI</small><h1>Merhaba, {user?.name}</h1></div>
+        <div><small>SKYFLEET AI</small><h1>{t("Merhaba")}, {user?.name}</h1></div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button type="button" onClick={() => setActiveView("notifications")} style={{ position: "relative" }}>
-            🔔 Bildirimler
+            🔔 {t("Bildirimler")}
             {unreadCount > 0 && <span style={{ marginLeft: "7px", padding: "2px 7px", borderRadius: "999px", background: "#dc2626", color: "#fff", fontWeight: 800 }}>{unreadCount}</span>}
           </button>
-          <button type="button" onClick={onLogout}>Çıkış</button>
+          <button type="button" onClick={onLogout}>{t("Çıkış")}</button>
         </div>
       </header>
 

@@ -34,7 +34,45 @@ class LocationController extends Controller
 
     public function airports(City $city): JsonResponse
     {
-        $airports = $city->airports()->with(['terminals' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('name')])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $airports = $city->airports()->with(['country:id,name,iso2,iso3', 'city:id,country_id,name', 'terminals' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('name')])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        return response()->json(['data' => $airports]);
+    }
+
+    public function airportSearch(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:100'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:25'],
+        ]);
+
+        $q = trim($validated['q']);
+        $limit = (int) ($validated['limit'] ?? 12);
+
+        $airports = Airport::query()
+            ->with([
+                'country:id,name,iso2,iso3,default_timezone',
+                'city:id,country_id,name,timezone',
+                'terminals' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')->orderBy('name'),
+            ])
+            ->where('is_active', true)
+            ->where(function ($query) use ($q) {
+                $query
+                    ->where('name', 'like', "%{$q}%")
+                    ->orWhere('iata_code', 'like', "%{$q}%")
+                    ->orWhere('icao_code', 'like', "%{$q}%")
+                    ->orWhereHas('country', function ($countryQuery) use ($q) {
+                        $countryQuery
+                            ->where('name', 'like', "%{$q}%")
+                            ->orWhere('iso2', 'like', "%{$q}%")
+                            ->orWhere('iso3', 'like', "%{$q}%");
+                    })
+                    ->orWhereHas('city', fn ($cityQuery) => $cityQuery->where('name', 'like', "%{$q}%"));
+            })
+            ->orderByRaw('CASE WHEN iata_code = ? THEN 0 WHEN icao_code = ? THEN 1 WHEN name LIKE ? THEN 2 ELSE 3 END', [strtoupper($q), strtoupper($q), $q . '%'])
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
+
         return response()->json(['data' => $airports]);
     }
 

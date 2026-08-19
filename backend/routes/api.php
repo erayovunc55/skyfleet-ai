@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PassengerTrackingController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\SupplierAccountController;
 use App\Http\Controllers\Api\SupplierCoverageController;
+use App\Http\Controllers\Api\SupplierMatchController;
 use App\Http\Controllers\Api\SupplierPortalAssignmentController;
 use App\Http\Controllers\Api\SupplierPortalController;
 use App\Http\Controllers\Api\SupplierPortalDriverController;
@@ -48,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('dispatcher/transfers/bulk-assign-supplier', [DispatcherController::class, 'bulkAssignSupplier']);
         Route::patch('dispatcher/transfers/{transfer}/assign', [DispatcherController::class, 'assign']);
         Route::get('dispatcher/transfers/{transfer}/route', [TransferRouteController::class, 'show']);
+        Route::get('dispatcher/transfers/{transfer}/supplier-matches', [SupplierMatchController::class, 'index']);
         Route::post('suppliers/with-account', [SupplierAccountController::class, 'store']);
         Route::get('suppliers', [SupplierController::class, 'index']);
         Route::post('suppliers', [SupplierController::class, 'store']);

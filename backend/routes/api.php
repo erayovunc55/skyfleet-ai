@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\DriverLocationController;
 use App\Http\Controllers\Api\DriverPushTokenController;
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\LocationPointController;
 use App\Http\Controllers\Api\OperationalAlertController;
 use App\Http\Controllers\Api\PassengerTrackingController;
 use App\Http\Controllers\Api\SupplierController;
@@ -63,6 +64,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('locations', [LocationController::class, 'store']);
         Route::patch('locations/{location}', [LocationController::class, 'update']);
         Route::post('locations/{location}/points', [LocationController::class, 'storePoint']);
+        Route::patch('locations/{location}/points/{point}', [LocationPointController::class, 'update']);
+        Route::delete('locations/{location}/points/{point}', [LocationPointController::class, 'destroy']);
     });
 
     Route::prefix('supplier-portal')->group(function (): void {

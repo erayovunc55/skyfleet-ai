@@ -49,6 +49,7 @@ class Supplier extends Model
     public function transfers(): HasMany { return $this->hasMany(Transfer::class, 'supplier_id'); }
     public function branches(): HasMany { return $this->hasMany(SupplierBranch::class); }
     public function documents(): HasMany { return $this->hasMany(SupplierDocument::class); }
+    public function coverages(): HasMany { return $this->hasMany(SupplierCoverage::class); }
     public function approvalLogs(): MorphMany { return $this->morphMany(ApprovalLog::class, 'approvable')->latest(); }
 
     public function isApproved(): bool { return $this->status === self::STATUS_APPROVED; }

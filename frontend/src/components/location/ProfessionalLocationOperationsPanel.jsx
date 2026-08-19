@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
-import { createLocationPoint, getLocation, updateLocation } from "../../services/locationService";
+import {
+  createLocationPoint,
+  deleteLocationPoint,
+  getLocation,
+  updateLocation,
+  updateLocationPoint,
+} from "../../services/locationService";
 import LocationOperationsMap from "./LocationOperationsMap";
 import "../../styles/modules/location-operations-panel.css";
 
@@ -13,10 +19,10 @@ const COPY = {
     terminals:"Airport Terminals", addTerminal:"Add Terminal", terminalName:"Terminal name", terminalCode:"Code", terminalType:"Type", saveTerminals:"Save Terminals",
     pickupPoints:"Pickup Points", dropoffPoints:"Dropoff Points", meetGreet:"Meet & Greet", points:"Operational Points", addPoint:"Add Point",
     pointName:"Point name", pointType:"Point type", terminal:"Terminal", noTerminal:"No terminal", latitude:"Latitude", longitude:"Longitude", radius:"Geofence radius (m)",
-    instructions:"Driver / meeting instructions", pickup:"Pickup", dropoff:"Dropoff", requiresMeet:"Meet & greet required", savePoint:"Save Point", cancel:"Cancel",
-    locationType:"Location Type", scope:"Country / City", timezone:"Timezone", coordinates:"Coordinates", geofence:"Location Geofence", address:"Address",
+    instructions:"Driver / meeting instructions", pickup:"Pickup", dropoff:"Dropoff", requiresMeet:"Meet & greet required", savePoint:"Save Point", updatePoint:"Update Point", cancel:"Cancel",
+    edit:"Edit", remove:"Delete", confirmDelete:"Delete this operational point?", locationType:"Location Type", scope:"Country / City", timezone:"Timezone", coordinates:"Coordinates", geofence:"Location Geofence", address:"Address",
     noTerminals:"No terminals registered yet.", noPoints:"No operational pickup/dropoff points registered yet.", active:"Active", inactive:"Inactive",
-    terminalSaved:"Terminal structure saved.", pointSaved:"Operational point saved.", meters:"m", passenger:"Passenger", map:"Location Map & Geofence", mapHint:"Airport center, operational points and geofence coverage",
+    terminalSaved:"Terminal structure saved.", pointSaved:"Operational point saved.", pointUpdated:"Operational point updated.", pointDeleted:"Operational point deleted.", meters:"m", passenger:"Passenger", map:"Location Map & Geofence", mapHint:"Airport center, operational points and geofence coverage",
     mapPicker:"Map selection active", mapPickerHint:"Click anywhere on the map above to fill latitude and longitude automatically.", selectedCoordinates:"Selected coordinates",
   },
   tr: {
@@ -24,10 +30,10 @@ const COPY = {
     terminals:"Havalimanı Terminalleri", addTerminal:"Terminal Ekle", terminalName:"Terminal adı", terminalCode:"Kod", terminalType:"Tür", saveTerminals:"Terminalleri Kaydet",
     pickupPoints:"Pickup Noktaları", dropoffPoints:"Dropoff Noktaları", meetGreet:"Karşılama", points:"Operasyon Noktaları", addPoint:"Nokta Ekle",
     pointName:"Nokta adı", pointType:"Nokta türü", terminal:"Terminal", noTerminal:"Terminal yok", latitude:"Enlem", longitude:"Boylam", radius:"Geofence yarıçapı (m)",
-    instructions:"Sürücü / karşılama talimatı", pickup:"Pickup", dropoff:"Dropoff", requiresMeet:"Karşılama gerekli", savePoint:"Noktayı Kaydet", cancel:"İptal",
-    locationType:"Lokasyon Türü", scope:"Ülke / Şehir", timezone:"Saat Dilimi", coordinates:"Koordinatlar", geofence:"Lokasyon Geofence", address:"Adres",
+    instructions:"Sürücü / karşılama talimatı", pickup:"Pickup", dropoff:"Dropoff", requiresMeet:"Karşılama gerekli", savePoint:"Noktayı Kaydet", updatePoint:"Noktayı Güncelle", cancel:"İptal",
+    edit:"Düzenle", remove:"Sil", confirmDelete:"Bu operasyon noktası silinsin mi?", locationType:"Lokasyon Türü", scope:"Ülke / Şehir", timezone:"Saat Dilimi", coordinates:"Koordinatlar", geofence:"Lokasyon Geofence", address:"Adres",
     noTerminals:"Henüz terminal kaydı yok.", noPoints:"Henüz operasyon pickup/dropoff noktası yok.", active:"Aktif", inactive:"Pasif",
-    terminalSaved:"Terminal yapısı kaydedildi.", pointSaved:"Operasyon noktası kaydedildi.", meters:"m", passenger:"Yolcu", map:"Lokasyon Haritası & Geofence", mapHint:"Havalimanı merkezi, operasyon noktaları ve geofence kapsamı",
+    terminalSaved:"Terminal yapısı kaydedildi.", pointSaved:"Operasyon noktası kaydedildi.", pointUpdated:"Operasyon noktası güncellendi.", pointDeleted:"Operasyon noktası silindi.", meters:"m", passenger:"Yolcu", map:"Lokasyon Haritası & Geofence", mapHint:"Havalimanı merkezi, operasyon noktaları ve geofence kapsamı",
     mapPicker:"Harita seçimi aktif", mapPickerHint:"Enlem ve boylamı otomatik doldurmak için yukarıdaki haritada istediğiniz noktaya tıklayın.", selectedCoordinates:"Seçilen koordinatlar",
   },
 };
@@ -39,11 +45,28 @@ const emptyPoint = {
   is_pickup_allowed:true, is_dropoff_allowed:false, requires_meet_and_greet:false,
 };
 
+function pointToForm(point) {
+  return {
+    name: point?.name || "",
+    code: point?.code || "",
+    point_type: point?.point_type || "meeting_point",
+    airport_terminal_id: point?.airport_terminal_id ? String(point.airport_terminal_id) : "",
+    instructions: point?.instructions || "",
+    latitude: point?.latitude ?? "",
+    longitude: point?.longitude ?? "",
+    geofence_radius_meters: point?.geofence_radius_meters ?? "",
+    is_pickup_allowed: Boolean(point?.is_pickup_allowed),
+    is_dropoff_allowed: Boolean(point?.is_dropoff_allowed),
+    requires_meet_and_greet: Boolean(point?.requires_meet_and_greet),
+  };
+}
+
 export default function ProfessionalLocationOperationsPanel({ initialLocation, language="en", onClose, onChanged }) {
   const text = COPY[language] || COPY.en;
   const [location, setLocation] = useState(initialLocation);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [pointOpen, setPointOpen] = useState(false);
+  const [editingPointId, setEditingPointId] = useState(null);
   const [terminals, setTerminals] = useState(() => (initialLocation.airport?.terminals || []).map(t => ({name:t.name, code:t.code||"", type:t.type||"mixed"})));
   const [pointForm, setPointForm] = useState(emptyPoint);
   const [busy, setBusy] = useState(false);
@@ -65,6 +88,32 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
     onChanged?.(fresh);
   }
 
+  function resetPointEditor() {
+    setPointOpen(false);
+    setEditingPointId(null);
+    setPointForm(emptyPoint);
+  }
+
+  function togglePointEditor() {
+    if (pointOpen) {
+      resetPointEditor();
+      return;
+    }
+    setEditingPointId(null);
+    setPointForm(emptyPoint);
+    setPointOpen(true);
+  }
+
+  function editPoint(point) {
+    setEditingPointId(point.id);
+    setPointForm(pointToForm(point));
+    setPointOpen(true);
+  }
+
+  function selectPointOnMap({ latitude, longitude }) {
+    setPointForm(current => ({ ...current, latitude, longitude }));
+  }
+
   function addTerminal() {
     setTerminals(v=>[...v,{name:"",code:"",type:"mixed"}]);
     setTerminalOpen(true);
@@ -72,18 +121,6 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
 
   function patchTerminal(index, key, value) {
     setTerminals(v=>v.map((item,i)=>i===index?{...item,[key]:value}:item));
-  }
-
-  function togglePointEditor() {
-    setPointOpen(current => {
-      const next = !current;
-      if (!next) setPointForm(emptyPoint);
-      return next;
-    });
-  }
-
-  function selectPointOnMap({ latitude, longitude }) {
-    setPointForm(current => ({ ...current, latitude, longitude }));
   }
 
   async function saveTerminals() {
@@ -114,19 +151,39 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
     } finally { setBusy(false); }
   }
 
+  function pointPayload() {
+    return {
+      ...pointForm,
+      airport_terminal_id: pointForm.airport_terminal_id ? Number(pointForm.airport_terminal_id) : null,
+      latitude: pointForm.latitude === "" ? null : pointForm.latitude,
+      longitude: pointForm.longitude === "" ? null : pointForm.longitude,
+      geofence_radius_meters: pointForm.geofence_radius_meters === "" ? null : pointForm.geofence_radius_meters,
+    };
+  }
+
   async function savePoint(event) {
     event.preventDefault(); setBusy(true); setNotice("");
     try {
-      await createLocationPoint(location.id, {
-        ...pointForm,
-        airport_terminal_id: pointForm.airport_terminal_id ? Number(pointForm.airport_terminal_id) : null,
-        latitude: pointForm.latitude || null,
-        longitude: pointForm.longitude || null,
-        geofence_radius_meters: pointForm.geofence_radius_meters || null,
-      });
-      setPointForm(emptyPoint);
-      setPointOpen(false);
-      await reload(text.pointSaved);
+      if (editingPointId) {
+        await updateLocationPoint(location.id, editingPointId, pointPayload());
+        await reload(text.pointUpdated);
+      } else {
+        await createLocationPoint(location.id, pointPayload());
+        await reload(text.pointSaved);
+      }
+      resetPointEditor();
+    } catch (error) {
+      setNotice(error?.response?.data?.message || error?.message || "Operation failed.");
+    } finally { setBusy(false); }
+  }
+
+  async function removePoint(point) {
+    if (!window.confirm(text.confirmDelete)) return;
+    setBusy(true); setNotice("");
+    try {
+      await deleteLocationPoint(location.id, point.id);
+      if (editingPointId === point.id) resetPointEditor();
+      await reload(text.pointDeleted);
     } catch (error) {
       setNotice(error?.response?.data?.message || error?.message || "Operation failed.");
     } finally { setBusy(false); }
@@ -164,13 +221,7 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
 
       <section className="lop-section lop-map-section">
         <div className="lop-section-title"><div><span>{text.operationalReadiness}</span><h3>{text.map}</h3><p>{text.mapHint}</p></div></div>
-        <LocationOperationsMap
-          location={location}
-          language={language}
-          selectionEnabled={pointOpen}
-          draftPoint={pointForm}
-          onSelect={selectPointOnMap}
-        />
+        <LocationOperationsMap location={location} language={language} selectionEnabled={pointOpen} draftPoint={pointForm} onSelect={selectPointOnMap}/>
         {pointOpen && <div className="lop-map-selection-status"><strong>⌖ {text.mapPicker}</strong><span>{text.mapPickerHint}</span>{pointForm.latitude && pointForm.longitude && <b>{text.selectedCoordinates}: {pointForm.latitude}, {pointForm.longitude}</b>}</div>}
       </section>
 
@@ -199,12 +250,12 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
           <input type="number" min="0" placeholder={text.radius} value={pointForm.geofence_radius_meters} onChange={e=>setPointForm(v=>({...v,geofence_radius_meters:e.target.value}))}/>
           <textarea placeholder={text.instructions} value={pointForm.instructions} onChange={e=>setPointForm(v=>({...v,instructions:e.target.value}))}/>
           <div className="lop-checks"><label><input type="checkbox" checked={pointForm.is_pickup_allowed} onChange={e=>setPointForm(v=>({...v,is_pickup_allowed:e.target.checked}))}/>{text.pickup}</label><label><input type="checkbox" checked={pointForm.is_dropoff_allowed} onChange={e=>setPointForm(v=>({...v,is_dropoff_allowed:e.target.checked}))}/>{text.dropoff}</label><label><input type="checkbox" checked={pointForm.requires_meet_and_greet} onChange={e=>setPointForm(v=>({...v,requires_meet_and_greet:e.target.checked}))}/>{text.requiresMeet}</label></div>
-          <div className="lop-editor-actions"><button type="button" onClick={()=>{setPointOpen(false);setPointForm(emptyPoint);}}>{text.cancel}</button><button className="primary" disabled={busy}>{text.savePoint}</button></div>
+          <div className="lop-editor-actions"><button type="button" onClick={resetPointEditor}>{text.cancel}</button><button className="primary" disabled={busy}>{editingPointId?text.updatePoint:text.savePoint}</button></div>
         </form>}
         {points.length ? <div className="lop-point-list">{points.map(point=><article key={point.id}>
           <div className="lop-point-icon">{point.is_pickup_allowed?"P":point.is_dropoff_allowed?"D":"•"}</div>
           <div className="lop-point-main"><strong>{point.name}</strong><span>{point.point_type?.replaceAll?.("_"," ") || point.point_type}</span><small>{point.airport_terminal?.name || text.noTerminal}</small>{point.instructions && <p>{point.instructions}</p>}</div>
-          <div className="lop-point-meta">{point.is_pickup_allowed&&<b>Pickup</b>}{point.is_dropoff_allowed&&<b>Dropoff</b>}{point.requires_meet_and_greet&&<b>M&G</b>}{point.geofence_radius_meters&&<span>{point.geofence_radius_meters} m</span>}</div>
+          <div className="lop-point-side"><div className="lop-point-meta">{point.is_pickup_allowed&&<b>Pickup</b>}{point.is_dropoff_allowed&&<b>Dropoff</b>}{point.requires_meet_and_greet&&<b>M&G</b>}{point.geofence_radius_meters&&<span>{point.geofence_radius_meters} m</span>}</div><div className="lop-point-actions"><button type="button" disabled={busy} onClick={()=>editPoint(point)}>{text.edit}</button><button type="button" className="danger" disabled={busy} onClick={()=>removePoint(point)}>{text.remove}</button></div></div>
         </article>)}</div> : !pointOpen && <div className="lop-empty">{text.noPoints}</div>}
       </section>
     </aside>

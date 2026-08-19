@@ -6,6 +6,7 @@ import {
   Popup,
   TileLayer,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -21,6 +22,8 @@ const COPY = {
     geofence: "Geofence",
     unpositioned: "points are not positioned on the map yet.",
     invalid: "points have invalid or out-of-area coordinates.",
+    choose: "Click the map to place the new operational point.",
+    draft: "New point preview",
   },
   tr: {
     center: "Lokasyon merkezi",
@@ -30,13 +33,22 @@ const COPY = {
     geofence: "Geofence",
     unpositioned: "nokta henüz haritada konumlandırılmadı.",
     invalid: "noktanın koordinatı geçersiz veya operasyon bölgesinin dışında.",
+    choose: "Yeni operasyon noktasını yerleştirmek için haritaya tıklayın.",
+    draft: "Yeni nokta önizlemesi",
   },
 };
 
-export default function LocationOperationsMap({ location, language = "en" }) {
+export default function LocationOperationsMap({
+  location,
+  language = "en",
+  selectionEnabled = false,
+  draftPoint = null,
+  onSelect,
+}) {
   const text = COPY[language] || COPY.en;
   const locationPosition = coordinatePair(location?.latitude, location?.longitude);
   const points = Array.isArray(location?.points) ? location.points : [];
+  const draftPosition = coordinatePair(draftPoint?.latitude, draftPoint?.longitude);
 
   const pointCoordinates = useMemo(
     () => points.map(point => ({ point, position: coordinatePair(point.latitude, point.longitude) })),
@@ -56,14 +68,15 @@ export default function LocationOperationsMap({ location, language = "en" }) {
   const invalidCount = pointCoordinates.filter(item => item.position && !positionedPoints.includes(item)).length;
 
   const positions = useMemo(
-    () => [locationPosition, ...positionedPoints.map(item => item.position)].filter(Boolean),
-    [locationPosition, positionedPoints],
+    () => [locationPosition, ...positionedPoints.map(item => item.position), draftPosition].filter(Boolean),
+    [locationPosition, positionedPoints, draftPosition],
   );
 
-  const center = locationPosition || positionedPoints[0]?.position || DEFAULT_CENTER;
+  const center = draftPosition || locationPosition || positionedPoints[0]?.position || DEFAULT_CENTER;
 
   return (
-    <div className="lop-map-shell">
+    <div className={`lop-map-shell${selectionEnabled ? " is-selecting" : ""}`}>
+      {selectionEnabled && <div className="lop-map-pick-hint">⌖ {text.choose}</div>}
       <MapContainer center={center} zoom={14} scrollWheelZoom className="lop-map">
         <TileLayer
           attribution="&copy; OpenStreetMap contributors"
@@ -71,6 +84,7 @@ export default function LocationOperationsMap({ location, language = "en" }) {
         />
 
         <MapViewport positions={positions} center={center} />
+        {selectionEnabled && <MapPointSelector onSelect={onSelect} />}
 
         {locationPosition && (
           <>
@@ -94,6 +108,21 @@ export default function LocationOperationsMap({ location, language = "en" }) {
         {positionedPoints.map(({ point, position }) => (
           <PointLayer key={point.id} point={point} position={position} text={text} />
         ))}
+
+        {selectionEnabled && draftPosition && (
+          <>
+            {positiveNumber(draftPoint?.geofence_radius_meters) && (
+              <Circle
+                center={draftPosition}
+                radius={Number(draftPoint.geofence_radius_meters)}
+                pathOptions={{ weight: 3, fillOpacity: 0.16, dashArray: "8 6" }}
+              />
+            )}
+            <CircleMarker center={draftPosition} radius={8} pathOptions={{ weight: 3, fillOpacity: 0.95 }}>
+              <Popup><strong>{draftPoint?.name || text.draft}</strong><br />{text.draft}</Popup>
+            </CircleMarker>
+          </>
+        )}
       </MapContainer>
 
       <div className="lop-map-legend">
@@ -105,6 +134,18 @@ export default function LocationOperationsMap({ location, language = "en" }) {
       </div>
     </div>
   );
+}
+
+function MapPointSelector({ onSelect }) {
+  useMapEvents({
+    click(event) {
+      onSelect?.({
+        latitude: event.latlng.lat.toFixed(7),
+        longitude: event.latlng.lng.toFixed(7),
+      });
+    },
+  });
+  return null;
 }
 
 function PointLayer({ point, position, text }) {

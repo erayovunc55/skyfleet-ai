@@ -36,6 +36,18 @@ function sanitizeLocationPayload(payload = {}) {
   };
 }
 
+function locationParams(filters = {}) {
+  const params = {};
+  if (filters.countryId) params.country_id = filters.countryId;
+  if (filters.cityId) params.city_id = filters.cityId;
+  if (filters.type) params.type = filters.type;
+  if (filters.locationTypeId) params.location_type_id = filters.locationTypeId;
+  if (filters.search) params.search = filters.search;
+  if (filters.pickupOnly) params.pickup_only = 1;
+  if (filters.dropoffOnly) params.dropoff_only = 1;
+  return params;
+}
+
 export async function getLocationTypes() {
   const response = await apiClient.get("/location-types");
   return unwrapList(response);
@@ -67,17 +79,18 @@ export async function searchAirports(query, limit = 12) {
   return unwrapList(response);
 }
 
+export async function getAllLocations(filters = {}) {
+  const response = await apiClient.get("/locations", {
+    params: locationParams(filters),
+  });
+  return unwrapList(response);
+}
+
 export async function getLocations(cityId, filters = {}) {
   if (!cityId) return [];
-
-  const params = {};
-  if (filters.type) params.type = filters.type;
-  if (filters.locationTypeId) params.location_type_id = filters.locationTypeId;
-  if (filters.search) params.search = filters.search;
-  if (filters.pickupOnly) params.pickup_only = 1;
-  if (filters.dropoffOnly) params.dropoff_only = 1;
-
-  const response = await apiClient.get(`/cities/${cityId}/locations`, { params });
+  const response = await apiClient.get(`/cities/${cityId}/locations`, {
+    params: locationParams(filters),
+  });
   return unwrapList(response);
 }
 

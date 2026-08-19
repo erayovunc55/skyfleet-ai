@@ -108,6 +108,18 @@ export async function createLocationPoint(locationId, payload) {
   return unwrapItem(response);
 }
 
+export async function updateLocationPoint(locationId, pointId, payload) {
+  const response = await apiClient.patch(
+    `/locations/${locationId}/points/${pointId}`,
+    payload
+  );
+  return unwrapItem(response);
+}
+
+export async function deleteLocationPoint(locationId, pointId) {
+  await apiClient.delete(`/locations/${locationId}/points/${pointId}`);
+}
+
 export async function getLocationPoints(locationId, filters = {}) {
   if (!locationId) return [];
 

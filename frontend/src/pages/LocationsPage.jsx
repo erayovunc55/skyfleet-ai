@@ -11,6 +11,7 @@ import {
   getLocationTypes,
 } from "../services/locationService";
 import "../styles/modules/locations-page.css";
+import "../styles/modules/airport-operations.css";
 
 const PAGE_SIZES = [20, 50, 100];
 

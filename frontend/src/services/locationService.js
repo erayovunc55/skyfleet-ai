@@ -10,6 +10,32 @@ function unwrapItem(response) {
   return response?.data?.data ?? null;
 }
 
+function sanitizeLocationPayload(payload = {}) {
+  const allowedTerminalTypes = new Set([
+    "domestic",
+    "international",
+    "mixed",
+  ]);
+
+  const terminals = Array.isArray(payload.terminals)
+    ? payload.terminals
+        .map((terminal) => ({
+          ...terminal,
+          name: String(terminal?.name || "").trim(),
+          code: String(terminal?.code || "").trim() || null,
+          type: allowedTerminalTypes.has(terminal?.type)
+            ? terminal.type
+            : "mixed",
+        }))
+        .filter((terminal) => terminal.name.length > 0)
+    : [];
+
+  return {
+    ...payload,
+    terminals,
+  };
+}
+
 export async function getLocationTypes() {
   const response = await apiClient.get("/location-types");
   return unwrapList(response);
@@ -62,12 +88,18 @@ export async function getLocation(locationId) {
 }
 
 export async function createLocation(payload) {
-  const response = await apiClient.post("/locations", payload);
+  const response = await apiClient.post(
+    "/locations",
+    sanitizeLocationPayload(payload)
+  );
   return unwrapItem(response);
 }
 
 export async function updateLocation(locationId, payload) {
-  const response = await apiClient.patch(`/locations/${locationId}`, payload);
+  const response = await apiClient.patch(
+    `/locations/${locationId}`,
+    sanitizeLocationPayload(payload)
+  );
   return unwrapItem(response);
 }
 

@@ -17,6 +17,7 @@ const COPY = {
     locationType:"Location Type", scope:"Country / City", timezone:"Timezone", coordinates:"Coordinates", geofence:"Location Geofence", address:"Address",
     noTerminals:"No terminals registered yet.", noPoints:"No operational pickup/dropoff points registered yet.", active:"Active", inactive:"Inactive",
     terminalSaved:"Terminal structure saved.", pointSaved:"Operational point saved.", meters:"m", passenger:"Passenger", map:"Location Map & Geofence", mapHint:"Airport center, operational points and geofence coverage",
+    mapPicker:"Map selection active", mapPickerHint:"Click anywhere on the map above to fill latitude and longitude automatically.", selectedCoordinates:"Selected coordinates",
   },
   tr: {
     title:"Lokasyon Operasyon Merkezi", close:"Kapat", overview:"Genel Bakış", airportIdentity:"Havalimanı Kimliği", operationalReadiness:"Operasyon Hazırlığı",
@@ -27,6 +28,7 @@ const COPY = {
     locationType:"Lokasyon Türü", scope:"Ülke / Şehir", timezone:"Saat Dilimi", coordinates:"Koordinatlar", geofence:"Lokasyon Geofence", address:"Adres",
     noTerminals:"Henüz terminal kaydı yok.", noPoints:"Henüz operasyon pickup/dropoff noktası yok.", active:"Aktif", inactive:"Pasif",
     terminalSaved:"Terminal yapısı kaydedildi.", pointSaved:"Operasyon noktası kaydedildi.", meters:"m", passenger:"Yolcu", map:"Lokasyon Haritası & Geofence", mapHint:"Havalimanı merkezi, operasyon noktaları ve geofence kapsamı",
+    mapPicker:"Harita seçimi aktif", mapPickerHint:"Enlem ve boylamı otomatik doldurmak için yukarıdaki haritada istediğiniz noktaya tıklayın.", selectedCoordinates:"Seçilen koordinatlar",
   },
 };
 COPY.ar = {...COPY.en,title:"مركز عمليات الموقع",close:"إغلاق",terminals:"محطات المطار",addTerminal:"إضافة محطة",points:"نقاط التشغيل",addPoint:"إضافة نقطة"};
@@ -70,6 +72,18 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
 
   function patchTerminal(index, key, value) {
     setTerminals(v=>v.map((item,i)=>i===index?{...item,[key]:value}:item));
+  }
+
+  function togglePointEditor() {
+    setPointOpen(current => {
+      const next = !current;
+      if (!next) setPointForm(emptyPoint);
+      return next;
+    });
+  }
+
+  function selectPointOnMap({ latitude, longitude }) {
+    setPointForm(current => ({ ...current, latitude, longitude }));
   }
 
   async function saveTerminals() {
@@ -150,7 +164,14 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
 
       <section className="lop-section lop-map-section">
         <div className="lop-section-title"><div><span>{text.operationalReadiness}</span><h3>{text.map}</h3><p>{text.mapHint}</p></div></div>
-        <LocationOperationsMap location={location} language={language}/>
+        <LocationOperationsMap
+          location={location}
+          language={language}
+          selectionEnabled={pointOpen}
+          draftPoint={pointForm}
+          onSelect={selectPointOnMap}
+        />
+        {pointOpen && <div className="lop-map-selection-status"><strong>⌖ {text.mapPicker}</strong><span>{text.mapPickerHint}</span>{pointForm.latitude && pointForm.longitude && <b>{text.selectedCoordinates}: {pointForm.latitude}, {pointForm.longitude}</b>}</div>}
       </section>
 
       {airport && <section className="lop-section">
@@ -168,7 +189,7 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
       </section>}
 
       <section className="lop-section">
-        <div className="lop-section-title"><div><span>{text.operationalReadiness}</span><h3>{text.points}</h3></div><button onClick={()=>setPointOpen(v=>!v)}>+ {text.addPoint}</button></div>
+        <div className="lop-section-title"><div><span>{text.operationalReadiness}</span><h3>{text.points}</h3></div><button onClick={togglePointEditor}>{pointOpen?`× ${text.cancel}`:`+ ${text.addPoint}`}</button></div>
         {pointOpen && <form className="lop-point-form" onSubmit={savePoint}>
           <input required placeholder={text.pointName} value={pointForm.name} onChange={e=>setPointForm(v=>({...v,name:e.target.value}))}/>
           <select value={pointForm.point_type} onChange={e=>setPointForm(v=>({...v,point_type:e.target.value}))}>{POINT_TYPES.map(type=><option key={type} value={type}>{type.replaceAll("_"," ")}</option>)}</select>
@@ -178,7 +199,7 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
           <input type="number" min="0" placeholder={text.radius} value={pointForm.geofence_radius_meters} onChange={e=>setPointForm(v=>({...v,geofence_radius_meters:e.target.value}))}/>
           <textarea placeholder={text.instructions} value={pointForm.instructions} onChange={e=>setPointForm(v=>({...v,instructions:e.target.value}))}/>
           <div className="lop-checks"><label><input type="checkbox" checked={pointForm.is_pickup_allowed} onChange={e=>setPointForm(v=>({...v,is_pickup_allowed:e.target.checked}))}/>{text.pickup}</label><label><input type="checkbox" checked={pointForm.is_dropoff_allowed} onChange={e=>setPointForm(v=>({...v,is_dropoff_allowed:e.target.checked}))}/>{text.dropoff}</label><label><input type="checkbox" checked={pointForm.requires_meet_and_greet} onChange={e=>setPointForm(v=>({...v,requires_meet_and_greet:e.target.checked}))}/>{text.requiresMeet}</label></div>
-          <div className="lop-editor-actions"><button type="button" onClick={()=>setPointOpen(false)}>{text.cancel}</button><button className="primary" disabled={busy}>{text.savePoint}</button></div>
+          <div className="lop-editor-actions"><button type="button" onClick={()=>{setPointOpen(false);setPointForm(emptyPoint);}}>{text.cancel}</button><button className="primary" disabled={busy}>{text.savePoint}</button></div>
         </form>}
         {points.length ? <div className="lop-point-list">{points.map(point=><article key={point.id}>
           <div className="lop-point-icon">{point.is_pickup_allowed?"P":point.is_dropoff_allowed?"D":"•"}</div>

@@ -24,9 +24,40 @@ class GlobalLocationController extends Controller
         $query = Location::query()
             ->with([
                 'type',
-                'airport',
                 'country:id,name,iso2,iso3',
                 'city:id,country_id,name',
+                'airport' => fn ($airport) => $airport
+                    ->select([
+                        'id',
+                        'country_id',
+                        'city_id',
+                        'name',
+                        'iata_code',
+                        'icao_code',
+                        'timezone',
+                        'latitude',
+                        'longitude',
+                    ])
+                    ->withCount([
+                        'terminals as terminals_count' => fn ($terminal) => $terminal->where('is_active', true),
+                    ]),
+            ])
+            ->withCount([
+                'points as pickup_points_count' => fn ($point) => $point
+                    ->where('is_active', true)
+                    ->where('is_pickup_allowed', true),
+                'points as dropoff_points_count' => fn ($point) => $point
+                    ->where('is_active', true)
+                    ->where('is_dropoff_allowed', true),
+                'points as meet_greet_points_count' => fn ($point) => $point
+                    ->where('is_active', true)
+                    ->where('requires_meet_and_greet', true),
+                'points as mapped_points_count' => fn ($point) => $point
+                    ->where('is_active', true)
+                    ->whereNotNull('latitude')
+                    ->whereNotNull('longitude'),
+                'points as operational_points_count' => fn ($point) => $point
+                    ->where('is_active', true),
             ])
             ->where('is_active', true)
             ->where('is_public', true);
@@ -54,17 +85,24 @@ class GlobalLocationController extends Controller
                     ->orWhere('native_name', 'like', "%{$search}%")
                     ->orWhere('code', 'like', "%{$search}%")
                     ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhereHas('airport', fn ($airport) => $airport
+                        ->where('iata_code', 'like', "%{$search}%")
+                        ->orWhere('icao_code', 'like', "%{$search}%"))
                     ->orWhereHas('country', fn ($country) => $country->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('city', fn ($city) => $city->where('name', 'like', "%{$search}%"));
             });
         }
 
         if (filter_var($validated['pickup_only'] ?? false, FILTER_VALIDATE_BOOL)) {
-            $query->whereHas('points', fn ($q) => $q->where('is_active', true)->where('is_pickup_allowed', true));
+            $query->whereHas('points', fn ($q) => $q
+                ->where('is_active', true)
+                ->where('is_pickup_allowed', true));
         }
 
         if (filter_var($validated['dropoff_only'] ?? false, FILTER_VALIDATE_BOOL)) {
-            $query->whereHas('points', fn ($q) => $q->where('is_active', true)->where('is_dropoff_allowed', true));
+            $query->whereHas('points', fn ($q) => $q
+                ->where('is_active', true)
+                ->where('is_dropoff_allowed', true));
         }
 
         return response()->json([

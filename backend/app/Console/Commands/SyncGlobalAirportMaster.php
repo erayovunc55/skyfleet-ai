@@ -8,6 +8,7 @@ use App\Models\Country;
 use DateTimeZone;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class SyncGlobalAirportMaster extends Command
@@ -20,12 +21,18 @@ class SyncGlobalAirportMaster extends Command
     private const AIRPORTS_URL = 'https://davidmegginson.github.io/ourairports-data/airports.csv';
 
     private array $timezoneCache = [];
+    private array $cityIndex = [];
 
     public function handle(): int
     {
         $this->info('Downloading global country master...');
         $countryCsv = $this->download(self::COUNTRIES_URL);
         $countryMap = $this->syncCountries($countryCsv);
+
+        $mergedCities = $this->repairDuplicateCityAliases();
+        if ($mergedCities > 0) {
+            $this->info("Merged {$mergedCities} duplicate city alias record(s).");
+        }
 
         $this->info('Downloading global airport master...');
         $airportCsv = $this->download(self::AIRPORTS_URL);
@@ -127,17 +134,10 @@ class SyncGlobalAirportMaster extends Command
 
             $country = $countryMap[$countryCode];
             $cityName = $municipality !== '' ? $municipality : $name;
-            $cityKey = $country->id . '|' . mb_strtolower($cityName);
+            $cityKey = $country->id . '|' . $this->normalizeCityName($cityName);
 
             if (!isset($cityCache[$cityKey])) {
-                $cityCache[$cityKey] = City::firstOrCreate(
-                    ['country_id' => $country->id, 'name' => $cityName],
-                    [
-                        'is_active' => true,
-                        'sort_order' => 0,
-                        'metadata' => ['source' => 'ourairports'],
-                    ]
-                );
+                $cityCache[$cityKey] = $this->findOrCreateCanonicalCity($country, $cityName);
             }
 
             $city = $cityCache[$cityKey];
@@ -201,6 +201,103 @@ class SyncGlobalAirportMaster extends Command
         return [$created, $updated, $skipped];
     }
 
+    private function findOrCreateCanonicalCity(Country $country, string $cityName): City
+    {
+        $countryId = $country->id;
+        $normalized = $this->normalizeCityName($cityName);
+
+        if (!isset($this->cityIndex[$countryId])) {
+            $this->cityIndex[$countryId] = [];
+            foreach (City::query()->where('country_id', $countryId)->orderBy('id')->get() as $city) {
+                $this->cityIndex[$countryId][$this->normalizeCityName($city->name)] ??= $city;
+                if ($city->native_name) {
+                    $this->cityIndex[$countryId][$this->normalizeCityName($city->native_name)] ??= $city;
+                }
+            }
+        }
+
+        if (isset($this->cityIndex[$countryId][$normalized])) {
+            $city = $this->cityIndex[$countryId][$normalized];
+            if (!$city->is_active) {
+                $city->update(['is_active' => true]);
+            }
+            return $city;
+        }
+
+        $city = City::create([
+            'country_id' => $countryId,
+            'name' => $cityName,
+            'is_active' => true,
+            'sort_order' => 0,
+            'metadata' => ['source' => 'ourairports'],
+        ]);
+
+        $this->cityIndex[$countryId][$normalized] = $city;
+        return $city;
+    }
+
+    private function repairDuplicateCityAliases(): int
+    {
+        $merged = 0;
+
+        Country::query()->select('id')->orderBy('id')->chunkById(100, function ($countries) use (&$merged) {
+            foreach ($countries as $country) {
+                $groups = City::query()
+                    ->where('country_id', $country->id)
+                    ->withCount(['locations', 'airports'])
+                    ->orderBy('id')
+                    ->get()
+                    ->groupBy(fn (City $city) => $this->normalizeCityName($city->name));
+
+                foreach ($groups as $cities) {
+                    if ($cities->count() < 2) {
+                        continue;
+                    }
+
+                    $canonical = $cities
+                        ->sortByDesc(fn (City $city) => ($city->locations_count * 1000000) + ($city->airports_count * 1000) - $city->id)
+                        ->first();
+
+                    foreach ($cities as $duplicate) {
+                        if ($duplicate->id === $canonical->id) {
+                            continue;
+                        }
+
+                        $duplicate->airports()->update(['city_id' => $canonical->id]);
+                        $duplicate->locations()->update(['city_id' => $canonical->id]);
+                        $duplicate->operatingZones()->update(['city_id' => $canonical->id]);
+
+                        if ((!$canonical->timezone || $canonical->timezone === 'UTC') && $duplicate->timezone && $duplicate->timezone !== 'UTC') {
+                            $canonical->update(['timezone' => $duplicate->timezone]);
+                        }
+
+                        if (!$canonical->native_name && $duplicate->name !== $canonical->name) {
+                            $canonical->update(['native_name' => $duplicate->name]);
+                        }
+
+                        $duplicate->delete();
+                        $merged++;
+                    }
+                }
+            }
+        });
+
+        $this->cityIndex = [];
+        return $merged;
+    }
+
+    private function normalizeCityName(?string $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        $ascii = Str::ascii($value);
+        $ascii = mb_strtolower($ascii);
+        return preg_replace('/[^a-z0-9]+/u', '', $ascii) ?: $ascii;
+    }
+
     private function resolveTimezone(
         string $countryCode,
         ?float $latitude,
@@ -225,10 +322,7 @@ class SyncGlobalAirportMaster extends Command
         }
 
         try {
-            $identifiers = DateTimeZone::listIdentifiers(
-                DateTimeZone::PER_COUNTRY,
-                strtoupper($countryCode)
-            );
+            $identifiers = DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, strtoupper($countryCode));
         } catch (\Throwable) {
             return 'UTC';
         }
@@ -255,12 +349,7 @@ class SyncGlobalAirportMaster extends Command
                 continue;
             }
 
-            $distance = $this->haversineKm(
-                $latitude,
-                $longitude,
-                (float) $location['latitude'],
-                (float) $location['longitude'],
-            );
+            $distance = $this->haversineKm($latitude, $longitude, (float) $location['latitude'], (float) $location['longitude']);
 
             if ($distance < $bestDistance) {
                 $bestDistance = $distance;
@@ -276,9 +365,7 @@ class SyncGlobalAirportMaster extends Command
         $earthRadius = 6371.0088;
         $latDelta = deg2rad($lat2 - $lat1);
         $lonDelta = deg2rad($lon2 - $lon1);
-        $a = sin($latDelta / 2) ** 2
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lonDelta / 2) ** 2;
-
+        $a = sin($latDelta / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lonDelta / 2) ** 2;
         return 2 * $earthRadius * asin(min(1, sqrt($a)));
     }
 
@@ -298,7 +385,6 @@ class SyncGlobalAirportMaster extends Command
             if (count($values) !== count($headers)) {
                 continue;
             }
-
             yield array_combine($headers, $values);
         }
 

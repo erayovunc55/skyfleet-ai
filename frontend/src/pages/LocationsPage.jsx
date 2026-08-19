@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "../i18n";
 import AirportFinder from "../components/location/AirportFinder";
 import ProfessionalLocationOperationsPanel from "../components/location/ProfessionalLocationOperationsPanel";
+import { calculateLocationReadiness } from "../modules/locations/readiness";
 import {
   createLocation,
   getAllLocations,
@@ -284,6 +285,7 @@ function AirportOperationRow({item,text,onDetails}){
   const isAirport = String(item.type?.code || "").toLowerCase() === "airport";
   const setupComplete = !isAirport || terminals > 0;
   const mapComplete = totalPoints > 0 && mappedPoints >= totalPoints;
+  const score = calculateLocationReadiness(item);
   const readiness = !setupComplete || totalPoints === 0
     ? {label:text.setup,className:"is-setup",target:"setup"}
     : mapComplete
@@ -296,7 +298,7 @@ function AirportOperationRow({item,text,onDetails}){
     <td><div className="location-code-stack"><b>{item.airport?.iata_code||item.code||"—"}</b>{item.airport?.icao_code&&<span>{item.airport.icao_code}</span>}</div></td>
     <td><div className="location-operation-badges"><span title="Terminals">{text.terminalsShort} <b>{terminals}</b></span><span title="Pickup">{text.pickupShort} <b>{pickup}</b></span><span title="Dropoff">{text.dropoffShort} <b>{dropoff}</b></span><span title="Meet & Greet">{text.meetShort} <b>{meet}</b></span></div></td>
     <td><div className="location-coverage-cell"><strong>{totalPoints?`${mappedPoints}/${totalPoints} ${text.mapped}`:text.noPoints}</strong><small>{item.geofence_radius_meters?`Geofence ${item.geofence_radius_meters} m`:"Geofence —"}</small></div></td>
-    <td><div className="location-status-stack"><button type="button" className={`location-readiness-status location-readiness-action ${readiness.className}`} onClick={()=>onDetails(item.id,readiness.target)}>{readiness.label}</button><span className={`location-status ${item.is_active?"is-active":"is-inactive"}`}>{item.is_active?text.active:text.inactive}</span></div></td>
+    <td><div className="location-status-stack"><button type="button" className={`location-readiness-status location-readiness-action ${readiness.className}`} onClick={()=>onDetails(item.id,readiness.target)}><span>{readiness.label}</span><b>{score.score}%</b></button><span className={`location-status ${item.is_active?"is-active":"is-inactive"}`}>{item.is_active?text.active:text.inactive}</span></div></td>
     <td><button className="location-details-button" onClick={()=>onDetails(item.id)}>{text.details}</button></td>
   </tr>;
 }

@@ -4,10 +4,10 @@ import AirportFinder from "../components/location/AirportFinder";
 import ProfessionalLocationOperationsPanel from "../components/location/ProfessionalLocationOperationsPanel";
 import {
   createLocation,
+  getAllLocations,
   getCities,
   getCountries,
   getLocation,
-  getLocations,
   getLocationTypes,
 } from "../services/locationService";
 import "../styles/modules/locations-page.css";
@@ -17,19 +17,19 @@ const PAGE_SIZES = [20, 50, 100];
 const COPY = {
   en: {
     eyebrow:"GLOBAL MASTER DATA", title:"Location Control Center", description:"Manage countries, cities, airports, terminals, service locations and pickup points from one scalable workspace.", refresh:"Refresh", add:"Add Location",
-    countries:"Countries", cities:"Cities", locations:"Locations", airports:"Airports", selectCountry:"Select country", selectCity:"Select city", allTypes:"All location types", search:"Search location, code or address...", pickupOnly:"Pickup enabled", dropoffOnly:"Dropoff enabled",
-    name:"Location", type:"Type", code:"Code", coordinates:"Coordinates", geofence:"Geofence", status:"Status", active:"Active", inactive:"Inactive", details:"Details", noRows:"No locations match the selected filters.", chooseScope:"Select a country and city to view operational locations.", loading:"Loading locations...",
-    close:"Close", showing:"Showing", of:"of", page:"Page", previous:"Previous", next:"Next", perPage:"per page", newLocation:"New Location", locationName:"Location name", nativeName:"Native name", locationCode:"Location / IATA code", latitude:"Latitude", longitude:"Longitude", public:"Public", save:"Save Location", cancel:"Cancel", iata:"IATA", icao:"ICAO", terminals:"Airport Terminals", terminalName:"Terminal name", terminalCode:"Code", addTerminal:"Add Terminal", remove:"Remove", address:"Address", timezone:"Timezone", radius:"Geofence Radius", noTerminals:"No terminals registered yet.", saved:"Location saved and opened in its operational scope.", error:"Operation failed"
+    countries:"Countries", cities:"Cities", locations:"Locations", airports:"Airports", selectCountry:"All countries", selectCity:"All cities", allTypes:"All location types", search:"Search location, code, city or country...", pickupOnly:"Pickup enabled", dropoffOnly:"Dropoff enabled",
+    name:"Location", scope:"Country / City", type:"Type", code:"Code", coordinates:"Coordinates", geofence:"Geofence", status:"Status", active:"Active", inactive:"Inactive", details:"Details", noRows:"No operational locations match the selected filters.", loading:"Loading locations...",
+    close:"Close", showing:"Showing", of:"of", page:"Page", previous:"Previous", next:"Next", perPage:"per page", newLocation:"New Location", locationName:"Location name", nativeName:"Native name", locationCode:"Location / IATA code", latitude:"Latitude", longitude:"Longitude", public:"Public", save:"Save Location", cancel:"Cancel", iata:"IATA", icao:"ICAO", terminals:"Airport Terminals", terminalName:"Terminal name", terminalCode:"Code", addTerminal:"Add Terminal", remove:"Remove", address:"Address", timezone:"Timezone", radius:"Geofence Radius", noTerminals:"No terminals registered yet.", saved:"Location saved and added to the global operational list.", error:"Operation failed"
   },
   tr: {
     eyebrow:"GLOBAL ANA VERİ", title:"Lokasyon Kontrol Merkezi", description:"Ülke, şehir, havalimanı, terminal, servis lokasyonu ve buluşma noktalarını ölçeklenebilir tek ekrandan yönetin.", refresh:"Yenile", add:"Lokasyon Ekle",
-    countries:"Ülkeler", cities:"Şehirler", locations:"Lokasyonlar", airports:"Havalimanları", selectCountry:"Ülke seçin", selectCity:"Şehir seçin", allTypes:"Tüm lokasyon türleri", search:"Lokasyon, kod veya adres ara...", pickupOnly:"Pickup uygun", dropoffOnly:"Dropoff uygun",
-    name:"Lokasyon", type:"Tür", code:"Kod", coordinates:"Koordinatlar", geofence:"Geofence", status:"Durum", active:"Aktif", inactive:"Pasif", details:"Detay", noRows:"Seçilen filtrelere uygun lokasyon bulunamadı.", chooseScope:"Operasyon lokasyonlarını görmek için ülke ve şehir seçin.", loading:"Lokasyonlar yükleniyor...",
-    close:"Kapat", showing:"Gösterilen", of:"/", page:"Sayfa", previous:"Önceki", next:"Sonraki", perPage:"sayfa başına", newLocation:"Yeni Lokasyon", locationName:"Lokasyon adı", nativeName:"Yerel adı", locationCode:"Lokasyon / IATA kodu", latitude:"Enlem", longitude:"Boylam", public:"Genel", save:"Lokasyonu Kaydet", cancel:"İptal", iata:"IATA", icao:"ICAO", terminals:"Havalimanı Terminalleri", terminalName:"Terminal adı", terminalCode:"Kod", addTerminal:"Terminal Ekle", remove:"Kaldır", address:"Adres", timezone:"Saat Dilimi", radius:"Geofence Yarıçapı", noTerminals:"Henüz terminal kaydı yok.", saved:"Lokasyon kaydedildi ve ilgili operasyon bölgesi açıldı.", error:"İşlem başarısız"
+    countries:"Ülkeler", cities:"Şehirler", locations:"Lokasyonlar", airports:"Havalimanları", selectCountry:"Tüm ülkeler", selectCity:"Tüm şehirler", allTypes:"Tüm lokasyon türleri", search:"Lokasyon, kod, şehir veya ülke ara...", pickupOnly:"Pickup uygun", dropoffOnly:"Dropoff uygun",
+    name:"Lokasyon", scope:"Ülke / Şehir", type:"Tür", code:"Kod", coordinates:"Koordinatlar", geofence:"Geofence", status:"Durum", active:"Aktif", inactive:"Pasif", details:"Detay", noRows:"Seçilen filtrelere uygun operasyon lokasyonu bulunamadı.", loading:"Lokasyonlar yükleniyor...",
+    close:"Kapat", showing:"Gösterilen", of:"/", page:"Sayfa", previous:"Önceki", next:"Sonraki", perPage:"sayfa başına", newLocation:"Yeni Lokasyon", locationName:"Lokasyon adı", nativeName:"Yerel adı", locationCode:"Lokasyon / IATA kodu", latitude:"Enlem", longitude:"Boylam", public:"Genel", save:"Lokasyonu Kaydet", cancel:"İptal", iata:"IATA", icao:"ICAO", terminals:"Havalimanı Terminalleri", terminalName:"Terminal adı", terminalCode:"Kod", addTerminal:"Terminal Ekle", remove:"Kaldır", address:"Adres", timezone:"Saat Dilimi", radius:"Geofence Yarıçapı", noTerminals:"Henüz terminal kaydı yok.", saved:"Lokasyon kaydedildi ve global operasyon listesine eklendi.", error:"İşlem başarısız"
   },
 };
-COPY.ar = {...COPY.en, eyebrow:"البيانات الرئيسية العالمية", title:"مركز التحكم بالمواقع", refresh:"تحديث", add:"إضافة موقع", countries:"الدول", cities:"المدن", airports:"المطارات", selectCountry:"اختر الدولة", selectCity:"اختر المدينة", save:"حفظ الموقع", cancel:"إلغاء"};
-COPY.es = {...COPY.en, eyebrow:"DATOS MAESTROS GLOBALES", title:"Centro de Control de Ubicaciones", refresh:"Actualizar", add:"Añadir ubicación", countries:"Países", cities:"Ciudades", airports:"Aeropuertos", selectCountry:"Seleccionar país", selectCity:"Seleccionar ciudad", save:"Guardar ubicación", cancel:"Cancelar"};
+COPY.ar = {...COPY.en, eyebrow:"البيانات الرئيسية العالمية", title:"مركز التحكم بالمواقع", refresh:"تحديث", add:"إضافة موقع", countries:"الدول", cities:"المدن", airports:"المطارات", selectCountry:"كل الدول", selectCity:"كل المدن", save:"حفظ الموقع", cancel:"إلغاء"};
+COPY.es = {...COPY.en, eyebrow:"DATOS MAESTROS GLOBALES", title:"Centro de Control de Ubicaciones", refresh:"Actualizar", add:"Añadir ubicación", countries:"Países", cities:"Ciudades", airports:"Aeropuertos", selectCountry:"Todos los países", selectCity:"Todas las ciudades", save:"Guardar ubicación", cancel:"Cancelar"};
 
 const emptyLocation = {country_id:"",city_id:"",name:"",native_name:"",location_type_id:"",code:"",address:"",timezone:"",latitude:"",longitude:"",geofence_radius_meters:"",iata_code:"",icao_code:"",is_public:true,is_active:true,terminals:[]};
 
@@ -65,7 +65,6 @@ export default function LocationsPage(){
     if(!countryId){
       setCities([]);
       setCityId("");
-      setRows([]);
       return undefined;
     }
     getCities(countryId).then((nextCities)=>{
@@ -76,11 +75,12 @@ export default function LocationsPage(){
     return ()=>{alive=false;};
   },[countryId]);
 
-  async function fetchScope(city = cityId, overrides = {}){
-    if(!city){setRows([]);return [];}
+  async function fetchScope(overrides = {}){
     setLoading(true);
     try{
-      const nextRows = await getLocations(city,{
+      const nextRows = await getAllLocations({
+        countryId: overrides.countryId !== undefined ? overrides.countryId : (countryId||undefined),
+        cityId: overrides.cityId !== undefined ? overrides.cityId : (cityId||undefined),
         type: overrides.type !== undefined ? overrides.type : (type||undefined),
         search: overrides.search !== undefined ? overrides.search : (search.trim()||undefined),
         pickupOnly: overrides.pickupOnly !== undefined ? overrides.pickupOnly : pickupOnly,
@@ -92,14 +92,14 @@ export default function LocationsPage(){
     }finally{setLoading(false);}
   }
 
-  useEffect(()=>{fetchScope();},[cityId,type,pickupOnly,dropoffOnly]);
+  useEffect(()=>{fetchScope();},[countryId,cityId,type,pickupOnly,dropoffOnly]);
 
   const summary = useMemo(()=>({
     countries:countries.length,
-    cities:cities.length,
+    cities:new Set(rows.map(x=>x.city_id).filter(Boolean)).size,
     locations:rows.length,
     airports:rows.filter(x=>String(x.type?.code||"").toLowerCase()==="airport").length,
-  }),[countries,cities,rows]);
+  }),[countries,rows]);
 
   const lastPage=Math.max(1,Math.ceil(rows.length/pageSize));
   const safePage=Math.min(page,lastPage);
@@ -148,11 +148,11 @@ export default function LocationsPage(){
       latitude:airport.latitude??v.latitude,
       longitude:airport.longitude??v.longitude,
       geofence_radius_meters:v.geofence_radius_meters||1500,
-      terminals:Array.isArray(airport.terminals)?airport.terminals.map(t=>({name:t.name,code:t.code||"",type:t.type||"passenger"})):v.terminals,
+      terminals:Array.isArray(airport.terminals)?airport.terminals.map(t=>({name:t.name,code:t.code||"",type:t.type||"mixed"})):v.terminals,
     }));
   }
 
-  function addTerminal(){patch("terminals",[...form.terminals,{name:"",code:"",type:"passenger"}]);}
+  function addTerminal(){patch("terminals",[...form.terminals,{name:"",code:"",type:"mixed"}]);}
   function patchTerminal(i,key,value){patch("terminals",form.terminals.map((t,n)=>n===i?{...t,[key]:value}:t));}
 
   async function saveLocation(e){
@@ -169,23 +169,17 @@ export default function LocationsPage(){
         geofence_radius_meters:form.geofence_radius_meters||null,
       };
       const created = await createLocation(payload);
-      const targetCountry = String(created?.country_id ?? form.country_id);
-      const targetCity = String(created?.city_id ?? form.city_id);
-      const targetType = selectedType?.code || "";
-      const nextCities = await getCities(targetCountry);
-      const nextRows = await getLocations(targetCity,{type:targetType||undefined});
 
       setEditorOpen(false);
       setNotice(text.saved);
       setSearch("");
       setPickupOnly(false);
       setDropoffOnly(false);
-      setCountryId(targetCountry);
-      setCities(nextCities);
-      setCityId(targetCity);
-      setType(targetType);
-      setRows(nextRows);
-      setPage(1);
+      setCountryId("");
+      setCities([]);
+      setCityId("");
+      setType("");
+      await fetchScope({countryId:undefined,cityId:undefined,type:undefined,search:"",pickupOnly:false,dropoffOnly:false});
 
       if(created?.id){
         const fresh = await getLocation(created.id);
@@ -217,9 +211,9 @@ export default function LocationsPage(){
       <div className="location-filters">
         <select value={countryId} onChange={e=>setCountryId(e.target.value)}><option value="">{text.selectCountry}</option>{countries.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>
         <select value={cityId} disabled={!countryId} onChange={e=>setCityId(e.target.value)}><option value="">{text.selectCity}</option>{cities.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>
-        <select value={type} disabled={!cityId} onChange={e=>setType(e.target.value)}><option value="">{text.allTypes}</option>{types.map(x=><option key={x.id} value={x.code}>{x.name}</option>)}</select>
-        <input value={search} disabled={!cityId} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&fetchScope()} placeholder={text.search}/>
-        <button type="button" disabled={!cityId} onClick={()=>fetchScope()}>⌕</button>
+        <select value={type} onChange={e=>setType(e.target.value)}><option value="">{text.allTypes}</option>{types.map(x=><option key={x.id} value={x.code}>{x.name}</option>)}</select>
+        <input value={search} onChange={e=>setSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&fetchScope()} placeholder={text.search}/>
+        <button type="button" onClick={()=>fetchScope()}>⌕</button>
       </div>
 
       <div className="location-toggle-row">
@@ -227,16 +221,16 @@ export default function LocationsPage(){
         <label><input type="checkbox" checked={dropoffOnly} onChange={e=>setDropoffOnly(e.target.checked)}/>{text.dropoffOnly}</label>
       </div>
 
-      {!cityId ? <div className="location-empty">{text.chooseScope}</div> : loading ? <div className="location-empty">{text.loading}</div> : pageRows.length ?
-        <div className="location-table-wrap"><table><thead><tr><th>{text.name}</th><th>{text.type}</th><th>{text.code}</th><th>{text.coordinates}</th><th>{text.geofence}</th><th>{text.status}</th><th>{text.details}</th></tr></thead><tbody>{pageRows.map(item=><tr key={item.id}><td><strong>{item.name}</strong><small>{item.address||item.native_name||"—"}</small></td><td>{item.type?.name||"—"}</td><td>{item.code||"—"}</td><td>{item.latitude&&item.longitude?`${item.latitude}, ${item.longitude}`:"—"}</td><td>{item.geofence_radius_meters?`${item.geofence_radius_meters} m`:"—"}</td><td><span className={`location-status ${item.is_active?"is-active":"is-inactive"}`}>{item.is_active?text.active:text.inactive}</span></td><td><button onClick={()=>openDetails(item.id)}>{text.details}</button></td></tr>)}</tbody></table></div>
+      {loading ? <div className="location-empty">{text.loading}</div> : pageRows.length ?
+        <div className="location-table-wrap"><table><thead><tr><th>{text.name}</th><th>{text.scope}</th><th>{text.type}</th><th>{text.code}</th><th>{text.coordinates}</th><th>{text.geofence}</th><th>{text.status}</th><th>{text.details}</th></tr></thead><tbody>{pageRows.map(item=><tr key={item.id}><td><strong>{item.name}</strong><small>{item.address||item.native_name||"—"}</small></td><td><strong>{item.country?.name||"—"}</strong><small>{item.city?.name||"—"}</small></td><td>{item.type?.name||"—"}</td><td>{item.code||"—"}</td><td>{item.latitude&&item.longitude?`${item.latitude}, ${item.longitude}`:"—"}</td><td>{item.geofence_radius_meters?`${item.geofence_radius_meters} m`:"—"}</td><td><span className={`location-status ${item.is_active?"is-active":"is-inactive"}`}>{item.is_active?text.active:text.inactive}</span></td><td><button onClick={()=>openDetails(item.id)}>{text.details}</button></td></tr>)}</tbody></table></div>
         : <div className="location-empty">{text.noRows}</div>}
 
-      {cityId&&<div className="location-pagination"><span>{text.showing} <strong>{from}-{to}</strong> {text.of} <strong>{rows.length}</strong></span><div><button disabled={safePage<=1} onClick={()=>setPage(safePage-1)}>‹ {text.previous}</button><span>{text.page} {safePage} / {lastPage}</span><button disabled={safePage>=lastPage} onClick={()=>setPage(safePage+1)}>{text.next} ›</button></div><label><select value={pageSize} onChange={e=>{setPageSize(Number(e.target.value));setPage(1);}}>{PAGE_SIZES.map(s=><option key={s}>{s}</option>)}</select><span>{text.perPage}</span></label></div>}
+      <div className="location-pagination"><span>{text.showing} <strong>{from}-{to}</strong> {text.of} <strong>{rows.length}</strong></span><div><button disabled={safePage<=1} onClick={()=>setPage(safePage-1)}>‹ {text.previous}</button><span>{text.page} {safePage} / {lastPage}</span><button disabled={safePage>=lastPage} onClick={()=>setPage(safePage+1)}>{text.next} ›</button></div><label><select value={pageSize} onChange={e=>{setPageSize(Number(e.target.value));setPage(1);}}>{PAGE_SIZES.map(s=><option key={s}>{s}</option>)}</select><span>{text.perPage}</span></label></div>
     </section>
 
     {editorOpen&&<div className="location-detail-backdrop"><aside className="location-detail-panel location-editor"><header><div><span>{text.eyebrow}</span><h2>{text.newLocation}</h2></div><button onClick={()=>setEditorOpen(false)}>× {text.cancel}</button></header><form onSubmit={saveLocation} className="location-form-grid">
-      <Field label={text.selectCountry}><select required value={form.country_id} onChange={e=>changeFormCountry(e.target.value)}><option value="">{text.selectCountry}</option>{countries.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
-      <Field label={text.selectCity}><select required value={form.city_id} onChange={e=>patch("city_id",e.target.value)}><option value="">{text.selectCity}</option>{formCities.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
+      <Field label={language==="tr"?"Ülke seçin":"Select country"}><select required value={form.country_id} onChange={e=>changeFormCountry(e.target.value)}><option value="">{language==="tr"?"Ülke seçin":"Select country"}</option>{countries.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
+      <Field label={language==="tr"?"Şehir seçin":"Select city"}><select required value={form.city_id} onChange={e=>patch("city_id",e.target.value)}><option value="">{language==="tr"?"Şehir seçin":"Select city"}</option>{formCities.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
       <Field label={text.type}><select required value={form.location_type_id} onChange={e=>patch("location_type_id",e.target.value)}>{types.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></Field>
       {selectedType?.code==="airport"&&<div className="location-airport-finder"><AirportFinder language={language} onSelect={applyAirport}/></div>}
       <Field label={text.locationName}><input required value={form.name} onChange={e=>patch("name",e.target.value)}/></Field>

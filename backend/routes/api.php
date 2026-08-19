@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\OperationalAlertController;
 use App\Http\Controllers\Api\PassengerTrackingController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\SupplierAccountController;
+use App\Http\Controllers\Api\SupplierCoverageController;
 use App\Http\Controllers\Api\SupplierPortalAssignmentController;
 use App\Http\Controllers\Api\SupplierPortalController;
 use App\Http\Controllers\Api\SupplierPortalDriverController;
@@ -58,6 +59,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('suppliers/{supplier}/reject', [SupplierController::class, 'reject']);
         Route::patch('suppliers/{supplier}/suspend', [SupplierController::class, 'suspend']);
         Route::patch('suppliers/{supplier}/reactivate', [SupplierController::class, 'reactivate']);
+        Route::get('suppliers/{supplier}/coverages', [SupplierCoverageController::class, 'index']);
+        Route::post('suppliers/{supplier}/coverages', [SupplierCoverageController::class, 'store']);
+        Route::patch('suppliers/{supplier}/coverages/{coverage}', [SupplierCoverageController::class, 'update']);
+        Route::delete('suppliers/{supplier}/coverages/{coverage}', [SupplierCoverageController::class, 'destroy']);
 
         Route::get('airports/search', [LocationController::class, 'airportSearch']);
         Route::get('cities/{city}/airports', [LocationController::class, 'airports']);

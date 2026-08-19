@@ -41,6 +41,26 @@ const supplierService = {
     const response = await apiClient.get(`/suppliers/${supplierId}/activity`, { params });
     return response.data;
   },
+
+  async getCoverages(supplierId) {
+    const response = await apiClient.get(`/suppliers/${supplierId}/coverages`);
+    return Array.isArray(response.data?.data) ? response.data.data : [];
+  },
+
+  async addCoverage(supplierId, payload) {
+    const response = await apiClient.post(`/suppliers/${supplierId}/coverages`, payload);
+    return response.data?.data || response.data;
+  },
+
+  async updateCoverage(supplierId, coverageId, payload) {
+    const response = await apiClient.patch(`/suppliers/${supplierId}/coverages/${coverageId}`, payload);
+    return response.data?.data || response.data;
+  },
+
+  async deleteCoverage(supplierId, coverageId) {
+    const response = await apiClient.delete(`/suppliers/${supplierId}/coverages/${coverageId}`);
+    return response.data;
+  },
 };
 
 export default supplierService;

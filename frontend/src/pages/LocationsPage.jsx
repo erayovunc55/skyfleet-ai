@@ -53,6 +53,7 @@ export default function LocationsPage(){
   const [pageSize,setPageSize] = useState(20);
   const [loading,setLoading] = useState(false);
   const [selected,setSelected] = useState(null);
+  const [focusTarget,setFocusTarget] = useState("");
   const [editorOpen,setEditorOpen] = useState(false);
   const [form,setForm] = useState(emptyLocation);
   const [formCities,setFormCities] = useState([]);
@@ -77,6 +78,21 @@ export default function LocationsPage(){
     });
     return ()=>{alive=false;};
   },[countryId]);
+
+  useEffect(()=>{
+    if(!selected || !focusTarget) return undefined;
+    const timer = window.setTimeout(()=>{
+      const sections = Array.from(document.querySelectorAll(".lop-panel .lop-section"));
+      const target = focusTarget === "setup" ? sections[2] : sections[3];
+      if(target){
+        target.scrollIntoView({behavior:"smooth",block:"start"});
+        target.classList.add("lop-focus-pulse");
+        window.setTimeout(()=>target.classList.remove("lop-focus-pulse"),1800);
+      }
+      setFocusTarget("");
+    },180);
+    return ()=>window.clearTimeout(timer);
+  },[selected,focusTarget]);
 
   async function fetchScope(overrides = {}){
     setLoading(true);
@@ -110,7 +126,11 @@ export default function LocationsPage(){
   const from=rows.length?(safePage-1)*pageSize+1:0;
   const to=Math.min(safePage*pageSize,rows.length);
 
-  async function openDetails(id){setSelected(await getLocation(id));}
+  async function openDetails(id, target=""){
+    const fresh = await getLocation(id);
+    setSelected(fresh);
+    setFocusTarget(target);
+  }
 
   async function openAdd(){
     setNotice("");
@@ -250,7 +270,7 @@ export default function LocationsPage(){
       <button className="location-save" disabled={busy}>{busy?"…":text.save}</button>
     </form></aside></div>}
 
-    {selected&&<ProfessionalLocationOperationsPanel initialLocation={selected} language={language} onClose={()=>setSelected(null)} onChanged={(fresh)=>{setSelected(fresh);fetchScope();}}/>}
+    {selected&&<ProfessionalLocationOperationsPanel initialLocation={selected} language={language} onClose={()=>{setSelected(null);setFocusTarget("");}} onChanged={(fresh)=>{setSelected(fresh);fetchScope();}}/>}
   </main>;
 }
 
@@ -265,10 +285,10 @@ function AirportOperationRow({item,text,onDetails}){
   const setupComplete = !isAirport || terminals > 0;
   const mapComplete = totalPoints > 0 && mappedPoints >= totalPoints;
   const readiness = !setupComplete || totalPoints === 0
-    ? {label:text.setup,className:"is-setup"}
+    ? {label:text.setup,className:"is-setup",target:"setup"}
     : mapComplete
-      ? {label:text.ready,className:"is-ready"}
-      : {label:text.needsMap,className:"is-warning"};
+      ? {label:text.ready,className:"is-ready",target:""}
+      : {label:text.needsMap,className:"is-warning",target:"points"};
 
   return <tr>
     <td className="location-name-cell"><div className="location-kind-icon">{isAirport?"✈":"●"}</div><div><strong>{item.name}</strong><small>{item.type?.name || "—"}{item.timezone?` · ${item.timezone}`:""}</small></div></td>
@@ -276,7 +296,7 @@ function AirportOperationRow({item,text,onDetails}){
     <td><div className="location-code-stack"><b>{item.airport?.iata_code||item.code||"—"}</b>{item.airport?.icao_code&&<span>{item.airport.icao_code}</span>}</div></td>
     <td><div className="location-operation-badges"><span title="Terminals">{text.terminalsShort} <b>{terminals}</b></span><span title="Pickup">{text.pickupShort} <b>{pickup}</b></span><span title="Dropoff">{text.dropoffShort} <b>{dropoff}</b></span><span title="Meet & Greet">{text.meetShort} <b>{meet}</b></span></div></td>
     <td><div className="location-coverage-cell"><strong>{totalPoints?`${mappedPoints}/${totalPoints} ${text.mapped}`:text.noPoints}</strong><small>{item.geofence_radius_meters?`Geofence ${item.geofence_radius_meters} m`:"Geofence —"}</small></div></td>
-    <td><div className="location-status-stack"><span className={`location-readiness-status ${readiness.className}`}>{readiness.label}</span><span className={`location-status ${item.is_active?"is-active":"is-inactive"}`}>{item.is_active?text.active:text.inactive}</span></div></td>
+    <td><div className="location-status-stack"><button type="button" className={`location-readiness-status location-readiness-action ${readiness.className}`} onClick={()=>onDetails(item.id,readiness.target)}>{readiness.label}</button><span className={`location-status ${item.is_active?"is-active":"is-inactive"}`}>{item.is_active?text.active:text.inactive}</span></div></td>
     <td><button className="location-details-button" onClick={()=>onDetails(item.id)}>{text.details}</button></td>
   </tr>;
 }

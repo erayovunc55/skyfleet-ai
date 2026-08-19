@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createLocationPoint, getLocation, updateLocation } from "../../services/locationService";
+import LocationOperationsMap from "./LocationOperationsMap";
 import "../../styles/modules/location-operations-panel.css";
 
 const POINT_TYPES = [
@@ -15,7 +16,7 @@ const COPY = {
     instructions:"Driver / meeting instructions", pickup:"Pickup", dropoff:"Dropoff", requiresMeet:"Meet & greet required", savePoint:"Save Point", cancel:"Cancel",
     locationType:"Location Type", scope:"Country / City", timezone:"Timezone", coordinates:"Coordinates", geofence:"Location Geofence", address:"Address",
     noTerminals:"No terminals registered yet.", noPoints:"No operational pickup/dropoff points registered yet.", active:"Active", inactive:"Inactive",
-    terminalSaved:"Terminal structure saved.", pointSaved:"Operational point saved.", meters:"m", passenger:"Passenger",
+    terminalSaved:"Terminal structure saved.", pointSaved:"Operational point saved.", meters:"m", passenger:"Passenger", map:"Location Map & Geofence", mapHint:"Airport center, operational points and geofence coverage",
   },
   tr: {
     title:"Lokasyon Operasyon Merkezi", close:"Kapat", overview:"Genel Bakış", airportIdentity:"Havalimanı Kimliği", operationalReadiness:"Operasyon Hazırlığı",
@@ -25,7 +26,7 @@ const COPY = {
     instructions:"Sürücü / karşılama talimatı", pickup:"Pickup", dropoff:"Dropoff", requiresMeet:"Karşılama gerekli", savePoint:"Noktayı Kaydet", cancel:"İptal",
     locationType:"Lokasyon Türü", scope:"Ülke / Şehir", timezone:"Saat Dilimi", coordinates:"Koordinatlar", geofence:"Lokasyon Geofence", address:"Adres",
     noTerminals:"Henüz terminal kaydı yok.", noPoints:"Henüz operasyon pickup/dropoff noktası yok.", active:"Aktif", inactive:"Pasif",
-    terminalSaved:"Terminal yapısı kaydedildi.", pointSaved:"Operasyon noktası kaydedildi.", meters:"m", passenger:"Yolcu",
+    terminalSaved:"Terminal yapısı kaydedildi.", pointSaved:"Operasyon noktası kaydedildi.", meters:"m", passenger:"Yolcu", map:"Lokasyon Haritası & Geofence", mapHint:"Havalimanı merkezi, operasyon noktaları ve geofence kapsamı",
   },
 };
 COPY.ar = {...COPY.en,title:"مركز عمليات الموقع",close:"إغلاق",terminals:"محطات المطار",addTerminal:"إضافة محطة",points:"نقاط التشغيل",addPoint:"إضافة نقطة"};
@@ -41,7 +42,7 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
   const [location, setLocation] = useState(initialLocation);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [pointOpen, setPointOpen] = useState(false);
-  const [terminals, setTerminals] = useState(() => (initialLocation.airport?.terminals || []).map(t => ({name:t.name, code:t.code||"", type:t.type||"passenger"})));
+  const [terminals, setTerminals] = useState(() => (initialLocation.airport?.terminals || []).map(t => ({name:t.name, code:t.code||"", type:t.type||"mixed"})));
   const [pointForm, setPointForm] = useState(emptyPoint);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -57,13 +58,13 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
   async function reload(message="") {
     const fresh = await getLocation(location.id);
     setLocation(fresh);
-    setTerminals((fresh.airport?.terminals || []).map(t=>({name:t.name,code:t.code||"",type:t.type||"passenger"})));
+    setTerminals((fresh.airport?.terminals || []).map(t=>({name:t.name,code:t.code||"",type:t.type||"mixed"})));
     setNotice(message);
     onChanged?.(fresh);
   }
 
   function addTerminal() {
-    setTerminals(v=>[...v,{name:"",code:"",type:"passenger"}]);
+    setTerminals(v=>[...v,{name:"",code:"",type:"mixed"}]);
     setTerminalOpen(true);
   }
 
@@ -147,18 +148,23 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
         </div>
       </section>
 
+      <section className="lop-section lop-map-section">
+        <div className="lop-section-title"><div><span>{text.operationalReadiness}</span><h3>{text.map}</h3><p>{text.mapHint}</p></div></div>
+        <LocationOperationsMap location={location} language={language}/>
+      </section>
+
       {airport && <section className="lop-section">
         <div className="lop-section-title"><div><span>{text.airportIdentity}</span><h3>{text.terminals}</h3></div><button onClick={()=>setTerminalOpen(v=>!v)}>+ {text.addTerminal}</button></div>
         {terminalOpen && <div className="lop-terminal-editor">
           {terminals.map((terminal,index)=><div className="lop-terminal-row" key={index}>
             <input placeholder={text.terminalName} value={terminal.name} onChange={e=>patchTerminal(index,"name",e.target.value)}/>
             <input placeholder={text.terminalCode} value={terminal.code} onChange={e=>patchTerminal(index,"code",e.target.value)}/>
-            <select value={terminal.type} onChange={e=>patchTerminal(index,"type",e.target.value)}><option value="passenger">{text.passenger}</option><option value="domestic">Domestic</option><option value="international">International</option><option value="general">General</option></select>
+            <select value={terminal.type} onChange={e=>patchTerminal(index,"type",e.target.value)}><option value="mixed">Mixed</option><option value="domestic">Domestic</option><option value="international">International</option></select>
             <button className="danger" onClick={()=>setTerminals(v=>v.filter((_,i)=>i!==index))}>×</button>
           </div>)}
           <div className="lop-editor-actions"><button onClick={()=>setTerminalOpen(false)}>{text.cancel}</button><button className="primary" disabled={busy} onClick={saveTerminals}>{text.saveTerminals}</button></div>
         </div>}
-        {airportTerminals.length ? <div className="lop-terminal-cards">{airportTerminals.map(t=><article key={t.id}><div><strong>{t.name}</strong><span>{t.type || text.passenger}</span></div><b>{t.code || "—"}</b></article>)}</div> : <div className="lop-empty">{text.noTerminals}</div>}
+        {airportTerminals.length ? <div className="lop-terminal-cards">{airportTerminals.map(t=><article key={t.id}><div><strong>{t.name}</strong><span>{t.type || "mixed"}</span></div><b>{t.code || "—"}</b></article>)}</div> : <div className="lop-empty">{text.noTerminals}</div>}
       </section>}
 
       <section className="lop-section">

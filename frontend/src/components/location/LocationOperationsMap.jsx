@@ -10,6 +10,7 @@ import {
 import "leaflet/dist/leaflet.css";
 
 const DEFAULT_CENTER = [41.0082, 28.9784];
+const MAX_POINT_DISTANCE_KM = 80;
 
 const COPY = {
   en: {
@@ -18,8 +19,8 @@ const COPY = {
     dropoff: "Dropoff point",
     operational: "Operational point",
     geofence: "Geofence",
-    noCoordinates: "No coordinates",
     unpositioned: "points are not positioned on the map yet.",
+    invalid: "points have invalid or out-of-area coordinates.",
   },
   tr: {
     center: "Lokasyon merkezi",
@@ -27,8 +28,8 @@ const COPY = {
     dropoff: "Dropoff noktası",
     operational: "Operasyon noktası",
     geofence: "Geofence",
-    noCoordinates: "Koordinat yok",
     unpositioned: "nokta henüz haritada konumlandırılmadı.",
+    invalid: "noktanın koordinatı geçersiz veya operasyon bölgesinin dışında.",
   },
 };
 
@@ -37,12 +38,23 @@ export default function LocationOperationsMap({ location, language = "en" }) {
   const locationPosition = coordinatePair(location?.latitude, location?.longitude);
   const points = Array.isArray(location?.points) ? location.points : [];
 
-  const positionedPoints = useMemo(
-    () => points.map(point => ({ point, position: coordinatePair(point.latitude, point.longitude) })).filter(item => item.position),
+  const pointCoordinates = useMemo(
+    () => points.map(point => ({ point, position: coordinatePair(point.latitude, point.longitude) })),
     [points],
   );
 
-  const unpositionedCount = points.length - positionedPoints.length;
+  const positionedPoints = useMemo(
+    () => pointCoordinates.filter(({ position }) => {
+      if (!position) return false;
+      if (!locationPosition) return true;
+      return distanceKm(locationPosition, position) <= MAX_POINT_DISTANCE_KM;
+    }),
+    [pointCoordinates, locationPosition],
+  );
+
+  const missingCount = pointCoordinates.filter(item => !item.position).length;
+  const invalidCount = pointCoordinates.filter(item => item.position && !positionedPoints.includes(item)).length;
+
   const positions = useMemo(
     () => [locationPosition, ...positionedPoints.map(item => item.position)].filter(Boolean),
     [locationPosition, positionedPoints],
@@ -88,7 +100,8 @@ export default function LocationOperationsMap({ location, language = "en" }) {
         <span><i className="is-center" />{text.center}</span>
         <span><i className="is-pickup" />{text.pickup}</span>
         <span><i className="is-dropoff" />{text.dropoff}</span>
-        {unpositionedCount > 0 && <b>{unpositionedCount} {text.unpositioned}</b>}
+        {missingCount > 0 && <b>{missingCount} {text.unpositioned}</b>}
+        {invalidCount > 0 && <b>{invalidCount} {text.invalid}</b>}
       </div>
     </div>
   );
@@ -143,10 +156,28 @@ function MapViewport({ positions, center }) {
 }
 
 function coordinatePair(latitude, longitude) {
+  if (latitude === null || latitude === undefined || latitude === "" || longitude === null || longitude === undefined || longitude === "") {
+    return null;
+  }
+
   const lat = Number(latitude);
   const lng = Number(longitude);
+
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  if (Math.abs(lat) < 0.000001 && Math.abs(lng) < 0.000001) return null;
+
   return [lat, lng];
+}
+
+function distanceKm([lat1, lng1], [lat2, lng2]) {
+  const toRad = value => value * Math.PI / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function positiveNumber(value) {

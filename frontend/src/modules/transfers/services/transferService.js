@@ -26,6 +26,22 @@ const transferService = {
     );
   },
 
+  async getSupplierMatches(transferId) {
+    if (!transferId) {
+      throw new Error("Öneri alınacak transfer bulunamadı.");
+    }
+
+    const response = await apiClient.get(
+      `/dispatcher/transfers/${transferId}/supplier-matches`,
+    );
+
+    return Array.isArray(response.data?.data)
+      ? response.data.data
+      : Array.isArray(response.data)
+        ? response.data
+        : [];
+  },
+
   async getTransferEvidences(transferId) {
     if (!transferId) {
       throw new Error(

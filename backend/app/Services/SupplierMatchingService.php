@@ -55,10 +55,11 @@ class SupplierMatchingService
             ->get(['id','supplier_id','name','vehicle_id'])
             ->groupBy('supplier_id');
 
-        // Performance is calculated only from real historical transfers already
-        // assigned to each supplier. No manual/star rating is invented here.
+        // Reliability uses only finished operations. Active/pending transfers
+        // must never lower a supplier's historical performance score.
         $performanceBySupplier = Transfer::query()
             ->whereIn('supplier_id', $supplierIds)
+            ->whereIn('status', ['completed', 'no_show', 'cancelled'])
             ->selectRaw("supplier_id, COUNT(*) as total_count, SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count, SUM(CASE WHEN status = 'no_show' THEN 1 ELSE 0 END) as no_show_count, SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_count")
             ->groupBy('supplier_id')
             ->get()
@@ -179,9 +180,6 @@ class SupplierMatchingService
         $completionRate = round(($completed / $total) * 100, 1);
         $noShowRate = round(($noShow / $total) * 100, 1);
         $cancellationRate = round(($cancelled / $total) * 100, 1);
-
-        // Reliability is deliberately conservative: completion helps, while
-        // no-show and cancellation outcomes receive heavier penalties.
         $reliability = max(0, min(100, round($completionRate - ($noShowRate * 1.5) - $cancellationRate, 1)));
         $bonus = $sampleSufficient ? (int) round(($reliability / 100) * 15) : 0;
 

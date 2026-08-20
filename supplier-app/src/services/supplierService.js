@@ -1,11 +1,37 @@
 import apiClient from "./apiClient";
 
-export async function getSupplierProfile() {
-  const response = await apiClient.get("/supplier-portal/profile");
-  return response.data?.data || response.data;
+const TERMINAL_TRANSFER_STATUSES = new Set([
+  "completed",
+  "no_show",
+  "cancelled",
+]);
+
+function normalizeTransferResponse(responseData, scope = "all") {
+  const source = responseData || {};
+  const items = Array.isArray(source?.data) ? source.data : [];
+
+  let filteredItems = items;
+
+  if (scope === "active") {
+    filteredItems = items.filter(
+      (transfer) => !TERMINAL_TRANSFER_STATUSES.has(transfer?.status),
+    );
+  }
+
+  if (scope === "history") {
+    filteredItems = items.filter(
+      (transfer) => TERMINAL_TRANSFER_STATUSES.has(transfer?.status),
+    );
+  }
+
+  return {
+    ...source,
+    data: filteredItems,
+    total: filteredItems.length,
+  };
 }
 
-export async function getSupplierTransfers(filters = {}) {
+async function fetchSupplierTransfers(filters = {}, scope = "all") {
   const params = {};
   if (filters.search) params.search = filters.search;
   if (filters.status) params.status = filters.status;
@@ -14,7 +40,20 @@ export async function getSupplierTransfers(filters = {}) {
   params.per_page = 100;
 
   const response = await apiClient.get("/supplier-portal/transfers", { params });
-  return response.data;
+  return normalizeTransferResponse(response.data, scope);
+}
+
+export async function getSupplierProfile() {
+  const response = await apiClient.get("/supplier-portal/profile");
+  return response.data?.data || response.data;
+}
+
+export async function getSupplierTransfers(filters = {}) {
+  return fetchSupplierTransfers(filters, "active");
+}
+
+export async function getSupplierHistoryTransfers(filters = {}) {
+  return fetchSupplierTransfers(filters, "history");
 }
 
 export async function getSupplierTransfer(transferId) {

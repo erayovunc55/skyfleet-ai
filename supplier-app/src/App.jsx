@@ -4,6 +4,7 @@ import SupplierAvailableJobsPage from "./pages/SupplierAvailableJobsPage";
 import SupplierDashboardPage from "./pages/SupplierDashboardPage";
 import SupplierDriversPage from "./pages/SupplierDriversPage";
 import SupplierFinancePage from "./pages/SupplierFinancePage";
+import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import SupplierInvoicesPage from "./pages/SupplierInvoicesPage";
 import SupplierLoginPage from "./pages/SupplierLoginPage";
 import SupplierVehiclesPage from "./pages/SupplierVehiclesPage";
@@ -13,6 +14,7 @@ import { clearStoredAuth, getStoredUser, logout } from "./services/authService";
 const NAVIGATION_ITEMS = [
   { id: "available-jobs", label: "Açık İşler", icon: "⚡" },
   { id: "transfers", label: "Transferlerim", icon: "📋" },
+  { id: "history", label: "Geçmiş", icon: "🗂️" },
   { id: "drivers", label: "Sürücüler", icon: "👤" },
   { id: "vehicles", label: "Araçlar", icon: "🚐" },
   { id: "finance", label: "Hakedişlerim", icon: "💶" },
@@ -89,6 +91,7 @@ export default function App() {
         <SupplierAvailableJobsPage onOpenMyTransfers={() => setCurrentPage("transfers")} />
       )}
       {currentPage === "transfers" && <SupplierDashboardPage user={user} onLogout={handleLogout} />}
+      {currentPage === "history" && <SupplierHistoryPage />}
       {currentPage === "drivers" && <SupplierDriversPage />}
       {currentPage === "vehicles" && <SupplierVehiclesPage />}
       {currentPage === "finance" && <SupplierFinancePage />}

@@ -10,8 +10,19 @@ import "../../../styles/modules/transfer-supplier-suggestions.css";
 const REASON_LABELS = {
   pickup_coverage: "Pickup coverage",
   dropoff_coverage: "Dropoff coverage",
-  vehicle_capacity_available: "Araç mevcut",
-  driver_team_available: "Sürücü ekibi mevcut",
+  operational_vehicle_available: "Operasyonel araç mevcut",
+  passenger_capacity_fit: "Yolcu kapasitesi uygun",
+  luggage_capacity_fit: "Bagaj kapasitesi uygun",
+  vehicle_type_fit: "Araç tipi uyumlu",
+  active_driver_available: "Aktif sürücü mevcut",
+};
+
+const WARNING_LABELS = {
+  no_operational_vehicle: "Operasyonel araç yok",
+  passenger_capacity_unavailable: "Yolcu kapasitesi doğrulanamadı",
+  luggage_capacity_unavailable: "Bagaj kapasitesi yetersiz",
+  vehicle_type_not_confirmed: "Araç tipi doğrulanamadı",
+  no_active_driver: "Aktif sürücü yok",
 };
 
 export default function TransferSupplierAssignment({
@@ -95,7 +106,9 @@ export default function TransferSupplierAssignment({
 
         setMatches(items);
 
-        const bestMatch = Array.isArray(items) ? items[0] : null;
+        const bestMatch = Array.isArray(items)
+          ? items.find((item) => item?.eligible)
+          : null;
 
         if (
           bestMatch &&
@@ -168,6 +181,7 @@ export default function TransferSupplierAssignment({
 
   if (!transfer) return null;
 
+  const bestEligibleMatch = matches.find((match) => match?.eligible);
   const autoSuggestionPending =
     !transfer.supplier_id &&
     autoSuggestedSupplierId &&
@@ -190,12 +204,12 @@ export default function TransferSupplierAssignment({
         <div className="transfer-supplier-suggestions-header">
           <div>
             <span>SKYFLEET MATCHING</span>
-            <strong>Önerilen Tedarikçiler</strong>
+            <strong>Akıllı Tedarikçi Sıralaması</strong>
           </div>
-          {matches[0] && <b>{matches[0].score}% en iyi eşleşme</b>}
+          {bestEligibleMatch && <b>{bestEligibleMatch.score}% en iyi uygun eşleşme</b>}
         </div>
 
-        {matching && <div className="transfer-supplier-suggestion-state">Coverage eşleşmeleri hesaplanıyor...</div>}
+        {matching && <div className="transfer-supplier-suggestion-state">Coverage, araç ve sürücü uygunluğu hesaplanıyor...</div>}
 
         {!matching && matchError && (
           <div className="transfer-supplier-suggestion-state warning">{matchError}</div>
@@ -211,37 +225,77 @@ export default function TransferSupplierAssignment({
 
         {autoSuggestionPending && (
           <div className="transfer-supplier-suggestion-state auto-ready">
-            En iyi eşleşme otomatik ön-seçildi. Atama henüz yapılmadı; onaylamak için “Atamayı Kaydet” düğmesine basın.
+            En iyi uygun tedarikçi otomatik ön-seçildi. Atama henüz yapılmadı; onaylamak için “Atamayı Kaydet” düğmesine basın.
+          </div>
+        )}
+
+        {!matching && matches.length > 0 && !bestEligibleMatch && (
+          <div className="transfer-supplier-suggestion-state warning">
+            Coverage eşleşmesi var ancak araç/sürücü uygunluğu doğrulanamadı. Otomatik ön-seçim yapılmadı.
           </div>
         )}
 
         {!matching && matches.length > 0 && (
           <div className="transfer-supplier-suggestion-list">
             {matches.slice(0, 5).map((match, index) => (
-              <article className={index === 0 ? "is-best" : ""} key={match.supplier_id}>
+              <article
+                className={`${index === 0 ? "is-best" : ""} ${match.eligible ? "is-eligible" : "needs-review"}`.trim()}
+                key={match.supplier_id}
+              >
                 <div className="transfer-supplier-suggestion-rank">#{index + 1}</div>
                 <div className="transfer-supplier-suggestion-main">
                   <strong>{match.company_name}</strong>
                   <span>{[match.city, match.country_code].filter(Boolean).join(", ") || "Konum belirtilmedi"}</span>
+
                   <div className="transfer-supplier-suggestion-reasons">
                     {(match.reasons || []).map((reason) => (
                       <small key={reason}>{REASON_LABELS[reason] || reason}</small>
                     ))}
                   </div>
+
+                  {(match.warnings || []).length > 0 && (
+                    <div className="transfer-supplier-suggestion-reasons warning-tags">
+                      {match.warnings.map((warning) => (
+                        <small key={warning}>{WARNING_LABELS[warning] || warning}</small>
+                      ))}
+                    </div>
+                  )}
+
+                  {match.best_vehicle && (
+                    <span className="transfer-supplier-best-vehicle">
+                      En uygun araç: {[match.best_vehicle.brand, match.best_vehicle.model, match.best_vehicle.plate]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      {match.best_vehicle.passenger_capacity
+                        ? ` · ${match.best_vehicle.passenger_capacity} pax`
+                        : ""}
+                    </span>
+                  )}
                 </div>
+
                 <div className="transfer-supplier-suggestion-side">
                   <b className={`match-score match-${match.match_level}`}>{match.score}%</b>
-                  <small>{match.match_level === "full" ? "Full Match" : "Partial Match"}</small>
-                  <span>{match.vehicles_count} araç · {match.drivers_count} sürücü</span>
+                  <small>
+                    {match.match_level === "full"
+                      ? "Operational Match"
+                      : match.match_level === "review"
+                        ? "Manual Review"
+                        : "Partial Match"}
+                  </small>
+                  <span>{match.vehicles_count} uygun araç · {match.drivers_count} aktif sürücü</span>
                   <button
                     type="button"
-                    disabled={!canAssign || saving}
+                    disabled={!canAssign || saving || !match.eligible}
                     onClick={() => {
                       setSelectedSupplierId(String(match.supplier_id));
                       setAutoSuggestedSupplierId("");
                     }}
                   >
-                    {String(selectedSupplierId) === String(match.supplier_id) ? "Seçildi" : "Bu tedarikçiyi seç"}
+                    {!match.eligible
+                      ? "Kontrol gerekli"
+                      : String(selectedSupplierId) === String(match.supplier_id)
+                        ? "Seçildi"
+                        : "Bu tedarikçiyi seç"}
                   </button>
                 </div>
               </article>

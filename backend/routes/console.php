@@ -16,3 +16,8 @@ Schedule::command('skyfleet:sync-flights --limit=3')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->when(fn (): bool => (bool) config('services.flight_tracking.auto_enabled', false));
+
+Schedule::command('skyfleet:process-flight-passenger-contact')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->when(fn (): bool => (bool) config('services.passenger_contact.auto_enabled', false));

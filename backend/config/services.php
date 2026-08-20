@@ -2,18 +2,6 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Third Party Services
-    |--------------------------------------------------------------------------
-    |
-    | This file is for storing the credentials for third party services such
-    | as Mailgun, Postmark, AWS and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
-    |
-    */
-
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
@@ -38,6 +26,11 @@ return [
     'flight_tracking' => [
         'provider' => env('FLIGHT_TRACKING_PROVIDER', 'aviationstack'),
         'key' => env('FLIGHT_TRACKING_API_KEY'),
+        'auto_enabled' => env('FLIGHT_TRACKING_AUTO_ENABLED', false),
+        'stale_minutes' => env('FLIGHT_TRACKING_STALE_MINUTES', 30),
+        'lookback_hours' => env('FLIGHT_TRACKING_LOOKBACK_HOURS', 3),
+        'lookahead_hours' => env('FLIGHT_TRACKING_LOOKAHEAD_HOURS', 6),
+        'landed_contact_minutes' => env('FLIGHT_TRACKING_LANDED_CONTACT_MINUTES', 50),
     ],
 
 ];

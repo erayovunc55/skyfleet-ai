@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DispatcherTransferManagementController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\DriverLocationController;
 use App\Http\Controllers\Api\DriverPushTokenController;
+use App\Http\Controllers\Api\FlightTrackingController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationPointController;
 use App\Http\Controllers\Api\OperationalAlertController;
@@ -51,6 +52,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('dispatcher/transfers/{transfer}/assign', [DispatcherController::class, 'assign']);
         Route::get('dispatcher/transfers/{transfer}/route', [TransferRouteController::class, 'show']);
         Route::get('dispatcher/transfers/{transfer}/supplier-matches', [SupplierMatchController::class, 'index']);
+        Route::get('dispatcher/transfers/{transfer}/flight', [FlightTrackingController::class, 'show']);
+        Route::post('dispatcher/transfers/{transfer}/flight/sync', [FlightTrackingController::class, 'sync']);
         Route::post('suppliers/with-account', [SupplierAccountController::class, 'store']);
         Route::get('suppliers', [SupplierController::class, 'index']);
         Route::post('suppliers', [SupplierController::class, 'store']);

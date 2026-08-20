@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DispatcherTransferManagementController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\DriverLocationController;
 use App\Http\Controllers\Api\DriverPushTokenController;
+use App\Http\Controllers\Api\FlightOperationalAlertController;
 use App\Http\Controllers\Api\FlightTrackingController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationPointController;
@@ -69,7 +70,6 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('suppliers/{supplier}/coverages', [SupplierCoverageController::class, 'store']);
         Route::patch('suppliers/{supplier}/coverages/{coverage}', [SupplierCoverageController::class, 'update']);
         Route::delete('suppliers/{supplier}/coverages/{coverage}', [SupplierCoverageController::class, 'destroy']);
-
         Route::get('airports/search', [LocationController::class, 'airportSearch']);
         Route::get('cities/{city}/airports', [LocationController::class, 'airports']);
         Route::post('locations', [LocationController::class, 'store']);
@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('admin/dashboard', AdminDashboardController::class)->middleware('panel.role:dispatcher,admin,super_admin');
     Route::get('admin/alerts', [OperationalAlertController::class, 'index'])->middleware('panel.role:dispatcher,admin,super_admin');
+    Route::get('admin/flight-alerts', FlightOperationalAlertController::class)->middleware('panel.role:dispatcher,admin,super_admin');
     Route::post('admin/alerts/read', [OperationalAlertController::class, 'markRead'])->middleware('panel.role:dispatcher,admin,super_admin');
 });
 

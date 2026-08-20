@@ -24,20 +24,37 @@ L.Icon.Default.mergeOptions({
 });
 
 const defaultCenter = [41.0082, 28.9784];
+const ACTIVE_STATUSES = new Set([
+  "accepted",
+  "on_the_way",
+  "arrived",
+  "passenger_called",
+  "passenger_on_board",
+  "trip_started",
+]);
 
-const driverIcon = L.divIcon({
-  className: "driver-map-marker",
-  html: `
-    <div class="driver-map-marker__inner">
-      🚐
-    </div>
-  `,
-  iconSize: [44, 44],
-  iconAnchor: [22, 22],
-  popupAnchor: [0, -22],
-});
+function createDriverIcon(isSelected, isStale) {
+  const stateClass = isStale ? " stale" : "";
+  const selectedClass = isSelected ? " selected" : "";
 
-export default function DispatcherMap({ transfer }) {
+  return L.divIcon({
+    className: `driver-map-marker${selectedClass}${stateClass}`,
+    html: `
+      <div class="driver-map-marker__inner">
+        🚐
+      </div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -22],
+  });
+}
+
+export default function DispatcherMap({
+  transfer,
+  transfers = [],
+  onSelectTransfer,
+}) {
   const pickupPosition = useMemo(
     () =>
       getCoordinatePair(
@@ -56,7 +73,22 @@ export default function DispatcherMap({ transfer }) {
     [transfer?.dropoff_lat, transfer?.dropoff_lng],
   );
 
-  const driverPosition = useMemo(
+  const activeVehicles = useMemo(
+    () =>
+      transfers
+        .filter((item) => ACTIVE_STATUSES.has(item.status))
+        .map((item) => ({
+          transfer: item,
+          position: getCoordinatePair(
+            item?.latest_location?.latitude,
+            item?.latest_location?.longitude,
+          ),
+        }))
+        .filter((item) => item.position),
+    [transfers],
+  );
+
+  const selectedDriverPosition = useMemo(
     () =>
       getCoordinatePair(
         transfer?.latest_location?.latitude,
@@ -69,21 +101,20 @@ export default function DispatcherMap({ transfer }) {
   );
 
   const positions = useMemo(
-    () =>
-      [
+    () => {
+      const all = [
+        ...activeVehicles.map((item) => item.position),
         pickupPosition,
         dropoffPosition,
-        driverPosition,
-      ].filter(Boolean),
-    [
-      pickupPosition,
-      dropoffPosition,
-      driverPosition,
-    ],
+      ].filter(Boolean);
+
+      return dedupePositions(all);
+    }, [activeVehicles, pickupPosition, dropoffPosition],
   );
 
   const center =
-    driverPosition ||
+    selectedDriverPosition ||
+    activeVehicles[0]?.position ||
     pickupPosition ||
     dropoffPosition ||
     defaultCenter;
@@ -123,63 +154,54 @@ export default function DispatcherMap({ transfer }) {
           </Marker>
         )}
 
-        {driverPosition && (
-          <Marker
-            position={driverPosition}
-            icon={driverIcon}
-          >
-            <Popup>
-              <strong>Sürücü Konumu</strong>
-              <br />
+        {activeVehicles.map(({ transfer: item, position }) => {
+          const isSelected = item.id === transfer?.id;
+          const isStale = locationIsStale(item.latest_location?.recorded_at);
 
-              {transfer?.driver?.name || "Sürücü"}
-              <br />
-
-              Hız:{" "}
-              {formatSpeed(
-                transfer?.latest_location?.speed,
-              )}
-              <br />
-
-              Yön:{" "}
-              {formatHeading(
-                transfer?.latest_location?.heading,
-              )}
-              <br />
-
-              Hassasiyet:{" "}
-              {formatAccuracy(
-                transfer?.latest_location?.accuracy,
-              )}
-              <br />
-
-              Son güncelleme:{" "}
-              {formatDateTime(
-                transfer?.latest_location?.recorded_at,
-              )}
-            </Popup>
-          </Marker>
-        )}
+          return (
+            <Marker
+              key={`driver-${item.id}`}
+              position={position}
+              icon={createDriverIcon(isSelected, isStale)}
+              eventHandlers={{
+                click: () => onSelectTransfer?.(item),
+              }}
+            >
+              <Popup>
+                <strong>{item.booking_reference || `Transfer #${item.id}`}</strong>
+                <br />
+                {getStatusLabel(item.status)}
+                <br />
+                Sürücü: {item?.driver?.name || "Atanmamış"}
+                <br />
+                Araç: {getVehicleLabel(item)}
+                <br />
+                Hız: {formatSpeed(item?.latest_location?.speed)}
+                <br />
+                Hassasiyet: {formatAccuracy(item?.latest_location?.accuracy)}
+                <br />
+                Son GPS: {formatDateTime(item?.latest_location?.recorded_at)}
+                {isStale && (
+                  <>
+                    <br />
+                    <strong>⚠ GPS güncel değil</strong>
+                  </>
+                )}
+              </Popup>
+            </Marker>
+          );
+        })}
 
         {pickupPosition && dropoffPosition && (
           <Polyline
-            positions={[
-              pickupPosition,
-              dropoffPosition,
-            ]}
-            pathOptions={{
-              weight: 5,
-              opacity: 0.8,
-            }}
+            positions={[pickupPosition, dropoffPosition]}
+            pathOptions={{ weight: 5, opacity: 0.8 }}
           />
         )}
 
-        {driverPosition && pickupPosition && (
+        {selectedDriverPosition && pickupPosition && (
           <Polyline
-            positions={[
-              driverPosition,
-              pickupPosition,
-            ]}
+            positions={[selectedDriverPosition, pickupPosition]}
             pathOptions={{
               weight: 4,
               opacity: 0.7,
@@ -214,74 +236,85 @@ function MapController({ positions }) {
       }
     }, 200);
 
-    return () => {
-      window.clearTimeout(resizeTimer);
-    };
+    return () => window.clearTimeout(resizeTimer);
   }, [map, positions]);
 
   return null;
+}
+
+function dedupePositions(positions) {
+  const seen = new Set();
+  return positions.filter((position) => {
+    const key = `${position[0].toFixed(6)}:${position[1].toFixed(6)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function getCoordinatePair(latitude, longitude) {
   const lat = Number(latitude);
   const lng = Number(longitude);
 
-  if (
-    !Number.isFinite(lat) ||
-    !Number.isFinite(lng)
-  ) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     return null;
   }
 
   return [lat, lng];
 }
 
+function locationIsStale(value) {
+  if (!value) return true;
+  const recordedAt = new Date(value).getTime();
+  if (!Number.isFinite(recordedAt)) return true;
+  return Date.now() - recordedAt > 60 * 1000;
+}
+
+function getVehicleLabel(transfer) {
+  const vehicle = transfer?.assigned_vehicle || transfer?.driver?.vehicle;
+  if (!vehicle) return "Atanmamış";
+  return [vehicle.plate, vehicle.brand, vehicle.model]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    accepted: "Kabul Edildi",
+    on_the_way: "Yola Çıktı",
+    arrived: "Alış Noktasında",
+    passenger_called: "Yolcu Arandı",
+    passenger_on_board: "Yolcu Araçta",
+    trip_started: "Yolculuk Başladı",
+  };
+
+  return labels[status] || status || "Bilinmiyor";
+}
+
 function formatAccuracy(value) {
   const accuracy = Number(value);
-
-  if (!Number.isFinite(accuracy)) {
-    return "Bilinmiyor";
-  }
-
-  return `${Math.round(accuracy)} metre`;
+  return Number.isFinite(accuracy)
+    ? `${Math.round(accuracy)} metre`
+    : "Bilinmiyor";
 }
 
 function formatSpeed(value) {
-  const speedInMetersPerSecond = Number(value);
+  const speed = Number(value);
+  if (!Number.isFinite(speed)) return "Bilinmiyor";
 
-  if (!Number.isFinite(speedInMetersPerSecond)) {
-    return "Bilinmiyor";
-  }
-
-  const speedInKilometersPerHour =
-    speedInMetersPerSecond * 3.6;
-
-  return `${Math.round(
-    speedInKilometersPerHour,
-  )} km/s`;
-}
-
-function formatHeading(value) {
-  const heading = Number(value);
-
-  if (!Number.isFinite(heading)) {
-    return "Bilinmiyor";
-  }
-
-  return `${Math.round(heading)}°`;
+  // Backend stores driver location speed as km/h.
+  return `${Math.round(speed)} km/s`;
 }
 
 function formatDateTime(value) {
-  if (!value) {
-    return "Bilinmiyor";
-  }
+  if (!value) return "Bilinmiyor";
 
-  return new Date(value).toLocaleTimeString(
-    "tr-TR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    },
-  );
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Bilinmiyor";
+
+  return date.toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }

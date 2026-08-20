@@ -21,6 +21,7 @@ export default function TransferSupplierAssignment({
   const [suppliers, setSuppliers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [autoSuggestedSupplierId, setAutoSuggestedSupplierId] = useState("");
   const [loading, setLoading] = useState(true);
   const [matching, setMatching] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,6 +35,7 @@ export default function TransferSupplierAssignment({
     setSelectedSupplierId(
       transfer?.supplier_id ? String(transfer.supplier_id) : "",
     );
+    setAutoSuggestedSupplierId("");
     setError("");
     setMessage("");
   }, [transfer?.id, transfer?.supplier_id]);
@@ -89,10 +91,25 @@ export default function TransferSupplierAssignment({
 
       try {
         const items = await transferService.getSupplierMatches(transfer.id);
-        if (active) setMatches(items);
+        if (!active) return;
+
+        setMatches(items);
+
+        const bestMatch = Array.isArray(items) ? items[0] : null;
+
+        if (
+          bestMatch &&
+          !transfer?.supplier_id &&
+          canAssign
+        ) {
+          const bestSupplierId = String(bestMatch.supplier_id);
+          setSelectedSupplierId(bestSupplierId);
+          setAutoSuggestedSupplierId(bestSupplierId);
+        }
       } catch (requestError) {
         if (active) {
           setMatches([]);
+          setAutoSuggestedSupplierId("");
           setMatchError(
             requestError?.response?.data?.message ||
               requestError?.message ||
@@ -106,7 +123,13 @@ export default function TransferSupplierAssignment({
 
     loadMatches();
     return () => { active = false; };
-  }, [transfer?.id, transfer?.pickup_location_id, transfer?.dropoff_location_id]);
+  }, [
+    transfer?.id,
+    transfer?.supplier_id,
+    transfer?.pickup_location_id,
+    transfer?.dropoff_location_id,
+    canAssign,
+  ]);
 
   async function handleSave() {
     if (!transfer?.id || !canAssign) return;
@@ -123,6 +146,7 @@ export default function TransferSupplierAssignment({
         },
       );
 
+      setAutoSuggestedSupplierId("");
       setMessage(
         selectedSupplierId
           ? "Transfer tedarikçiye atandı."
@@ -143,6 +167,11 @@ export default function TransferSupplierAssignment({
   }
 
   if (!transfer) return null;
+
+  const autoSuggestionPending =
+    !transfer.supplier_id &&
+    autoSuggestedSupplierId &&
+    String(selectedSupplierId) === String(autoSuggestedSupplierId);
 
   return (
     <section className="transfer-supplier-assignment">
@@ -180,6 +209,12 @@ export default function TransferSupplierAssignment({
           </div>
         )}
 
+        {autoSuggestionPending && (
+          <div className="transfer-supplier-suggestion-state auto-ready">
+            En iyi eşleşme otomatik ön-seçildi. Atama henüz yapılmadı; onaylamak için “Atamayı Kaydet” düğmesine basın.
+          </div>
+        )}
+
         {!matching && matches.length > 0 && (
           <div className="transfer-supplier-suggestion-list">
             {matches.slice(0, 5).map((match, index) => (
@@ -201,7 +236,10 @@ export default function TransferSupplierAssignment({
                   <button
                     type="button"
                     disabled={!canAssign || saving}
-                    onClick={() => setSelectedSupplierId(String(match.supplier_id))}
+                    onClick={() => {
+                      setSelectedSupplierId(String(match.supplier_id));
+                      setAutoSuggestedSupplierId("");
+                    }}
                   >
                     {String(selectedSupplierId) === String(match.supplier_id) ? "Seçildi" : "Bu tedarikçiyi seç"}
                   </button>
@@ -226,7 +264,10 @@ export default function TransferSupplierAssignment({
           <select
             value={selectedSupplierId}
             disabled={loading || saving || !canAssign}
-            onChange={(event) => setSelectedSupplierId(event.target.value)}
+            onChange={(event) => {
+              setSelectedSupplierId(event.target.value);
+              setAutoSuggestedSupplierId("");
+            }}
           >
             <option value="">Tedarikçi atamasını kaldır</option>
             {suppliers.map((supplier) => (

@@ -18,52 +18,25 @@ const STATUS_FLOW = [
   { current: "trip_started", next: "completed", label: "Transferi Tamamla", icon: "🏁" },
 ];
 
-const GPS_ACTIVE_STATUSES = [
-  "accepted",
-  "on_the_way",
-  "arrived",
-  "passenger_called",
-  "passenger_on_board",
-  "trip_started",
-];
-
 const NO_SHOW_ALLOWED_STATUSES = ["arrived", "passenger_called"];
-const TRACKING_SHARE_STATUSES = [
-  "on_the_way",
-  "arrived",
-  "passenger_called",
-  "passenger_on_board",
-  "trip_started",
-  "completed",
-  "no_show",
-];
+const GPS_ACTIVE_STATUSES = ["accepted", "on_the_way", "arrived", "passenger_called", "passenger_on_board", "trip_started"];
+const TRACKING_SHARE_STATUSES = ["on_the_way", "arrived", "passenger_called", "passenger_on_board", "trip_started", "completed", "no_show"];
 
 export default function DriverTransferDetailPage({ user, initialTransfer, onBack, onTransferUpdated }) {
   const [transfer, setTransfer] = useState(initialTransfer);
   const [showNoShowEvidence, setShowNoShowEvidence] = useState(false);
+  const shouldEnableGps = Boolean(transfer?.id && GPS_ACTIVE_STATUSES.includes(transfer.status));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [trackingUrl, setTrackingUrl] = useState(initialTransfer?.tracking_url || "");
   const [trackingLoading, setTrackingLoading] = useState(false);
-
-  const shouldEnableGps = Boolean(
-    transfer?.id && GPS_ACTIVE_STATUSES.includes(transfer.status),
-  );
-
   const canShareTracking = TRACKING_SHARE_STATUSES.includes(transfer.status);
 
   useEffect(() => {
-    if (!canShareTracking) {
-      setTrackingUrl("");
-      return;
-    }
-    if (transfer?.tracking_url && transfer.tracking_url !== trackingUrl) {
-      setTrackingUrl(transfer.tracking_url);
-      return;
-    }
+    if (!canShareTracking) { setTrackingUrl(""); return; }
+    if (transfer?.tracking_url && transfer.tracking_url !== trackingUrl) { setTrackingUrl(transfer.tracking_url); return; }
     if (trackingUrl) return;
-
     let active = true;
     async function loadTrackingLink() {
       setTrackingLoading(true);
@@ -74,18 +47,13 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
         if (active && ![409, 410].includes(requestError?.response?.status)) {
           setError(requestError?.response?.data?.message || "Takip bağlantısı alınamadı.");
         }
-      } finally {
-        if (active) setTrackingLoading(false);
-      }
+      } finally { if (active) setTrackingLoading(false); }
     }
     loadTrackingLink();
     return () => { active = false; };
   }, [canShareTracking, transfer.id, transfer?.tracking_url, trackingUrl]);
 
-  const nextAction = useMemo(
-    () => STATUS_FLOW.find((item) => item.current === transfer.status) || null,
-    [transfer.status],
-  );
+  const nextAction = useMemo(() => STATUS_FLOW.find((item) => item.current === transfer.status) || null, [transfer.status]);
   const canCreateNoShowEvidence = NO_SHOW_ALLOWED_STATUSES.includes(transfer.status);
 
   async function updateStatus(status, note = null) {
@@ -122,8 +90,8 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
     setError(""); setMessage("");
     const phone = normalizePhone(transfer.passenger_phone);
     if (!phone) { setError("Yolcu telefon bilgisi bulunmuyor."); return; }
-    const whatsappMessage = createWhatsAppMessage(transfer);
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(whatsappMessage)}`, "_blank", "noopener,noreferrer");
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(createWhatsAppMessage(transfer))}`;
+    window.open(url, "_blank", "noopener,noreferrer");
     const location = await getContactLocation();
     try {
       const response = await transferService.recordContactEvent(transfer.id, "passenger_whatsapp_opened", location, "Sürücü yolcu için WhatsApp görüşmesini açtı.");
@@ -143,19 +111,13 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
         resolvedTrackingUrl = data?.tracking_url || "";
         setTrackingUrl(resolvedTrackingUrl);
       } catch (requestError) {
-        setError(requestError?.response?.data?.message || "Takip bağlantısı hazırlanamadı.");
-        return;
+        setError(requestError?.response?.data?.message || "Takip bağlantısı hazırlanamadı."); return;
       } finally { setTrackingLoading(false); }
     }
     if (!resolvedTrackingUrl) { setError("Takip bağlantısı bulunamadı."); return; }
-    const whatsappMessage = createTrackingWhatsAppMessage(transfer, resolvedTrackingUrl);
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(whatsappMessage)}`, "_blank", "noopener,noreferrer");
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(createTrackingWhatsAppMessage(transfer, resolvedTrackingUrl))}`;
+    window.open(url, "_blank", "noopener,noreferrer");
     setMessage("Yolcu takip mesajı WhatsApp'ta hazırlandı.");
-    const location = await getContactLocation();
-    try {
-      const response = await transferService.recordContactEvent(transfer.id, "passenger_whatsapp_opened", location, "Canlı takip bağlantısı yolcu için WhatsApp'ta açıldı.");
-      appendContactEvent(response?.data?.event);
-    } catch { setMessage("Takip mesajı WhatsApp'ta açıldı; iletişim kaydı oluşturulamadı."); }
   }
 
   async function copyTrackingLink() {
@@ -181,11 +143,13 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
   }
 
   function openNoShowEvidence() { setError(""); setMessage(""); setShowNoShowEvidence(true); }
+
   async function handleEvidenceSaved() {
     setShowNoShowEvidence(false);
     await updateStatus("no_show", "No Show fotoğraf kanıtı yüklenerek sürücü tarafından kaydedildi.");
   }
-  function handlePrimaryAction() { if (nextAction && !saving) updateStatus(nextAction.next); }
+
+  function handlePrimaryAction() { if (!nextAction || saving) return; updateStatus(nextAction.next); }
 
   return (
     <main className="driver-detail-page">
@@ -211,12 +175,8 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
           <InfoRow label="Telefon" value={transfer.passenger_phone || "Belirtilmedi"} />
           <InfoRow label="Yolcu" value={`${getPassengerCount(transfer)} kişi`} />
           <InfoRow label="Bagaj" value={`${Number(transfer.luggage_count || 0)} adet`} />
-          <div className="driver-contact-actions">
-            <button type="button" onClick={callPassenger}>☎ Yolcuyu Ara</button>
-            <button type="button" onClick={openWhatsApp}>💬 WhatsApp</button>
-          </div>
+          <div className="driver-contact-actions"><button type="button" onClick={callPassenger}>☎ Yolcuyu Ara</button><button type="button" onClick={openWhatsApp}>💬 WhatsApp</button></div>
         </InfoCard>
-
         <InfoCard title="Uçuş">
           <InfoRow label="Uçuş" value={transfer.flight_number || "Belirtilmedi"} />
           <InfoRow label="Havayolu" value={transfer.airline || "Belirtilmedi"} />
@@ -225,13 +185,13 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
         </InfoCard>
       </section>
 
-      <DriverGpsPanel transferId={transfer.id} enabled={shouldEnableGps} sendInterval={5000} />
+      <DriverGpsPanel transferId={transfer.id} enabled={shouldEnableGps} />
 
       {canShareTracking && (
         <section className="driver-tracking-share-card">
-          <div><span>YOLCU CANLI TAKİBİ</span><h2>Takip Bağlantısı</h2><p>Yolcu uygulama yüklemeden aracınızı canlı takip edebilir.</p></div>
+          <span>YOLCU CANLI TAKİBİ</span><h2>Takip Bağlantısı</h2><p>Yolcu uygulama yüklemeden aracınızı canlı takip edebilir.</p>
           <div className="driver-tracking-share-actions">
-            <button type="button" disabled={trackingLoading} onClick={shareTrackingWithPassenger}>{trackingLoading ? "Hazırlanıyor..." : "💬 WhatsApp ile Gönder"}</button>
+            <button type="button" disabled={trackingLoading || !trackingUrl} onClick={shareTrackingWithPassenger}>💬 WhatsApp ile Gönder</button>
             <button type="button" disabled={!trackingUrl} onClick={copyTrackingLink}>🔗 Linki Kopyala</button>
           </div>
         </section>
@@ -241,9 +201,7 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
       {message && <div className="driver-action-message success">{message}</div>}
 
       {nextAction && (
-        <section className="driver-primary-action-card">
-          <button type="button" disabled={saving} onClick={handlePrimaryAction}>{nextAction.icon} {saving ? "Kaydediliyor..." : nextAction.label}</button>
-        </section>
+        <section className="driver-primary-action"><button type="button" disabled={saving} onClick={handlePrimaryAction}>{nextAction.icon} {saving ? "Kaydediliyor..." : nextAction.label}</button></section>
       )}
 
       {canCreateNoShowEvidence && (
@@ -251,7 +209,7 @@ export default function DriverTransferDetailPage({ user, initialTransfer, onBack
       )}
 
       {showNoShowEvidence && (
-        <NoShowEvidencePanel transfer={transfer} onSaved={handleEvidenceSaved} onCancel={() => setShowNoShowEvidence(false)} />
+        <NoShowEvidencePanel transfer={transfer} onEvidenceSaved={handleEvidenceSaved} onCancel={() => setShowNoShowEvidence(false)} />
       )}
     </main>
   );

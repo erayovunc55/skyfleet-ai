@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'flight_tracking' => [
+        'provider' => env('FLIGHT_TRACKING_PROVIDER', 'aviationstack'),
+        'key' => env('FLIGHT_TRACKING_API_KEY'),
+    ],
+
 ];

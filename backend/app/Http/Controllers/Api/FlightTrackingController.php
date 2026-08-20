@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\FlightStatusSnapshot;
 use App\Models\Transfer;
 use App\Services\FlightTrackingService;
 use Illuminate\Http\JsonResponse;
@@ -12,7 +13,8 @@ class FlightTrackingController extends Controller
 {
     public function show(Transfer $transfer): JsonResponse
     {
-        $latest = $transfer->flightStatusSnapshots()
+        $latest = FlightStatusSnapshot::query()
+            ->where('transfer_id', $transfer->id)
             ->latest('recorded_at')
             ->first();
 

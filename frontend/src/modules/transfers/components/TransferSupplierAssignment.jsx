@@ -15,6 +15,8 @@ const REASON_LABELS = {
   luggage_capacity_fit: "Bagaj kapasitesi uygun",
   vehicle_type_fit: "Araç tipi uyumlu",
   active_driver_available: "Aktif sürücü mevcut",
+  supplier_performance_tracked: "Performans geçmişi mevcut",
+  high_supplier_reliability: "Yüksek güvenilirlik",
 };
 
 const WARNING_LABELS = {
@@ -23,6 +25,8 @@ const WARNING_LABELS = {
   luggage_capacity_unavailable: "Bagaj kapasitesi yetersiz",
   vehicle_type_not_confirmed: "Araç tipi doğrulanamadı",
   no_active_driver: "Aktif sürücü yok",
+  limited_supplier_history: "Geçmiş veri henüz yetersiz",
+  low_supplier_reliability: "Düşük operasyon güvenilirliği",
 };
 
 export default function TransferSupplierAssignment({
@@ -209,7 +213,7 @@ export default function TransferSupplierAssignment({
           {bestEligibleMatch && <b>{bestEligibleMatch.score}% en iyi uygun eşleşme</b>}
         </div>
 
-        {matching && <div className="transfer-supplier-suggestion-state">Coverage, araç ve sürücü uygunluğu hesaplanıyor...</div>}
+        {matching && <div className="transfer-supplier-suggestion-state">Coverage, araç, sürücü ve performans uygunluğu hesaplanıyor...</div>}
 
         {!matching && matchError && (
           <div className="transfer-supplier-suggestion-state warning">{matchError}</div>
@@ -237,69 +241,105 @@ export default function TransferSupplierAssignment({
 
         {!matching && matches.length > 0 && (
           <div className="transfer-supplier-suggestion-list">
-            {matches.slice(0, 5).map((match, index) => (
-              <article
-                className={`${index === 0 ? "is-best" : ""} ${match.eligible ? "is-eligible" : "needs-review"}`.trim()}
-                key={match.supplier_id}
-              >
-                <div className="transfer-supplier-suggestion-rank">#{index + 1}</div>
-                <div className="transfer-supplier-suggestion-main">
-                  <strong>{match.company_name}</strong>
-                  <span>{[match.city, match.country_code].filter(Boolean).join(", ") || "Konum belirtilmedi"}</span>
+            {matches.slice(0, 5).map((match, index) => {
+              const performance = match.performance || {};
+              const performanceReady = Boolean(performance.sample_sufficient);
+              const reliabilityLabel = performanceReady
+                ? `${performance.reliability_score}%`
+                : "Yeni / veri yetersiz";
 
-                  <div className="transfer-supplier-suggestion-reasons">
-                    {(match.reasons || []).map((reason) => (
-                      <small key={reason}>{REASON_LABELS[reason] || reason}</small>
-                    ))}
-                  </div>
+              return (
+                <article
+                  className={`${index === 0 ? "is-best" : ""} ${match.eligible ? "is-eligible" : "needs-review"}`.trim()}
+                  key={match.supplier_id}
+                >
+                  <div className="transfer-supplier-suggestion-rank">#{index + 1}</div>
 
-                  {(match.warnings || []).length > 0 && (
-                    <div className="transfer-supplier-suggestion-reasons warning-tags">
-                      {match.warnings.map((warning) => (
-                        <small key={warning}>{WARNING_LABELS[warning] || warning}</small>
+                  <div className="transfer-supplier-suggestion-main">
+                    <strong>{match.company_name}</strong>
+                    <span>{[match.city, match.country_code].filter(Boolean).join(", ") || "Konum belirtilmedi"}</span>
+
+                    <div className="transfer-supplier-suggestion-metrics">
+                      <div>
+                        <span>Reliability</span>
+                        <strong>{reliabilityLabel}</strong>
+                      </div>
+                      <div>
+                        <span>Sonuçlanan</span>
+                        <strong>{performance.total_transfers ?? 0}</strong>
+                      </div>
+                      <div>
+                        <span>Completed</span>
+                        <strong>{performance.completed_transfers ?? 0}</strong>
+                      </div>
+                      <div>
+                        <span>No Show</span>
+                        <strong>{performance.no_show_transfers ?? 0}</strong>
+                      </div>
+                    </div>
+
+                    <div className="transfer-supplier-suggestion-reasons">
+                      {(match.reasons || []).map((reason) => (
+                        <small key={reason}>{REASON_LABELS[reason] || reason}</small>
                       ))}
                     </div>
-                  )}
 
-                  {match.best_vehicle && (
-                    <span className="transfer-supplier-best-vehicle">
-                      En uygun araç: {[match.best_vehicle.brand, match.best_vehicle.model, match.best_vehicle.plate]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      {match.best_vehicle.passenger_capacity
-                        ? ` · ${match.best_vehicle.passenger_capacity} pax`
-                        : ""}
-                    </span>
-                  )}
-                </div>
+                    {(match.warnings || []).length > 0 && (
+                      <div className="transfer-supplier-suggestion-reasons warning-tags">
+                        {match.warnings.map((warning) => (
+                          <small key={warning}>{WARNING_LABELS[warning] || warning}</small>
+                        ))}
+                      </div>
+                    )}
 
-                <div className="transfer-supplier-suggestion-side">
-                  <b className={`match-score match-${match.match_level}`}>{match.score}%</b>
-                  <small>
-                    {match.match_level === "full"
-                      ? "Operational Match"
-                      : match.match_level === "review"
-                        ? "Manual Review"
-                        : "Partial Match"}
-                  </small>
-                  <span>{match.vehicles_count} uygun araç · {match.drivers_count} aktif sürücü</span>
-                  <button
-                    type="button"
-                    disabled={!canAssign || saving || !match.eligible}
-                    onClick={() => {
-                      setSelectedSupplierId(String(match.supplier_id));
-                      setAutoSuggestedSupplierId("");
-                    }}
-                  >
-                    {!match.eligible
-                      ? "Kontrol gerekli"
-                      : String(selectedSupplierId) === String(match.supplier_id)
-                        ? "Seçildi"
-                        : "Bu tedarikçiyi seç"}
-                  </button>
-                </div>
-              </article>
-            ))}
+                    {match.best_vehicle && (
+                      <div className="transfer-supplier-best-vehicle">
+                        <span>Önerilen araç</span>
+                        <strong>
+                          {[match.best_vehicle.brand, match.best_vehicle.model, match.best_vehicle.plate]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </strong>
+                        <small>
+                          {match.best_vehicle.passenger_capacity
+                            ? `${match.best_vehicle.passenger_capacity} pax`
+                            : "Kapasite belirtilmedi"}
+                          {match.best_vehicle.luggage_capacity
+                            ? ` · ${match.best_vehicle.luggage_capacity} bagaj`
+                            : ""}
+                        </small>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="transfer-supplier-suggestion-side">
+                    <b className={`match-score match-${match.match_level}`}>{match.score}%</b>
+                    <small>
+                      {match.match_level === "full"
+                        ? "Operational Match"
+                        : match.match_level === "review"
+                          ? "Manual Review"
+                          : "Partial Match"}
+                    </small>
+                    <span>{match.vehicles_count} uygun araç · {match.drivers_count} aktif sürücü</span>
+                    <button
+                      type="button"
+                      disabled={!canAssign || saving || !match.eligible}
+                      onClick={() => {
+                        setSelectedSupplierId(String(match.supplier_id));
+                        setAutoSuggestedSupplierId("");
+                      }}
+                    >
+                      {!match.eligible
+                        ? "Kontrol gerekli"
+                        : String(selectedSupplierId) === String(match.supplier_id)
+                          ? "Seçildi"
+                          : "Bu tedarikçiyi seç"}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PassengerTrackingController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\SupplierAccountController;
 use App\Http\Controllers\Api\SupplierCoverageController;
+use App\Http\Controllers\Api\SupplierJobPoolController;
 use App\Http\Controllers\Api\SupplierMatchController;
 use App\Http\Controllers\Api\SupplierPortalAssignmentController;
 use App\Http\Controllers\Api\SupplierPortalController;
@@ -77,6 +78,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::prefix('supplier-portal')->group(function (): void {
         Route::get('profile', [SupplierPortalController::class, 'profile']);
+        Route::get('available-jobs', [SupplierJobPoolController::class, 'index']);
+        Route::post('available-jobs/{transfer}/accept', [SupplierJobPoolController::class, 'accept']);
         Route::get('transfers', [SupplierPortalController::class, 'transfers']);
         Route::get('transfers/{transfer}', [SupplierPortalController::class, 'show']);
         Route::get('vehicles', [SupplierPortalVehicleController::class, 'index']);

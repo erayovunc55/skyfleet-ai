@@ -33,4 +33,12 @@ return [
         'landed_contact_minutes' => env('FLIGHT_TRACKING_LANDED_CONTACT_MINUTES', 50),
     ],
 
+    'passenger_contact' => [
+        // Keep dry_run until a real messaging provider and approved templates
+        // are configured. Dry-run creates an auditable TransferEvent only.
+        'mode' => env('PASSENGER_CONTACT_MODE', 'dry_run'),
+        'channel' => env('PASSENGER_CONTACT_CHANNEL', 'whatsapp'),
+        'auto_enabled' => env('PASSENGER_CONTACT_AUTO_ENABLED', false),
+    ],
+
 ];

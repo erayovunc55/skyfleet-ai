@@ -30,6 +30,7 @@ class OperationalAlertController extends Controller
         $alerts = collect()
             ->concat($this->upcomingUnassigned($now))
             ->concat($this->supplierAssignmentDelay($now))
+            ->concat($this->pickupReadiness($now))
             ->concat($this->overdueTransfers($now))
             ->concat($this->gpsAttention($now))
             ->concat($this->recentNoShowEvidence($now))
@@ -98,11 +99,6 @@ class OperationalAlertController extends Controller
         ]);
     }
 
-    /**
-     * Transfers that are not yet owned by a supplier and are approaching pickup.
-     * Supplier-owned transfers are handled separately so the dispatcher can see
-     * whether the delay is supplier allocation or driver/vehicle assignment.
-     */
     private function upcomingUnassigned(Carbon $now): Collection
     {
         return Transfer::query()
@@ -129,10 +125,6 @@ class OperationalAlertController extends Controller
             );
     }
 
-    /**
-     * A supplier has accepted the job, but operational resources have not been
-     * completed. This is the key Attention Required signal for First Accept.
-     */
     private function supplierAssignmentDelay(Carbon $now): Collection
     {
         return Transfer::query()
@@ -190,6 +182,47 @@ class OperationalAlertController extends Controller
                     transfer: $transfer,
                     occurredAt: $transfer->updated_at,
                     icon: 'assignment'
+                );
+            });
+    }
+
+    /**
+     * Resources are assigned, but the driver has not started moving while pickup
+     * is approaching. This catches the operational gap after assignment.
+     */
+    private function pickupReadiness(Carbon $now): Collection
+    {
+        return Transfer::query()
+            ->whereBetween('pickup_time', [$now, $now->copy()->addHours(2)])
+            ->whereNotNull('supplier_id')
+            ->whereNotNull('driver_id')
+            ->whereNotNull('assigned_vehicle_id')
+            ->whereIn('status', ['pending', 'accepted', 'assigned'])
+            ->orderBy('pickup_time')
+            ->limit(16)
+            ->get()
+            ->map(function (Transfer $transfer) use ($now): array {
+                $minutesToPickup = max(
+                    0,
+                    (int) $now->diffInMinutes($transfer->pickup_time, false)
+                );
+
+                $level = $minutesToPickup <= 45 ? 'critical' : 'warning';
+
+                return $this->makeAlert(
+                    key: 'pickup-readiness:' . $transfer->id . ':' . $level,
+                    level: $level,
+                    title: $level === 'critical'
+                        ? 'Acil: sürücü henüz yola çıkmadı'
+                        : 'Pickup yaklaşıyor: sürücü hareket bekleniyor',
+                    message: sprintf(
+                        '%s için sürücü ve araç atanmış durumda fakat sürücü henüz yola çıkmadı. Alışa yaklaşık %s kaldı.',
+                        $transfer->booking_reference,
+                        $this->formatRemainingTime($minutesToPickup)
+                    ),
+                    transfer: $transfer,
+                    occurredAt: $transfer->updated_at,
+                    icon: 'departure'
                 );
             });
     }

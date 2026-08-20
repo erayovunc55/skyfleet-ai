@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import SupplierAvailableJobsPage from "./pages/SupplierAvailableJobsPage";
 import SupplierDashboardPage from "./pages/SupplierDashboardPage";
 import SupplierDriversPage from "./pages/SupplierDriversPage";
 import SupplierFinancePage from "./pages/SupplierFinancePage";
@@ -10,7 +11,8 @@ import { LanguageSwitcher } from "./i18n.jsx";
 import { clearStoredAuth, getStoredUser, logout } from "./services/authService";
 
 const NAVIGATION_ITEMS = [
-  { id: "transfers", label: "Transferler", icon: "📋" },
+  { id: "available-jobs", label: "Açık İşler", icon: "⚡" },
+  { id: "transfers", label: "Transferlerim", icon: "📋" },
   { id: "drivers", label: "Sürücüler", icon: "👤" },
   { id: "vehicles", label: "Araçlar", icon: "🚐" },
   { id: "finance", label: "Hakedişlerim", icon: "💶" },
@@ -19,13 +21,13 @@ const NAVIGATION_ITEMS = [
 
 export default function App() {
   const [user, setUser] = useState(getStoredUser());
-  const [currentPage, setCurrentPage] = useState("transfers");
+  const [currentPage, setCurrentPage] = useState("available-jobs");
 
   useEffect(() => {
     function handleUnauthenticated() {
       clearStoredAuth();
       setUser(null);
-      setCurrentPage("transfers");
+      setCurrentPage("available-jobs");
     }
     window.addEventListener("skyfleet-supplier:unauthenticated", handleUnauthenticated);
     return () => window.removeEventListener("skyfleet-supplier:unauthenticated", handleUnauthenticated);
@@ -34,7 +36,7 @@ export default function App() {
   async function handleLogout() {
     await logout();
     setUser(null);
-    setCurrentPage("transfers");
+    setCurrentPage("available-jobs");
   }
 
   if (!user) {
@@ -46,7 +48,7 @@ export default function App() {
         <SupplierLoginPage
           onLogin={(loggedInUser) => {
             setUser(loggedInUser);
-            setCurrentPage("transfers");
+            setCurrentPage("available-jobs");
           }}
         />
       </>
@@ -83,6 +85,9 @@ export default function App() {
         </div>
       </header>
 
+      {currentPage === "available-jobs" && (
+        <SupplierAvailableJobsPage onOpenMyTransfers={() => setCurrentPage("transfers")} />
+      )}
       {currentPage === "transfers" && <SupplierDashboardPage user={user} onLogout={handleLogout} />}
       {currentPage === "drivers" && <SupplierDriversPage />}
       {currentPage === "vehicles" && <SupplierVehiclesPage />}

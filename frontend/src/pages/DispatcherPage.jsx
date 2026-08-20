@@ -22,26 +22,16 @@ export default function DispatcherPage({
     async function loadTransfers() {
       try {
         const data = await getDispatcherTransfers();
-
-        const normalizedTransfers = Array.isArray(data)
-          ? data
-          : [];
+        const normalizedTransfers = Array.isArray(data) ? data : [];
 
         setTransfers(normalizedTransfers);
-
         setSelectedTransfer((currentTransfer) => {
           if (currentTransfer) {
-            const updatedTransfer =
-              normalizedTransfers.find(
-                (transfer) =>
-                  transfer.id === currentTransfer.id,
-              );
-
-            return (
-              updatedTransfer ||
-              normalizedTransfers[0] ||
-              null
+            const updatedTransfer = normalizedTransfers.find(
+              (transfer) => transfer.id === currentTransfer.id,
             );
+
+            return updatedTransfer || normalizedTransfers[0] || null;
           }
 
           return normalizedTransfers[0] || null;
@@ -49,10 +39,7 @@ export default function DispatcherPage({
 
         setError("");
       } catch (err) {
-        setError(
-          err.message ||
-            "Operasyon verileri yüklenemedi.",
-        );
+        setError(err.message || "Operasyon verileri yüklenemedi.");
       } finally {
         setLoading(false);
       }
@@ -60,75 +47,54 @@ export default function DispatcherPage({
 
     loadTransfers();
 
-    const refreshTimer = window.setInterval(
-      loadTransfers,
-      10000,
-    );
+    const refreshTimer = window.setInterval(loadTransfers, 10000);
 
-    return () => {
-      window.clearInterval(refreshTimer);
-    };
+    return () => window.clearInterval(refreshTimer);
   }, []);
 
   useEffect(() => {
-    if (!selectedTransfer?.id) {
-      return;
-    }
+    if (!selectedTransfer?.id) return undefined;
 
     const channelName = `transfer.${selectedTransfer.id}`;
 
-    const channel = echo
+    echo
       .channel(channelName)
-      .listen(
-        ".driver.location.updated",
-        (location) => {
-          console.log(
-            "GPS EVENT GELDİ:",
-            location,
-          );
-
-          setTransfers((currentTransfers) =>
-            currentTransfers.map((transfer) => {
-              if (
-                transfer.id !==
-                Number(location.transfer_id)
-              ) {
-                return transfer;
-              }
-
-              return {
-                ...transfer,
-                latest_location: {
-                  ...transfer.latest_location,
-                  ...location,
-                },
-              };
-            }),
-          );
-
-          setSelectedTransfer((currentTransfer) => {
-            if (
-              !currentTransfer ||
-              currentTransfer.id !==
-                Number(location.transfer_id)
-            ) {
-              return currentTransfer;
+      .listen(".driver.location.updated", (location) => {
+        setTransfers((currentTransfers) =>
+          currentTransfers.map((transfer) => {
+            if (transfer.id !== Number(location.transfer_id)) {
+              return transfer;
             }
 
             return {
-              ...currentTransfer,
+              ...transfer,
               latest_location: {
-                ...currentTransfer.latest_location,
+                ...transfer.latest_location,
                 ...location,
               },
             };
-          });
-        },
-      );
+          }),
+        );
 
-    return () => {
-      echo.leave(channelName);
-    };
+        setSelectedTransfer((currentTransfer) => {
+          if (
+            !currentTransfer ||
+            currentTransfer.id !== Number(location.transfer_id)
+          ) {
+            return currentTransfer;
+          }
+
+          return {
+            ...currentTransfer,
+            latest_location: {
+              ...currentTransfer.latest_location,
+              ...location,
+            },
+          };
+        });
+      });
+
+    return () => echo.leave(channelName);
   }, [selectedTransfer?.id]);
 
   const stats = useMemo(() => {
@@ -142,21 +108,21 @@ export default function DispatcherPage({
     ];
 
     return {
-      waiting: transfers.filter(
-        (transfer) =>
-          transfer.status === "pending",
-      ).length,
-
-      active: transfers.filter((transfer) =>
-        activeStatuses.includes(transfer.status),
-      ).length,
-
-      completed: transfers.filter(
-        (transfer) =>
-          transfer.status === "completed",
-      ).length,
+      waiting: transfers.filter((transfer) => transfer.status === "pending").length,
+      active: transfers.filter((transfer) => activeStatuses.includes(transfer.status)).length,
+      completed: transfers.filter((transfer) => transfer.status === "completed").length,
     };
   }, [transfers]);
+
+  const liveVehicleCount = useMemo(
+    () =>
+      transfers.filter((transfer) => {
+        const lat = Number(transfer?.latest_location?.latitude);
+        const lng = Number(transfer?.latest_location?.longitude);
+        return Number.isFinite(lat) && Number.isFinite(lng);
+      }).length,
+    [transfers],
+  );
 
   return (
     <main className="dispatcher-page">
@@ -169,19 +135,13 @@ export default function DispatcherPage({
         <div className="dispatcher-header-actions">
           <span>
             Son güncelleme:{" "}
-            {new Date().toLocaleTimeString(
-              "tr-TR",
-              {
-                hour: "2-digit",
-                minute: "2-digit",
-              },
-            )}
+            {new Date().toLocaleTimeString("tr-TR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </span>
 
-          <button
-            type="button"
-            onClick={onOpenFleet}
-          >
+          <button type="button" onClick={onOpenFleet}>
             Filo Yönetimi
           </button>
         </div>
@@ -194,143 +154,96 @@ export default function DispatcherPage({
       />
 
       {loading && (
-        <p className="dashboard-message">
-          Operasyon verileri yükleniyor...
-        </p>
+        <p className="dashboard-message">Operasyon verileri yükleniyor...</p>
       )}
 
-      {error && (
-        <p className="dashboard-error">
-          {error}
-        </p>
+      {error && <p className="dashboard-error">{error}</p>}
+
+      {!loading && !error && transfers.length === 0 && (
+        <p className="dashboard-message">Transfer bulunamadı.</p>
       )}
 
-      {!loading &&
-        !error &&
-        transfers.length === 0 && (
-          <p className="dashboard-message">
-            Transfer bulunamadı.
-          </p>
-        )}
-
-      {!loading &&
-        !error &&
-        transfers.length > 0 && (
-          <section className="dispatcher-workspace">
-            <div className="dispatcher-list-panel">
-              <div className="dispatcher-panel-heading">
-                <div>
-                  <p>OPERASYONLAR</p>
-                  <h2>Transfer Listesi</h2>
-                </div>
-
-                <span>
-                  {transfers.length} transfer
-                </span>
+      {!loading && !error && transfers.length > 0 && (
+        <section className="dispatcher-workspace">
+          <div className="dispatcher-list-panel">
+            <div className="dispatcher-panel-heading">
+              <div>
+                <p>OPERASYONLAR</p>
+                <h2>Transfer Listesi</h2>
               </div>
 
-              <div className="dispatcher-list">
-                {transfers.map((transfer) => {
-                  const normalizedTransfer = {
-  ...transfer,
-
-  driver:
-    transfer.driver?.name ||
-    "Sürücü atanmamış",
-
-  driver_phone:
-    transfer.driver?.phone || null,
-
-  driver_vehicle:
-    transfer.driver?.vehicle || null,
-
-  passenger:
-    transfer.passenger_name ||
-    "Yolcu belirtilmedi",
-
-  flight:
-    transfer.flight_number ||
-    "Belirtilmedi",
-
-  pickup_time: formatTime(
-    transfer.pickup_time,
-  ),
-};
-
-                  return (
-                    <div
-                      className={
-                        selectedTransfer?.id ===
-                        transfer.id
-                          ? "dispatcher-card-wrapper selected"
-                          : "dispatcher-card-wrapper"
-                      }
-                      key={transfer.id}
-                      onClick={() =>
-                        setSelectedTransfer(transfer)
-                      }
-                    >
-                      <DispatcherTransferCard
-                        transfer={
-                          normalizedTransfer
-                        }
-                        onViewDetail={() =>
-                          onViewTransfer?.(transfer)
-                        }
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              <span>{transfers.length} transfer</span>
             </div>
 
-            <aside className="dispatcher-map-panel">
-              <div className="dispatcher-panel-heading">
-                <div>
-                  <p>CANLI HARİTA</p>
+            <div className="dispatcher-list">
+              {transfers.map((transfer) => {
+                const normalizedTransfer = {
+                  ...transfer,
+                  driver: transfer.driver?.name || "Sürücü atanmamış",
+                  driver_phone: transfer.driver?.phone || null,
+                  driver_vehicle: transfer.driver?.vehicle || null,
+                  passenger: transfer.passenger_name || "Yolcu belirtilmedi",
+                  flight: transfer.flight_number || "Belirtilmedi",
+                  pickup_time: formatTime(transfer.pickup_time),
+                };
 
-                  <h2>
-                    {selectedTransfer
-                      ? selectedTransfer.booking_reference
-                      : "Transfer seçilmedi"}
-                  </h2>
-                </div>
+                return (
+                  <div
+                    className={
+                      selectedTransfer?.id === transfer.id
+                        ? "dispatcher-card-wrapper selected"
+                        : "dispatcher-card-wrapper"
+                    }
+                    key={transfer.id}
+                    onClick={() => setSelectedTransfer(transfer)}
+                  >
+                    <DispatcherTransferCard
+                      transfer={normalizedTransfer}
+                      onViewDetail={() => onViewTransfer?.(transfer)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-                {selectedTransfer && (
-                  <span>
-                    {getStatusLabel(
-                      selectedTransfer.status,
-                    )}
-                  </span>
-                )}
+          <aside className="dispatcher-map-panel">
+            <div className="dispatcher-panel-heading">
+              <div>
+                <p>GLOBAL LIVE OPERATIONS</p>
+                <h2>
+                  {selectedTransfer
+                    ? selectedTransfer.booking_reference
+                    : "Transfer seçilmedi"}
+                </h2>
               </div>
 
-              <TransferLiveMetrics
-                transfer={selectedTransfer}
-              />
+              <span>
+                {liveVehicleCount} araç canlı · {stats.active} aktif operasyon
+              </span>
+            </div>
 
-              <DispatcherMap
-                transfer={selectedTransfer}
-              />
-            </aside>
-          </section>
-        )}
+            <TransferLiveMetrics transfer={selectedTransfer} />
+
+            <DispatcherMap
+              transfer={selectedTransfer}
+              transfers={transfers}
+              onSelectTransfer={setSelectedTransfer}
+            />
+          </aside>
+        </section>
+      )}
     </main>
   );
 }
 
 function formatTime(dateTime) {
-  if (!dateTime) {
-    return "--:--";
-  }
+  if (!dateTime) return "--:--";
 
-  return new Date(dateTime).toLocaleTimeString(
-    "tr-TR",
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  );
+  return new Date(dateTime).toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function getStatusLabel(status) {

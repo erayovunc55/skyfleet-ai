@@ -33,30 +33,44 @@ class FlightTrackingService
         }
 
         $flightNumber = strtoupper(preg_replace('/\s+/', '', $transfer->flight_number));
-        $flightDate = $transfer->pickup_time?->copy()->timezone('UTC')->toDateString();
 
+        /*
+         * Aviationstack Free plan real-time flight data sağlar; ancak tarih
+         * filtreleri historical/future flight erişimine girebildiği için plan
+         * kısıtlaması oluşturabilir. Bu nedenle canlı sorguda yalnızca IATA
+         * uçuş numarasını gönderiyoruz ve dönen adaylar arasından transfer
+         * saatine en yakın kaydı aşağıda seçiyoruz.
+         */
         $response = Http::timeout(15)
             ->retry(2, 500)
-            ->get('https://api.aviationstack.com/v1/flights', array_filter([
+            ->get('https://api.aviationstack.com/v1/flights', [
                 'access_key' => $accessKey,
                 'flight_iata' => $flightNumber,
-                'flight_date' => $flightDate,
                 'limit' => 20,
-            ]));
+            ]);
+
+        $payload = $response->json();
 
         if (!$response->successful()) {
+            $providerCode = data_get($payload, 'error.code');
+            $providerMessage = data_get($payload, 'error.message');
+
             throw new RuntimeException(
-                'Uçuş sağlayıcısı yanıt vermedi. HTTP ' . $response->status()
+                trim(implode(' ', array_filter([
+                    'Uçuş sağlayıcısı hatası.',
+                    $providerCode ? '[' . $providerCode . ']' : null,
+                    $providerMessage,
+                    'HTTP ' . $response->status(),
+                ])))
             );
         }
 
-        $payload = $response->json();
         $items = is_array($payload['data'] ?? null) ? $payload['data'] : [];
 
         if ($items === []) {
             $providerError = data_get($payload, 'error.message');
             throw new RuntimeException(
-                $providerError ?: $flightNumber . ' için uçuş kaydı bulunamadı.'
+                $providerError ?: $flightNumber . ' için aktif uçuş kaydı bulunamadı.'
             );
         }
 

@@ -38,6 +38,18 @@ const transferService = {
         : [];
   },
 
+  async getFlightStatus(transferId) {
+    if (!transferId) throw new Error("Uçuşu görüntülenecek transfer bulunamadı.");
+    const response = await apiClient.get(`/dispatcher/transfers/${transferId}/flight`);
+    return response.data?.data || response.data;
+  },
+
+  async syncFlightStatus(transferId) {
+    if (!transferId) throw new Error("Uçuşu güncellenecek transfer bulunamadı.");
+    const response = await apiClient.post(`/dispatcher/transfers/${transferId}/flight/sync`);
+    return response.data?.data || response.data;
+  },
+
   async getDrivers() {
     const response = await apiClient.get("/drivers");
     return Array.isArray(response.data?.data) ? response.data.data : [];

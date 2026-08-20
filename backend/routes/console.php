@@ -11,3 +11,8 @@ Artisan::command('inspire', function () {
 Schedule::command('skyfleet:send-pickup-reminders')
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command('skyfleet:sync-flights --limit=3')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->when(fn (): bool => (bool) config('services.flight_tracking.auto_enabled', false));

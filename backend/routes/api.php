@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\DispatcherController;
 use App\Http\Controllers\Api\DispatcherTransferManagementController;
 use App\Http\Controllers\Api\DriverController;
 use App\Http\Controllers\Api\DriverLocationController;
+use App\Http\Controllers\Api\DriverPasswordResetController;
 use App\Http\Controllers\Api\DriverPushTokenController;
 use App\Http\Controllers\Api\FlightOperationalAlertController;
 use App\Http\Controllers\Api\FlightTrackingController;
@@ -36,6 +37,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('login', [AuthController::class, 'login']);
 Route::post('supplier-password/forgot', [SupplierPasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
 Route::post('supplier-password/reset', [SupplierPasswordResetController::class, 'reset'])->middleware('throttle:10,1');
+Route::post('driver-password/reset', [DriverPasswordResetController::class, 'reset'])->middleware('throttle:10,1');
 Route::get('public/tracking/{token}', [PassengerTrackingController::class, 'show'])->middleware('throttle:120,1');
 
 Route::middleware('auth:sanctum')->group(function (): void {
@@ -106,6 +108,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('drivers/{driver}', [SupplierPortalDriverController::class, 'show']);
         Route::patch('drivers/{driver}', [SupplierPortalDriverController::class, 'update']);
         Route::patch('drivers/{driver}/vehicle', [SupplierPortalDriverController::class, 'assignVehicle']);
+        Route::post('drivers/{driver}/password-reset-link', [DriverPasswordResetController::class, 'createWhatsAppLink']);
         Route::delete('drivers/{driver}', [SupplierPortalDriverController::class, 'destroy']);
         Route::patch('transfers/{transfer}/assignment', [SupplierPortalAssignmentController::class, 'assign']);
         Route::patch('transfers/{transfer}/unassign', [SupplierPortalAssignmentController::class, 'unassign']);

@@ -30,7 +30,7 @@ class Transfer extends Model
 
     protected $fillable = [
         'pickup_location_id', 'pickup_point_id', 'dropoff_location_id', 'dropoff_point_id',
-        'supplier_id', 'driver_id', 'assigned_vehicle_id',
+        'supplier_id', 'job_pool_published_at', 'driver_id', 'assigned_vehicle_id',
         'booking_reference', 'ota_booking_reference', 'ota_source', 'supplier',
         'passenger_name', 'passenger_phone', 'passenger_email',
         'flight_number', 'airline', 'terminal',
@@ -55,6 +55,7 @@ class Transfer extends Model
     {
         return [
             'pickup_time' => 'datetime',
+            'job_pool_published_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'public_tracking_enabled_at' => 'datetime',
             'public_tracking_expires_at' => 'datetime',

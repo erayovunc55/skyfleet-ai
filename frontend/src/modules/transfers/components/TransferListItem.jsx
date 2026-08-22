@@ -4,21 +4,56 @@ import {
 import { useLanguage } from "../../../i18n";
 
 const TEXT = {
-  tr: { passengerMissing: "Yolcu belirtilmedi", noFlight: "Uçuş yok", noDriver: "Sürücü atanmamış", noPickup: "Alış noktası yok", noDropoff: "Bırakış noktası yok", noDate: "Tarih belirtilmedi" },
-  en: { passengerMissing: "Passenger not provided", noFlight: "No flight", noDriver: "No driver assigned", noPickup: "Pickup point not provided", noDropoff: "Dropoff point not provided", noDate: "Date not provided" },
-  ar: { passengerMissing: "الراكب غير محدد", noFlight: "لا توجد رحلة", noDriver: "لم يتم تعيين سائق", noPickup: "نقطة الاستلام غير محددة", noDropoff: "نقطة الوصول غير محددة", noDate: "التاريخ غير محدد" },
-  es: { passengerMissing: "Pasajero no indicado", noFlight: "Sin vuelo", noDriver: "Sin conductor asignado", noPickup: "Punto de recogida no indicado", noDropoff: "Punto de destino no indicado", noDate: "Fecha no indicada" },
+  tr: { passengerMissing: "Yolcu belirtilmedi", noFlight: "Uçuş yok", noDriver: "Sürücü atanmamış", noPickup: "Alış noktası yok", noDropoff: "Bırakış noktası yok", noDate: "Tarih belirtilmedi", select: "Transferi seç" },
+  en: { passengerMissing: "Passenger not provided", noFlight: "No flight", noDriver: "No driver assigned", noPickup: "Pickup point not provided", noDropoff: "Dropoff point not provided", noDate: "Date not provided", select: "Select transfer" },
+  ar: { passengerMissing: "الراكب غير محدد", noFlight: "لا توجد رحلة", noDriver: "لم يتم تعيين سائق", noPickup: "نقطة الاستلام غير محددة", noDropoff: "نقطة الوصول غير محددة", noDate: "التاريخ غير محدد", select: "اختر التحويل" },
+  es: { passengerMissing: "Pasajero no indicado", noFlight: "Sin vuelo", noDriver: "Sin conductor asignado", noPickup: "Punto de recogida no indicado", noDropoff: "Punto de destino no indicado", noDate: "Fecha no indicada", select: "Seleccionar traslado" },
 };
 
 const LOCALES = { tr: "tr-TR", en: "en-GB", ar: "ar-SA", es: "es-ES" };
 
-export default function TransferListItem({ transfer, active = false, onClick }) {
+export default function TransferListItem({
+  transfer,
+  active = false,
+  selected = false,
+  selectable = false,
+  onClick,
+  onToggleSelect,
+}) {
   const { language } = useLanguage();
   const text = TEXT[language] || TEXT.en;
   const locale = LOCALES[language] || LOCALES.en;
 
+  function handleKeyDown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick?.();
+    }
+  }
+
   return (
-    <button className={active ? "transfer-list-item active" : "transfer-list-item"} type="button" onClick={onClick}>
+    <div
+      className={active ? "transfer-list-item active" : "transfer-list-item"}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+    >
+      {selectable ? (
+        <label
+          className="transfer-list-item-select"
+          title={text.select}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelect?.(transfer.id)}
+            aria-label={`${text.select} ${transfer.booking_reference || transfer.id}`}
+          />
+        </label>
+      ) : null}
+
       <div className="transfer-list-item-top">
         <div>
           <strong>{transfer.booking_reference || `#${transfer.id}`}</strong>
@@ -39,7 +74,7 @@ export default function TransferListItem({ transfer, active = false, onClick }) 
         <span>{transfer.flight_number || text.noFlight}</span>
         <span>{transfer.driver?.name || text.noDriver}</span>
       </div>
-    </button>
+    </div>
   );
 }
 

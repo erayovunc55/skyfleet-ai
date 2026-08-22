@@ -59,6 +59,27 @@ export async function login(
   return data;
 }
 
+export async function requestPasswordReset(email) {
+  const response = await apiClient.post(
+    "/supplier-password/forgot",
+    { email },
+  );
+  return response.data;
+}
+
+export async function resetPassword({ email, token, password, passwordConfirmation }) {
+  const response = await apiClient.post(
+    "/supplier-password/reset",
+    {
+      email,
+      token,
+      password,
+      password_confirmation: passwordConfirmation,
+    },
+  );
+  return response.data;
+}
+
 export async function logout() {
   try {
     await apiClient.post(

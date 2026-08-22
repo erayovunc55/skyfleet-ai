@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\SupplierCoverageController;
 use App\Http\Controllers\Api\SupplierDeletionController;
 use App\Http\Controllers\Api\SupplierJobPoolController;
 use App\Http\Controllers\Api\SupplierMatchController;
+use App\Http\Controllers\Api\SupplierPasswordResetController;
 use App\Http\Controllers\Api\SupplierPortalAssignmentController;
 use App\Http\Controllers\Api\SupplierPortalController;
 use App\Http\Controllers\Api\SupplierPortalDriverController;
@@ -33,6 +34,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::post('login', [AuthController::class, 'login']);
+Route::post('supplier-password/forgot', [SupplierPasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
+Route::post('supplier-password/reset', [SupplierPasswordResetController::class, 'reset'])->middleware('throttle:10,1');
 Route::get('public/tracking/{token}', [PassengerTrackingController::class, 'show'])->middleware('throttle:120,1');
 
 Route::middleware('auth:sanctum')->group(function (): void {
@@ -66,6 +69,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('suppliers/{supplier}', [SupplierController::class, 'show']);
         Route::patch('suppliers/{supplier}', [SupplierController::class, 'update']);
         Route::delete('suppliers/{supplier}', SupplierDeletionController::class);
+        Route::post('suppliers/{supplier}/password-reset', [SupplierPasswordResetController::class, 'adminSend']);
         Route::patch('suppliers/{supplier}/submit', [SupplierController::class, 'submit']);
         Route::patch('suppliers/{supplier}/approve', [SupplierController::class, 'approve']);
         Route::patch('suppliers/{supplier}/request-revision', [SupplierController::class, 'requestRevision']);

@@ -18,6 +18,16 @@ const supplierService = {
     return response.data?.data || response.data;
   },
 
+  async updateSupplier(id, payload) {
+    const response = await apiClient.patch(`/suppliers/${id}`, payload);
+    return response.data?.data || response.data;
+  },
+
+  async deleteSupplier(id) {
+    const response = await apiClient.delete(`/suppliers/${id}`);
+    return response.data;
+  },
+
   async getDocuments(supplierId, params = {}) {
     const response = await apiClient.get(`/suppliers/${supplierId}/documents`, { params });
     return response.data;

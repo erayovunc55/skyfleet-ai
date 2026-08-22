@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import DriverHomePage from "./pages/DriverHomePage";
 import DriverLoginPage from "./pages/DriverLoginPage";
+import DriverPasswordResetPage from "./pages/DriverPasswordResetPage";
 
 import {
   getStoredDriver,
@@ -15,10 +16,24 @@ import {
 
 import "./styles/driver-app.css";
 
+function hasPasswordResetLink() {
+  const params = new URLSearchParams(
+    window.location.search,
+  );
+
+  return Boolean(
+    params.get("reset_token") &&
+      params.get("driver"),
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(
     getStoredDriver(),
   );
+
+  const [resetMode, setResetMode] =
+    useState(hasPasswordResetLink());
 
   useEffect(() => {
     function handleUnauthenticated() {
@@ -43,11 +58,26 @@ export default function App() {
     setUser(null);
   }
 
+  function handleResetCompleted() {
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname,
+    );
+
+    setResetMode(false);
+    setUser(null);
+  }
+
   return (
     <LanguageProvider>
       <LanguageSwitcher />
 
-      {!user ? (
+      {resetMode ? (
+        <DriverPasswordResetPage
+          onCompleted={handleResetCompleted}
+        />
+      ) : !user ? (
         <DriverLoginPage
           onLogin={setUser}
         />

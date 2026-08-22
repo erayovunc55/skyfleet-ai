@@ -173,6 +173,12 @@ export async function assignSupplierVehicleToDriver(driverId, vehicleId) {
   return response.data?.data || response.data;
 }
 
+export async function createDriverPasswordResetLink(driverId) {
+  if (!driverId) throw new Error("Sürücü kimliği bulunamadı.");
+  const response = await apiClient.post(`/supplier-portal/drivers/${driverId}/password-reset-link`);
+  return response.data?.data || response.data;
+}
+
 export async function deactivateSupplierDriver(driverId) {
   if (!driverId) throw new Error("Sürücü kimliği bulunamadı.");
   const response = await apiClient.delete(`/supplier-portal/drivers/${driverId}`);

@@ -49,4 +49,8 @@ return [
         'template_language' => env('META_WHATSAPP_TEMPLATE_LANGUAGE', 'en_US'),
     ],
 
+    'supplier_portal' => [
+        'url' => env('SUPPLIER_PORTAL_URL', 'https://skytriptransfer.com/supplier'),
+    ],
+
 ];

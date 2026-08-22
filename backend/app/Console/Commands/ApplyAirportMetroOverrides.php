@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Airport;
 use App\Models\City;
 use App\Models\Country;
+use App\Models\Location;
 use Illuminate\Console\Command;
 
 class ApplyAirportMetroOverrides extends Command
@@ -66,12 +67,14 @@ class ApplyAirportMetroOverrides extends Command
                 'city_id' => $city->id,
             ]);
 
-            $airport->locations()->update([
-                'country_id' => $country->id,
-                'city_id' => $city->id,
-            ]);
+            $locationCount = Location::query()
+                ->where('airport_id', $airport->id)
+                ->update([
+                    'country_id' => $country->id,
+                    'city_id' => $city->id,
+                ]);
 
-            $this->info("{$iata} -> {$target['city']} applied.");
+            $this->info("{$iata} -> {$target['city']} applied ({$locationCount} linked location updated).");
             $updated++;
         }
 

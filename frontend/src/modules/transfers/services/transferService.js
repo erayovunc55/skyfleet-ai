@@ -80,6 +80,18 @@ const transferService = {
     return response.data;
   },
 
+  async bulkPublishToJobPool(transferIds) {
+    if (!Array.isArray(transferIds) || transferIds.length === 0) {
+      throw new Error("Havuza göndermek için en az bir transfer seçilmelidir.");
+    }
+
+    const response = await apiClient.post("/dispatcher/transfers/bulk-job-pool", {
+      transfer_ids: transferIds.map(Number),
+    });
+
+    return response.data;
+  },
+
   async updateDispatcherTransfer(transferId, payload) {
     if (!transferId) throw new Error("Düzenlenecek transfer bulunamadı.");
     const response = await apiClient.patch(`/dispatcher/transfers/${transferId}`, payload);

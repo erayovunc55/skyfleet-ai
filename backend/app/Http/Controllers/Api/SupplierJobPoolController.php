@@ -22,17 +22,14 @@ class SupplierJobPoolController extends Controller
     {
         [, $supplier] = $this->resolveSupplierUser($request);
 
-        $limit = min(
-            max((int) $request->integer('limit', 50), 1),
-            100
-        );
+        $limit = min(max((int) $request->integer('limit', 50), 1), 100);
 
         $candidateTransfers = Transfer::query()
             ->whereNull('supplier_id')
+            ->whereNotNull('job_pool_published_at')
             ->where('status', 'pending')
             ->where(function ($query): void {
-                $query
-                    ->whereNotNull('pickup_location_id')
+                $query->whereNotNull('pickup_location_id')
                     ->orWhereNotNull('dropoff_location_id');
             })
             ->orderBy('pickup_time')
@@ -41,22 +38,15 @@ class SupplierJobPoolController extends Controller
 
         $jobs = $candidateTransfers
             ->map(function (Transfer $transfer) use ($supplier): ?array {
-                $match = $this->matchingService
-                    ->forTransfer($transfer)
-                    ->first(
-                        fn (array $item): bool =>
-                            (int) $item['supplier_id'] === (int) $supplier->id
-                    );
+                $match = $this->matchingService->forTransfer($transfer)->first(
+                    fn (array $item): bool => (int) $item['supplier_id'] === (int) $supplier->id
+                );
 
                 if (!$match || !($match['eligible'] ?? false)) {
                     return null;
                 }
 
-                return $this->formatAvailableJob(
-                    $transfer,
-                    $supplier,
-                    $match
-                );
+                return $this->formatAvailableJob($transfer, $supplier, $match);
             })
             ->filter()
             ->take($limit)
@@ -71,63 +61,42 @@ class SupplierJobPoolController extends Controller
         ]);
     }
 
-    public function accept(
-        Request $request,
-        Transfer $transfer
-    ): JsonResponse {
+    public function accept(Request $request, Transfer $transfer): JsonResponse
+    {
         [, $supplier] = $this->resolveSupplierUser($request);
 
-        $acceptedTransfer = DB::transaction(
-            function () use ($transfer, $supplier): Transfer {
-                /** @var Transfer|null $lockedTransfer */
-                $lockedTransfer = Transfer::query()
-                    ->whereKey($transfer->id)
-                    ->lockForUpdate()
-                    ->first();
+        $acceptedTransfer = DB::transaction(function () use ($transfer, $supplier): Transfer {
+            $lockedTransfer = Transfer::query()->whereKey($transfer->id)->lockForUpdate()->first();
 
-                if (!$lockedTransfer) {
-                    abort(404, 'Transfer bulunamadı.');
+            if (!$lockedTransfer) {
+                abort(404, 'Transfer bulunamadı.');
+            }
+
+            if ($lockedTransfer->supplier_id !== null) {
+                if ((int) $lockedTransfer->supplier_id === (int) $supplier->id) {
+                    return $lockedTransfer;
                 }
+                abort(409, 'Bu transfer başka bir tedarikçi tarafından kabul edildi.');
+            }
 
-                if ($lockedTransfer->supplier_id !== null) {
-                    if ((int) $lockedTransfer->supplier_id === (int) $supplier->id) {
-                        return $lockedTransfer;
-                    }
+            if ($lockedTransfer->status !== 'pending' || !$lockedTransfer->job_pool_published_at) {
+                abort(409, 'Bu transfer artık açık iş havuzunda değil.');
+            }
 
-                    abort(
-                        409,
-                        'Bu transfer başka bir tedarikçi tarafından kabul edildi.'
-                    );
-                }
+            $match = $this->matchingService->forTransfer($lockedTransfer)->first(
+                fn (array $item): bool => (int) $item['supplier_id'] === (int) $supplier->id
+            );
 
-                if ($lockedTransfer->status !== 'pending') {
-                    abort(
-                        409,
-                        'Bu transfer artık açık iş havuzunda değil.'
-                    );
-                }
+            if (!$match || !($match['eligible'] ?? false)) {
+                abort(422, 'Tedarikçi bu transfer için artık operasyon kriterlerini karşılamıyor.');
+            }
 
-                $match = $this->matchingService
-                    ->forTransfer($lockedTransfer)
-                    ->first(
-                        fn (array $item): bool =>
-                            (int) $item['supplier_id'] === (int) $supplier->id
-                    );
+            $lockedTransfer->supplier_id = $supplier->id;
+            $lockedTransfer->job_pool_published_at = null;
+            $lockedTransfer->save();
 
-                if (!$match || !($match['eligible'] ?? false)) {
-                    abort(
-                        422,
-                        'Tedarikçi bu transfer için artık operasyon kriterlerini karşılamıyor.'
-                    );
-                }
-
-                $lockedTransfer->supplier_id = $supplier->id;
-                $lockedTransfer->save();
-
-                return $lockedTransfer->fresh();
-            },
-            3
-        );
+            return $lockedTransfer->fresh();
+        }, 3);
 
         return response()->json([
             'message' => 'Transfer başarıyla kabul edildi ve şirketinize atandı.',
@@ -137,41 +106,30 @@ class SupplierJobPoolController extends Controller
                 'supplier_id' => $acceptedTransfer->supplier_id,
                 'status' => $acceptedTransfer->status,
                 'supplier_amount' => number_format(
-                    $supplier->calculatePayableAmount(
-                        $acceptedTransfer->getRawOriginal('price')
-                    ),
+                    $supplier->calculatePayableAmount($acceptedTransfer->getRawOriginal('price')),
                     2,
                     '.',
                     ''
                 ),
-                'currency' =>
-                    $acceptedTransfer->getRawOriginal('currency')
+                'currency' => $acceptedTransfer->getRawOriginal('currency')
                     ?: $supplier->default_currency
                     ?: 'EUR',
             ],
         ]);
     }
 
-    private function formatAvailableJob(
-        Transfer $transfer,
-        Supplier $supplier,
-        array $match
-    ): array {
+    private function formatAvailableJob(Transfer $transfer, Supplier $supplier, array $match): array
+    {
         return [
             'id' => $transfer->id,
             'booking_reference' => $transfer->booking_reference,
             'supplier_amount' => number_format(
-                $supplier->calculatePayableAmount(
-                    $transfer->getRawOriginal('price')
-                ),
+                $supplier->calculatePayableAmount($transfer->getRawOriginal('price')),
                 2,
                 '.',
                 ''
             ),
-            'currency' =>
-                $transfer->getRawOriginal('currency')
-                ?: $supplier->default_currency
-                ?: 'EUR',
+            'currency' => $transfer->getRawOriginal('currency') ?: $supplier->default_currency ?: 'EUR',
             'pickup_time' => $transfer->pickup_time?->toISOString(),
             'pickup' => $transfer->pickup,
             'dropoff' => $transfer->dropoff,
@@ -195,34 +153,20 @@ class SupplierJobPoolController extends Controller
 
     private function resolveSupplierUser(Request $request): array
     {
-        /** @var User|null $user */
         $user = $request->user();
 
-        if (
-            !$user
-            || $user->role !== 'supplier'
-            || !$user->is_active
-        ) {
-            abort(
-                403,
-                'Bu alan yalnızca aktif tedarikçi kullanıcıları içindir.'
-            );
+        if (!$user || $user->role !== 'supplier' || !$user->is_active) {
+            abort(403, 'Bu alan yalnızca aktif tedarikçi kullanıcıları içindir.');
         }
 
         if (!$user->supplier_id) {
-            abort(
-                403,
-                'Kullanıcı hesabı bir tedarikçi şirketine bağlı değil.'
-            );
+            abort(403, 'Kullanıcı hesabı bir tedarikçi şirketine bağlı değil.');
         }
 
         $supplier = Supplier::query()->find($user->supplier_id);
 
         if (!$supplier || !$supplier->canOperate()) {
-            abort(
-                403,
-                'Tedarikçi hesabı operasyon kullanımına açık değil.'
-            );
+            abort(403, 'Tedarikçi hesabı operasyon kullanımına açık değil.');
         }
 
         return [$user, $supplier];

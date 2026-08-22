@@ -25,6 +25,9 @@ export default function TransferList({
   transfers = [],
   loading = false,
   error = "",
+  selectedIds = [],
+  onToggleSelect,
+  isSelectable,
 }) {
   const { language } = useLanguage();
   const text = TEXT[language] || TEXT.en;
@@ -60,19 +63,28 @@ export default function TransferList({
 
   return (
     <div className="transfer-list">
-      {transfers.map((transfer) => (
-        <TransferListItem
-          key={transfer.id}
-          transfer={transfer}
-          active={
-            Number(selectedTransfer?.id) ===
-            Number(transfer.id)
-          }
-          onClick={() =>
-            selectTransfer(transfer)
-          }
-        />
-      ))}
+      {transfers.map((transfer) => {
+        const selectable = typeof isSelectable === "function"
+          ? isSelectable(transfer)
+          : Boolean(onToggleSelect);
+
+        return (
+          <TransferListItem
+            key={transfer.id}
+            transfer={transfer}
+            active={
+              Number(selectedTransfer?.id) ===
+              Number(transfer.id)
+            }
+            selected={selectedIds.some((id) => Number(id) === Number(transfer.id))}
+            selectable={selectable}
+            onToggleSelect={onToggleSelect}
+            onClick={() =>
+              selectTransfer(transfer)
+            }
+          />
+        );
+      })}
     </div>
   );
 }

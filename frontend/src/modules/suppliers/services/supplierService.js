@@ -28,6 +28,11 @@ const supplierService = {
     return response.data;
   },
 
+  async sendPasswordReset(id) {
+    const response = await apiClient.post(`/suppliers/${id}/password-reset`);
+    return response.data;
+  },
+
   async getDocuments(supplierId, params = {}) {
     const response = await apiClient.get(`/suppliers/${supplierId}/documents`, { params });
     return response.data;

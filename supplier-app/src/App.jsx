@@ -7,6 +7,7 @@ import SupplierFinancePage from "./pages/SupplierFinancePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
 import SupplierInvoicesPage from "./pages/SupplierInvoicesPage";
 import SupplierLoginPage from "./pages/SupplierLoginPage";
+import SupplierResetPasswordPage from "./pages/SupplierResetPasswordPage";
 import SupplierVehiclesPage from "./pages/SupplierVehiclesPage";
 import { LanguageSwitcher } from "./i18n.jsx";
 import { clearStoredAuth, getStoredUser, logout } from "./services/authService";
@@ -24,6 +25,7 @@ const NAVIGATION_ITEMS = [
 export default function App() {
   const [user, setUser] = useState(getStoredUser());
   const [currentPage, setCurrentPage] = useState("available-jobs");
+  const [resetRequest, setResetRequest] = useState(() => readResetRequest());
 
   useEffect(() => {
     function handleUnauthenticated() {
@@ -39,6 +41,29 @@ export default function App() {
     await logout();
     setUser(null);
     setCurrentPage("available-jobs");
+  }
+
+  function returnToLogin() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("reset_token");
+    url.searchParams.delete("email");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    setResetRequest(null);
+  }
+
+  if (!user && resetRequest) {
+    return (
+      <>
+        <div style={{ position: "fixed", top: 16, right: 16, zIndex: 1000 }}>
+          <LanguageSwitcher />
+        </div>
+        <SupplierResetPasswordPage
+          email={resetRequest.email}
+          token={resetRequest.token}
+          onDone={returnToLogin}
+        />
+      </>
+    );
   }
 
   if (!user) {
@@ -98,4 +123,11 @@ export default function App() {
       {currentPage === "invoices" && <SupplierInvoicesPage />}
     </div>
   );
+}
+
+function readResetRequest() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("reset_token");
+  const email = params.get("email");
+  return token && email ? { token, email } : null;
 }

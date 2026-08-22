@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('dispatcher/transfers/{transfer}', [DispatcherTransferManagementController::class, 'update']);
         Route::patch('dispatcher/transfers/{transfer}/cancel', [DispatcherTransferManagementController::class, 'cancel']);
         Route::post('dispatcher/transfers/bulk-assign-supplier', [DispatcherController::class, 'bulkAssignSupplier']);
+        Route::post('dispatcher/transfers/bulk-job-pool', [TransferSupplierDispatchController::class, 'bulkPublish']);
         Route::patch('dispatcher/transfers/{transfer}/assign', [DispatcherController::class, 'assign']);
         Route::patch('dispatcher/transfers/{transfer}/supplier', [TransferSupplierDispatchController::class, 'assign']);
         Route::post('dispatcher/transfers/{transfer}/job-pool', [TransferSupplierDispatchController::class, 'publish']);

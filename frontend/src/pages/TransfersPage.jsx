@@ -312,6 +312,40 @@ export default function TransfersPage() {
     await reload();
   }
 
+  async function handleBulkPublishToJobPool() {
+    if (selectedTransferIds.length === 0) return;
+
+    setBulkAssigning(true);
+    setBulkAssignMessage("");
+    setBulkAssignError("");
+
+    try {
+      const result = await transferService.bulkPublishToJobPool(
+        selectedTransferIds,
+      );
+
+      const publishedCount = result?.published_count ?? result?.updated_count ?? 0;
+      const skippedCount = result?.skipped_count ?? 0;
+
+      let message = `${publishedCount} transfer iş havuzuna gönderildi.`;
+      if (skippedCount > 0) {
+        message += ` ${skippedCount} transfer atlandı.`;
+      }
+
+      setBulkAssignMessage(message);
+      setSelectedTransferIds([]);
+      await reload();
+    } catch (requestError) {
+      setBulkAssignError(
+        requestError?.response?.data?.message ||
+          requestError?.message ||
+          "Transferler iş havuzuna gönderilemedi.",
+      );
+    } finally {
+      setBulkAssigning(false);
+    }
+  }
+
   async function handleBulkAssignSupplier() {
     if (selectedTransferIds.length === 0 || !bulkSupplierId) return;
 
@@ -456,6 +490,13 @@ export default function TransfersPage() {
             </div>
             <div className="transfers-bulk-assignment">
               <span>{selectedTransferIds.length} transfer seçildi</span>
+              <button
+                type="button"
+                disabled={bulkAssigning || selectedTransferIds.length === 0}
+                onClick={handleBulkPublishToJobPool}
+              >
+                {bulkAssigning ? "İşlem yapılıyor..." : "Havuza Gönder"}
+              </button>
               <select
                 value={bulkSupplierId}
                 disabled={bulkAssigning || selectedTransferIds.length === 0}

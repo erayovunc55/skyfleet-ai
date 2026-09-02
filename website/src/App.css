@@ -1526,7 +1526,8 @@ tım:root{--ink:#071322;--navy:#0b1e35;--blue:#149ff5;--cyan:#52d5ff;--line:#dbe
 }
 
 .transfer-address-option:hover,
-.transfer-address-option:focus {
+.transfer-address-option:focus,
+.transfer-address-option.is-active {
   background: #f7f9fc;
   outline: none;
 }
@@ -1580,7 +1581,8 @@ tım:root{--ink:#071322;--navy:#0b1e35;--blue:#149ff5;--cyan:#52d5ff;--line:#dbe
   transition: transform 0.15s ease;
 }
 
-.transfer-address-option:hover .transfer-address-arrow {
+.transfer-address-option:hover .transfer-address-arrow,
+.transfer-address-option.is-active .transfer-address-arrow {
   transform: translateX(3px);
 }
 

@@ -167,6 +167,10 @@ function TransferPage({ language }) {
 
   const [pickupLoading, setPickupLoading] = useState(false);
   const [dropoffLoading, setDropoffLoading] = useState(false);
+  const [activeSuggestionIndexes, setActiveSuggestionIndexes] = useState({
+    pickup: -1,
+    dropoff: -1,
+  });
 
   const locationTimers = useRef({
     pickup: null,
@@ -188,6 +192,11 @@ function TransferPage({ language }) {
   }
 
   function resetLocationResults(type) {
+    setActiveSuggestionIndexes((current) => ({
+      ...current,
+      [type]: -1,
+    }));
+
     if (type === "pickup") {
       setPickupSuggestions([]);
       setPickupOpen(false);
@@ -209,6 +218,10 @@ function TransferPage({ language }) {
     setSelectedLocations((current) => ({
       ...current,
       [type]: null,
+    }));
+    setActiveSuggestionIndexes((current) => ({
+      ...current,
+      [type]: -1,
     }));
 
     clearLocationTimer(type);
@@ -263,6 +276,11 @@ function TransferPage({ language }) {
             setDropoffSuggestions(results);
             setDropoffOpen(true);
           }
+
+          setActiveSuggestionIndexes((current) => ({
+            ...current,
+            [type]: -1,
+          }));
         } catch {
           if (
             locationRequestIds.current[type] !== requestId
@@ -306,6 +324,10 @@ function TransferPage({ language }) {
       ...current,
       [type]: suggestion,
     }));
+    setActiveSuggestionIndexes((current) => ({
+      ...current,
+      [type]: -1,
+    }));
 
     if (type === "pickup") {
       setPickup(value);
@@ -323,6 +345,11 @@ function TransferPage({ language }) {
   function closeLocationDropdown(type) {
     window.setTimeout(
       () => {
+        setActiveSuggestionIndexes((current) => ({
+          ...current,
+          [type]: -1,
+        }));
+
         if (type === "pickup") {
           setPickupOpen(false);
         } else {
@@ -331,6 +358,82 @@ function TransferPage({ language }) {
       },
       150,
     );
+  }
+
+  function handleLocationKeyDown(
+    type,
+    event,
+    suggestions,
+    open,
+  ) {
+    if (event.key === "Escape") {
+      if (open) {
+        event.preventDefault();
+
+        if (type === "pickup") {
+          setPickupOpen(false);
+        } else {
+          setDropoffOpen(false);
+        }
+
+        setActiveSuggestionIndexes((current) => ({
+          ...current,
+          [type]: -1,
+        }));
+      }
+
+      return;
+    }
+
+    if (event.key === "Enter") {
+      const activeIndex = activeSuggestionIndexes[type];
+      const suggestion = suggestions[activeIndex];
+
+      if (open && suggestion) {
+        event.preventDefault();
+        selectLocation(type, suggestion);
+      }
+
+      return;
+    }
+
+    if (
+      !["ArrowDown", "ArrowUp"].includes(event.key) ||
+      suggestions.length === 0
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (type === "pickup") {
+      setPickupOpen(true);
+    } else {
+      setDropoffOpen(true);
+    }
+
+    setActiveSuggestionIndexes((current) => {
+      const currentIndex = current[type];
+      const lastIndex = suggestions.length - 1;
+      let nextIndex;
+
+      if (event.key === "ArrowDown") {
+        nextIndex =
+          currentIndex < lastIndex
+            ? currentIndex + 1
+            : 0;
+      } else {
+        nextIndex =
+          currentIndex > 0
+            ? currentIndex - 1
+            : lastIndex;
+      }
+
+      return {
+        ...current,
+        [type]: nextIndex,
+      };
+    });
   }
 
   async function submit(event) {
@@ -414,6 +517,10 @@ function TransferPage({ language }) {
       setDropoffSuggestions([]);
       setPickupOpen(false);
       setDropoffOpen(false);
+      setActiveSuggestionIndexes({
+        pickup: -1,
+        dropoff: -1,
+      });
     } catch (error) {
       const validationErrors =
         error.response?.data?.errors;
@@ -447,9 +554,22 @@ function TransferPage({ language }) {
     }
 
     return (
-      <div className="transfer-address-dropdown">
+      <div
+        id={`${type}-address-suggestions`}
+        className="transfer-address-dropdown"
+        role="listbox"
+        aria-label={
+          type === "pickup"
+            ? tr
+              ? "Alış noktası önerileri"
+              : "Pickup location suggestions"
+            : tr
+              ? "Bırakış noktası önerileri"
+              : "Drop-off location suggestions"
+        }
+      >
         {loading && (
-          <div className="transfer-address-status">
+          <div className="transfer-address-status" role="status">
             <span className="transfer-address-spinner" />
 
             {tr
@@ -459,7 +579,7 @@ function TransferPage({ language }) {
         )}
 
         {!loading && suggestions.length === 0 && (
-          <div className="transfer-address-status">
+          <div className="transfer-address-status" role="status">
             {tr
               ? "Adres bulunamadı. Yazmaya devam edin."
               : "No location found. Try a more specific search."}
@@ -473,11 +593,27 @@ function TransferPage({ language }) {
                 suggestion.place_id ||
                 `${suggestion.latitude}-${suggestion.longitude}-${index}`
               }
+              id={`${type}-address-option-${index}`}
               type="button"
-              className="transfer-address-option"
+              className={`transfer-address-option${
+                activeSuggestionIndexes[type] === index
+                  ? " is-active"
+                  : ""
+              }`}
+              role="option"
+              aria-selected={
+                activeSuggestionIndexes[type] === index
+              }
+              tabIndex={-1}
               onMouseDown={(event) => {
                 event.preventDefault();
               }}
+              onMouseEnter={() =>
+                setActiveSuggestionIndexes((current) => ({
+                  ...current,
+                  [type]: index,
+                }))
+              }
               onClick={() =>
                 selectLocation(type, suggestion)
               }
@@ -735,9 +871,23 @@ function TransferPage({ language }) {
                     <i>●</i>
 
                     <input
+                      id="pickup-address"
                       name="pickup"
                       value={pickup}
                       autoComplete="off"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-haspopup="listbox"
+                      aria-expanded={
+                        pickupOpen && pickup.trim().length >= 2
+                      }
+                      aria-controls="pickup-address-suggestions"
+                      aria-activedescendant={
+                        pickupOpen &&
+                        activeSuggestionIndexes.pickup >= 0
+                          ? `pickup-address-option-${activeSuggestionIndexes.pickup}`
+                          : undefined
+                      }
                       placeholder={
                         tr
                           ? "Havalimanı, otel veya adres"
@@ -756,6 +906,14 @@ function TransferPage({ language }) {
                       }}
                       onBlur={() =>
                         closeLocationDropdown("pickup")
+                      }
+                      onKeyDown={(event) =>
+                        handleLocationKeyDown(
+                          "pickup",
+                          event,
+                          pickupSuggestions,
+                          pickupOpen,
+                        )
                       }
                       required
                     />
@@ -788,9 +946,23 @@ function TransferPage({ language }) {
                     <i>◆</i>
 
                     <input
+                      id="dropoff-address"
                       name="dropoff"
                       value={dropoff}
                       autoComplete="off"
+                      role="combobox"
+                      aria-autocomplete="list"
+                      aria-haspopup="listbox"
+                      aria-expanded={
+                        dropoffOpen && dropoff.trim().length >= 2
+                      }
+                      aria-controls="dropoff-address-suggestions"
+                      aria-activedescendant={
+                        dropoffOpen &&
+                        activeSuggestionIndexes.dropoff >= 0
+                          ? `dropoff-address-option-${activeSuggestionIndexes.dropoff}`
+                          : undefined
+                      }
                       placeholder={
                         tr
                           ? "Otel, havalimanı veya adres"
@@ -809,6 +981,14 @@ function TransferPage({ language }) {
                       }}
                       onBlur={() =>
                         closeLocationDropdown("dropoff")
+                      }
+                      onKeyDown={(event) =>
+                        handleLocationKeyDown(
+                          "dropoff",
+                          event,
+                          dropoffSuggestions,
+                          dropoffOpen,
+                        )
                       }
                       required
                     />

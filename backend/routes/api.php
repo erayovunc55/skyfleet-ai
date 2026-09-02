@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\Api\AdminTransferRequestController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminDashboardController;
 use App\Http\Controllers\Api\DispatcherController;
@@ -13,6 +14,9 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\LocationPointController;
 use App\Http\Controllers\Api\OperationalAlertController;
 use App\Http\Controllers\Api\PassengerTrackingController;
+use App\Http\Controllers\Api\PublicAddressSearchController;
+use App\Http\Controllers\Api\PublicTransferRequestController;
+use App\Http\Controllers\Api\PublicSupplierApplicationController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\SupplierAccountController;
 use App\Http\Controllers\Api\SupplierCoverageController;
@@ -25,6 +29,7 @@ use App\Http\Controllers\Api\SupplierPortalController;
 use App\Http\Controllers\Api\SupplierPortalDriverController;
 use App\Http\Controllers\Api\SupplierPortalVehicleController;
 use App\Http\Controllers\Api\TransferController;
+use App\Http\Controllers\Api\TransferRequestConversionController;
 use App\Http\Controllers\Api\TransferEventController;
 use App\Http\Controllers\Api\TransferEvidenceController;
 use App\Http\Controllers\Api\TransferExcelImportController;
@@ -33,6 +38,21 @@ use App\Http\Controllers\Api\TransferSupplierDispatchController;
 use App\Http\Controllers\Api\VehicleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::post(
+    'public/supplier-applications',
+    [PublicSupplierApplicationController::class, 'store']
+)->middleware('throttle:3,1');
+
+Route::get(
+    'public/address-search',
+    PublicAddressSearchController::class
+)->middleware('throttle:60,1');
+
+Route::post(
+    'public/transfer-requests',
+    [PublicTransferRequestController::class, 'store']
+)->middleware('throttle:10,1');
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('supplier-password/forgot', [SupplierPasswordResetController::class, 'forgot'])->middleware('throttle:5,1');
@@ -44,6 +64,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('user', function (Request $request) { return $request->user()?->load('supplierCompany'); });
 
     Route::middleware('panel.role:dispatcher,admin,super_admin')->group(function (): void {
+        Route::get('admin/transfer-requests', [AdminTransferRequestController::class, 'index']);
+        Route::patch('admin/transfer-requests/{transferRequest}/status', [AdminTransferRequestController::class, 'updateStatus']);
+        Route::post('admin/transfer-requests/{transferRequest}/convert', [TransferRequestConversionController::class, 'store']);
         Route::apiResource('vehicles', VehicleController::class);
         Route::patch('vehicles/{vehicle}/status', [VehicleController::class, 'changeStatus']);
         Route::post('vehicles/{vehicle}/photo', [VehicleController::class, 'uploadPhoto']);

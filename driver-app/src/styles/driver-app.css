@@ -1,10 +1,159 @@
-:root {
+﻿:root {
   font-family:
     Inter,
     system-ui,
     sans-serif;
   color: #e5eefb;
   background: #050b18;
+}
+
+/* Passenger live tracking share */
+.driver-tracking-share-card {
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid rgba(52, 205, 255, 0.32);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37, 171, 255, 0.14), transparent 38%),
+    #0d1a2e;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.driver-tracking-share-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.driver-tracking-share-header > div:first-child > span {
+  color: #32c5ff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.driver-tracking-share-header h2 {
+  margin: 7px 0 5px;
+  color: #f4f8ff;
+  font-size: 20px;
+}
+
+.driver-tracking-share-header p {
+  margin: 0;
+  color: #8ea5c4;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.driver-tracking-link-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #29415f;
+  border-radius: 999px;
+  background: #101f35;
+  color: #92a7c3;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.driver-tracking-link-state > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7488a4;
+}
+
+.driver-tracking-link-state.ready {
+  border-color: rgba(64, 226, 163, 0.35);
+  background: rgba(64, 226, 163, 0.1);
+  color: #58e9b1;
+}
+
+.driver-tracking-link-state.ready > span {
+  background: #43e4a7;
+  box-shadow: 0 0 0 6px rgba(67, 228, 167, 0.09);
+}
+
+.driver-tracking-share-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 17px;
+  padding: 13px;
+  border: 1px solid #243b59;
+  border-radius: 14px;
+  background: rgba(7, 19, 34, 0.75);
+}
+
+.driver-tracking-share-preview > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #287dff, #19bde1);
+  color: #fff;
+  font-weight: 900;
+}
+
+.driver-tracking-share-preview strong,
+.driver-tracking-share-preview small {
+  display: block;
+}
+
+.driver-tracking-share-preview strong {
+  color: #edf5ff;
+  font-size: 13px;
+}
+
+.driver-tracking-share-preview small {
+  margin-top: 5px;
+  color: #778fae;
+  font-size: 10px;
+}
+
+.driver-tracking-share-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(150px, 0.7fr);
+  gap: 10px;
+  margin-top: 13px;
+}
+
+.driver-tracking-share-actions button {
+  min-height: 48px;
+  border: 1px solid #2b5575;
+  border-radius: 13px;
+  background: #102841;
+  color: #ddecff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.driver-tracking-share-actions button.whatsapp {
+  border-color: rgba(48, 220, 139, 0.45);
+  background: linear-gradient(135deg, #15995f, #21c77e);
+  color: #fff;
+}
+
+.driver-tracking-share-actions button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+  opacity: 0.48;
+}
+
+@media (max-width: 620px) {
+  .driver-tracking-share-header {
+    flex-direction: column;
+  }
+
+  .driver-tracking-share-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 * {
@@ -487,8 +636,7 @@ button {
 .driver-route-actions,
 .driver-contact-actions {
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 9px;
   margin-top: 17px;
 }
@@ -506,8 +654,7 @@ button {
 
 .driver-detail-grid {
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
@@ -741,8 +888,7 @@ button {
 
 .driver-gps-actions {
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 9px;
   margin-top: 17px;
 }
@@ -1218,4 +1364,24 @@ button {
   .no-show-evidence-actions {
     grid-template-columns: 1fr;
   }
+}
+.driver-gps-action-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(28, 181, 255, 0.55);
+  border-radius: 12px;
+  background: rgba(10, 132, 255, 0.14);
+  color: #35c5ff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.driver-gps-action-button:hover:not(:disabled) {
+  background: rgba(10, 132, 255, 0.24);
+}
+
+.driver-gps-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }

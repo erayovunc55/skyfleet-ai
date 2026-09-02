@@ -1,0 +1,48 @@
+SKYFLEET AI - YOLCU CANLI TAKIP UYGULAMASI
+
+YEREL KURULUM
+
+1. Bu klasörü aşağıdaki konuma kopyalayın:
+   C:\Projects\SKYFLEET-AI\passenger-tracking-app
+
+2. PowerShell'e yalnızca aşağıdaki komutları yapıştırın:
+
+cd C:\Projects\SKYFLEET-AI\passenger-tracking-app
+npm install
+npm run build
+npm run dev
+
+3. Uygulama aşağıdaki adreste çalışacaktır:
+   http://localhost:5176/track/TAKIP_TOKENI
+
+4. Backend .env dosyasında yerel adres şu olmalıdır:
+   PASSENGER_TRACKING_URL=http://localhost:5176/track
+
+5. Backend .env değişikliğinden sonra çalıştırın:
+
+cd C:\Projects\SKYFLEET-AI\backend
+php artisan optimize:clear
+
+CANLI KURULUM
+
+1. npm run build sonrasında dist klasörünün İÇİNDEKİ dosyaları
+   sunucudaki public_html/track klasörüne yükleyin.
+
+   dist içindeki .htaccess dosyasını da mutlaka yükleyin. Bu dosya
+   doğrudan /track/TAKIP_TOKENI bağlantısının açılmasını sağlar.
+
+2. Canlı backend .env dosyasına ekleyin:
+   PASSENGER_TRACKING_URL=https://skytriptransfer.com/track
+
+3. Canlı backend önbelleğini temizleyin:
+   php artisan optimize:clear
+
+ÖZELLİKLER
+
+- Uygulama yüklemeden güvenli bağlantı ile erişim
+- 5 saniyede bir otomatik canlı konum yenileme
+- OpenStreetMap üzerinde sürücü, alış ve bırakış noktaları
+- Sürücü ve araç bilgileri
+- Operasyon durum zaman çizelgesi
+- Mobil uyumlu yatırımcı sunumuna hazır tasarım
+- Fiyat, OTA, tedarikçi, telefon ve e-posta bilgileri gösterilmez

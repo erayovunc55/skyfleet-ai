@@ -1,11 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import apiClient from "../services/apiClient";
 import "leaflet/dist/leaflet.css";
 import "./dispatcher.css";
 import NewTransferModal from "./components/NewTransferModal";
 import AssignDriverModal from "./components/AssignDriverModal";
+import TransferTimelineModal from "./components/TransferTimelineModal";
 
 const driverMarkerIcon = L.divIcon({
   className: "dispatcher-fleet-marker-icon",
@@ -13,6 +21,30 @@ const driverMarkerIcon = L.divIcon({
   iconSize: [32, 32],
   iconAnchor: [16, 32],
   popupAnchor: [0, -30],
+});
+
+const delayedDriverMarkerIcon = L.divIcon({
+  className: "dispatcher-fleet-marker-icon dispatcher-fleet-marker-delayed",
+  html: '<div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#d97706;color:#ffffff;font-size:18px;box-shadow:0 0 0 7px rgba(217,119,6,0.22);border:2px solid #ffffff;">🚐</div>',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -30],
+});
+
+const offlineDriverMarkerIcon = L.divIcon({
+  className: "dispatcher-fleet-marker-icon dispatcher-fleet-marker-offline",
+  html: '<div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:#dc2626;color:#ffffff;font-size:18px;box-shadow:0 0 0 7px rgba(220,38,38,0.22);border:2px solid #ffffff;">🚐</div>',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -30],
+});
+
+const pickupMarkerIcon = L.divIcon({
+  className: "dispatcher-pickup-marker-icon",
+  html: '<div style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:#16a34a;color:#ffffff;font-size:18px;box-shadow:0 0 0 6px rgba(22,163,74,0.18);border:2px solid #ffffff;">📍</div>',
+  iconSize: [34, 34],
+  iconAnchor: [17, 34],
+  popupAnchor: [0, -32],
 });
 
 function FleetMapController({ positions }) {
@@ -214,6 +246,142 @@ function formatLastGpsTime(value) {
     minute: "2-digit",
   });
 }
+
+function getGpsState(recordedAt) {
+  if (!recordedAt) {
+    return {
+      key: "offline",
+      label: "Offline",
+      color: "#b91c1c",
+      background: "#fee2e2",
+      border: "#fecaca",
+    };
+  }
+
+  const recordedDate = new Date(recordedAt);
+  if (Number.isNaN(recordedDate.getTime())) {
+    return {
+      key: "offline",
+      label: "Offline",
+      color: "#b91c1c",
+      background: "#fee2e2",
+      border: "#fecaca",
+    };
+  }
+
+  const ageSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - recordedDate.getTime()) / 1000),
+  );
+
+  if (ageSeconds <= 30) {
+    return {
+      key: "live",
+      label: "Live",
+      color: "#166534",
+      background: "#dcfce7",
+      border: "#bbf7d0",
+    };
+  }
+
+  if (ageSeconds <= 120) {
+    return {
+      key: "delayed",
+      label: "Delayed",
+      color: "#92400e",
+      background: "#fef3c7",
+      border: "#fde68a",
+    };
+  }
+
+  return {
+    key: "offline",
+    label: "Offline",
+    color: "#b91c1c",
+    background: "#fee2e2",
+    border: "#fecaca",
+  };
+}
+
+function getDriverMarkerIcon(recordedAt) {
+  const gpsState = getGpsState(recordedAt);
+
+  if (gpsState.key === "offline") return offlineDriverMarkerIcon;
+  if (gpsState.key === "delayed") return delayedDriverMarkerIcon;
+  return driverMarkerIcon;
+}
+
+function getScheduleRisk(route, transfer) {
+  if (!route || !transfer) return null;
+
+  if (route.target === "dropoff") {
+    return {
+      key: "ongoing",
+      label: "Trip in Progress",
+      detail: "Driving to destination",
+      color: "#1d4ed8",
+      background: "#dbeafe",
+      border: "#bfdbfe",
+    };
+  }
+
+  const pickupDate = new Date(
+    String(transfer.pickupDateTime ?? "").replace(" ", "T"),
+  );
+  const etaMinutes = Number(route.eta_minutes);
+
+  if (
+    Number.isNaN(pickupDate.getTime()) ||
+    !Number.isFinite(etaMinutes)
+  ) {
+    return {
+      key: "unknown",
+      label: "Schedule Unavailable",
+      detail: "Pickup time or ETA is missing",
+      color: "#475569",
+      background: "#f1f5f9",
+      border: "#cbd5e1",
+    };
+  }
+
+  const minutesUntilPickup = Math.ceil(
+    (pickupDate.getTime() - Date.now()) / 60000,
+  );
+
+  if (minutesUntilPickup < 0) {
+    return {
+      key: "late",
+      label: "Late",
+      detail: `${Math.abs(minutesUntilPickup)} min after pickup time`,
+      color: "#b91c1c",
+      background: "#fee2e2",
+      border: "#fecaca",
+    };
+  }
+
+  const expectedDelay = Math.ceil(etaMinutes - minutesUntilPickup);
+
+  if (expectedDelay > 0) {
+    return {
+      key: "risk",
+      label: "At Risk",
+      detail: `Expected ${expectedDelay} min late`,
+      color: "#92400e",
+      background: "#fef3c7",
+      border: "#fde68a",
+    };
+  }
+
+  return {
+    key: "on-time",
+    label: "On Time",
+    detail: `${minutesUntilPickup} min until pickup`,
+    color: "#166534",
+    background: "#dcfce7",
+    border: "#bbf7d0",
+  };
+}
+
 function normalizeTransfer(item = {}) {
   const pickupTimeValue = item.pickup_time || item.pickupTime || item.date;
 
@@ -243,6 +411,7 @@ function normalizeTransfer(item = {}) {
         item.dropoff_address,
     ),
     pickupTime: formatPickupTime(pickupTimeValue),
+    pickupDateTime: pickupTimeValue ?? null,
     date: formatPickupDate(pickupTimeValue || item.date),
     driverId: item.driver_id ?? item.driver?.id ?? null,
     driver: formatDriver(item.driver, item.driver_name),
@@ -255,7 +424,9 @@ function normalizeTransfer(item = {}) {
       item.driver?.vehiclePlate ??
       "-",
     latestLocation: parseLatestLocation(item),
+    lastGpsRecordedAt: parseLatestLocation(item)?.recordedAt ?? null,
     lastGpsTime: formatLastGpsTime(parseLatestLocation(item)?.recordedAt),
+    events: Array.isArray(item.events) ? item.events : [],
     status: mapDispatcherStatus(item.status || item.state),
   };
 }
@@ -302,7 +473,12 @@ export default function DispatcherApp() {
 
   const [isNewTransferModalOpen, setIsNewTransferModalOpen] = useState(false);
   const [assignmentTransfer, setAssignmentTransfer] = useState(null);
+  const [timelineTransfer, setTimelineTransfer] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
+  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [loadingRouteId, setLoadingRouteId] = useState(null);
+  const [routeError, setRouteError] = useState("");
+  const [routeUpdatedAt, setRouteUpdatedAt] = useState(null);
 
   useEffect(() => {
     const handlePopState = () => setActivePage(getInitialPage());
@@ -343,7 +519,20 @@ export default function DispatcherApp() {
           : [];
 
         if (mounted) {
-          setTransfersState(items.map(normalizeTransfer));
+          const normalizedTransfers = items.map(normalizeTransfer);
+
+          setTransfersState(normalizedTransfers);
+          setTimelineTransfer((currentTransfer) => {
+            if (!currentTransfer?.id) {
+              return currentTransfer;
+            }
+
+            return (
+              normalizedTransfers.find(
+                (transfer) => transfer.id === currentTransfer.id,
+              ) ?? currentTransfer
+            );
+          });
         }
       } catch (error) {
         if (!mounted) return;
@@ -435,6 +624,43 @@ export default function DispatcherApp() {
     };
   }, [activePage]);
 
+  useEffect(() => {
+    const transferId = selectedRoute?.transfer_id;
+
+    if (activePage !== "fleet-map" || !transferId) {
+      return undefined;
+    }
+
+    let mounted = true;
+
+    const intervalId = window.setInterval(async () => {
+      try {
+        const response = await apiClient.get(
+          `/dispatcher/transfers/${transferId}/route`,
+        );
+        const routeData = response.data?.data;
+
+        if (mounted && routeData?.geometry?.coordinates) {
+          setSelectedRoute(routeData);
+          setRouteUpdatedAt(new Date());
+          setRouteError("");
+        }
+      } catch (error) {
+        if (mounted) {
+          setRouteError(
+            error?.response?.data?.message ||
+              "The live route could not be refreshed.",
+          );
+        }
+      }
+    }, 10000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [activePage, selectedRoute?.transfer_id]);
+
   const activeDrivers = useMemo(
   () => driversState.filter((driver) => driver.isActive),
   [driversState],
@@ -494,6 +720,65 @@ const uniqueDates = useMemo(
       item.latestLocation.longitude,
     ]),
     [fleetMapItems],
+  );
+
+  const fleetGpsSummary = useMemo(() => {
+    const summary = {
+      live: 0,
+      delayed: 0,
+      offline: 0,
+      offlineItems: [],
+    };
+
+    fleetMapItems.forEach((item) => {
+      const gpsState = getGpsState(item.lastGpsRecordedAt);
+      summary[gpsState.key] += 1;
+
+      if (gpsState.key === "offline") {
+        summary.offlineItems.push(item);
+      }
+    });
+
+    return summary;
+  }, [fleetMapItems]);
+
+  const selectedRoutePositions = useMemo(() => {
+    const coordinates = selectedRoute?.geometry?.coordinates;
+
+    if (!Array.isArray(coordinates)) {
+      return [];
+    }
+
+    return coordinates
+      .flatMap((line) => (Array.isArray(line) ? line : []))
+      .filter(
+        (coordinate) =>
+          Array.isArray(coordinate) &&
+          Number.isFinite(Number(coordinate[0])) &&
+          Number.isFinite(Number(coordinate[1])),
+      )
+      .map(([longitude, latitude]) => [
+        Number(latitude),
+        Number(longitude),
+      ]);
+  }, [selectedRoute]);
+
+  const mapControllerPositions =
+    selectedRoutePositions.length > 0
+      ? selectedRoutePositions
+      : fleetMapPositions;
+
+  const selectedRouteTransfer = useMemo(
+    () =>
+      fleetMapItems.find(
+        (item) => item.id === selectedRoute?.transfer_id,
+      ) ?? null,
+    [fleetMapItems, selectedRoute?.transfer_id],
+  );
+
+  const selectedScheduleRisk = useMemo(
+    () => getScheduleRisk(selectedRoute, selectedRouteTransfer),
+    [selectedRoute, selectedRouteTransfer],
   );
 
   const kpis = useMemo(() => {
@@ -569,12 +854,54 @@ const summaryCards = useMemo(() => [
       ),
     );
 
+    setTimelineTransfer((currentTransfer) =>
+      currentTransfer?.id === updatedTransfer.id
+        ? updatedTransfer
+        : currentTransfer,
+    );
+
     setAssignmentTransfer(null);
     setToastMessage(
       response.data?.message || "Driver assigned successfully.",
     );
 
     return updatedItem;
+  }
+
+  async function handleShowRoute(transfer) {
+    if (!transfer?.id) return;
+
+    setLoadingRouteId(transfer.id);
+    setRouteError("");
+
+    try {
+      const response = await apiClient.get(
+        `/dispatcher/transfers/${transfer.id}/route`,
+      );
+      const routeData = response.data?.data;
+
+      if (!routeData?.geometry?.coordinates) {
+        throw new Error("Route coordinates were not returned.");
+      }
+
+      setSelectedRoute(routeData);
+      setRouteUpdatedAt(new Date());
+    } catch (error) {
+      setSelectedRoute(null);
+      setRouteError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to calculate the transfer route.",
+      );
+    } finally {
+      setLoadingRouteId(null);
+    }
+  }
+
+  function handleClearRoute() {
+    setSelectedRoute(null);
+    setRouteUpdatedAt(null);
+    setRouteError("");
   }
 
   const pageTitle =
@@ -792,14 +1119,25 @@ const summaryCards = useMemo(() => [
                                 </span>
                               </td>
                               <td>
-                                <button
-                                  type="button"
-                                  className="dispatcher-action-button"
-                                  disabled={!transfer.id}
-                                  onClick={() => setAssignmentTransfer(transfer)}
-                                >
-                                  Assign Driver
-                                </button>
+                                <div className="dispatcher-row-actions">
+                                  <button
+                                    type="button"
+                                    className="dispatcher-action-button"
+                                    disabled={!transfer.id}
+                                    onClick={() => setAssignmentTransfer(transfer)}
+                                  >
+                                    Assign Driver
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="dispatcher-action-button dispatcher-timeline-button"
+                                    disabled={!transfer.id}
+                                    onClick={() => setTimelineTransfer(transfer)}
+                                  >
+                                    Timeline
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -856,14 +1194,25 @@ const summaryCards = useMemo(() => [
                           <div className="transfer-card-footer">
                             <span>{transfer.driver || "Unassigned"}</span>
 
-                            <button
-                              type="button"
-                              className="dispatcher-action-button dispatcher-action-button-secondary"
-                              disabled={!transfer.id}
-                              onClick={() => setAssignmentTransfer(transfer)}
-                            >
-                              Assign Driver
-                            </button>
+                            <div className="dispatcher-card-actions">
+                              <button
+                                type="button"
+                                className="dispatcher-action-button dispatcher-action-button-secondary"
+                                disabled={!transfer.id}
+                                onClick={() => setAssignmentTransfer(transfer)}
+                              >
+                                Assign Driver
+                              </button>
+
+                              <button
+                                type="button"
+                                className="dispatcher-action-button dispatcher-timeline-button"
+                                disabled={!transfer.id}
+                                onClick={() => setTimelineTransfer(transfer)}
+                              >
+                                Timeline
+                              </button>
+                            </div>
                           </div>
                         </article>
                       );
@@ -893,7 +1242,127 @@ const summaryCards = useMemo(() => [
                 </div>
               </div>
 
+              <div
+                className="dispatcher-summary-grid"
+                style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}
+              >
+                <article className="dispatcher-summary-card">
+                  <div className="dispatcher-summary-icon">🟢</div>
+                  <div>
+                    <p>Live GPS</p>
+                    <strong>{fleetGpsSummary.live}</strong>
+                  </div>
+                </article>
+
+                <article className="dispatcher-summary-card">
+                  <div
+                    className="dispatcher-summary-icon"
+                    style={{ background: "#fef3c7" }}
+                  >
+                    🟠
+                  </div>
+                  <div>
+                    <p>Delayed GPS</p>
+                    <strong>{fleetGpsSummary.delayed}</strong>
+                  </div>
+                </article>
+
+                <article className="dispatcher-summary-card">
+                  <div
+                    className="dispatcher-summary-icon"
+                    style={{ background: "#fee2e2" }}
+                  >
+                    🔴
+                  </div>
+                  <div>
+                    <p>Offline GPS</p>
+                    <strong>{fleetGpsSummary.offline}</strong>
+                  </div>
+                </article>
+              </div>
+
+              {fleetGpsSummary.offlineItems.length > 0 && (
+                <div
+                  role="alert"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "12px",
+                    padding: "14px 16px",
+                    border: "1px solid #fecaca",
+                    borderRadius: "16px",
+                    background: "#fef2f2",
+                    color: "#991b1b",
+                  }}
+                >
+                  <span aria-hidden="true" style={{ fontSize: "20px" }}>
+                    ⚠️
+                  </span>
+                  <div>
+                    <strong>Active transfer GPS warning</strong>
+                    <p style={{ margin: "4px 0 0", lineHeight: 1.5 }}>
+                      {fleetGpsSummary.offlineItems
+                        .map(
+                          (item) =>
+                            `${item.driver || "Unassigned"} (${item.voucher || "-"})`,
+                        )
+                        .join(", ")} {fleetGpsSummary.offlineItems.length === 1
+                          ? "has"
+                          : "have"} not reported a current location.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="dispatcher-fleet-map-map">
+                {routeError && (
+                  <div className="dispatcher-error-state">
+                    <p>{routeError}</p>
+                  </div>
+                )}
+
+                {selectedRoute && (
+                  <div className="dispatcher-route-summary">
+                    <strong>{selectedRoute.booking_reference || "Selected route"}</strong>{" "}
+                    <span>{selectedRoute.distance_text || "-"}</span>{" "}
+                    <span>{selectedRoute.eta_minutes || "-"} minutes</span>{" "}
+                    <span>
+                      {selectedRoute.target === "dropoff"
+                        ? "Destination"
+                        : "Pickup point"}
+                    </span>{" "}
+                    <span>
+                      Updated {routeUpdatedAt
+                        ? routeUpdatedAt.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                          })
+                        : "-"}
+                    </span>
+                    {selectedScheduleRisk && (
+                      <span
+                        title={selectedScheduleRisk.detail}
+                        style={{
+                          borderColor: selectedScheduleRisk.border,
+                          background: selectedScheduleRisk.background,
+                          color: selectedScheduleRisk.color,
+                        }}
+                      >
+                        {selectedScheduleRisk.label} · {selectedScheduleRisk.detail}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className="dispatcher-action-button dispatcher-action-button-secondary"
+                      onClick={handleClearRoute}
+                      style={{ marginLeft: "auto" }}
+                    >
+                      Close Route
+                    </button>
+                  </div>
+                )}
+
                 {isLoadingTransfers ? (
                   <div className="dispatcher-loading-state">
                     <p>Loading fleet map data...</p>
@@ -913,36 +1382,95 @@ const summaryCards = useMemo(() => [
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <FleetMapController positions={fleetMapPositions} />
+                    <FleetMapController positions={mapControllerPositions} />
 
-                    {fleetMapItems.map((item) => (
+                    {selectedRoutePositions.length > 0 && (
+                      <Polyline
+                        positions={selectedRoutePositions}
+                        pathOptions={{
+                          color: "#2563eb",
+                          weight: 6,
+                          opacity: 0.9,
+                        }}
+                      />
+                    )}
+
+                    {selectedRoute?.to && (
                       <Marker
-                        key={item.id ?? item.voucher}
                         position={[
-                          item.latestLocation.latitude,
-                          item.latestLocation.longitude,
+                          Number(selectedRoute.to.latitude),
+                          Number(selectedRoute.to.longitude),
                         ]}
-                        icon={driverMarkerIcon}
+                        icon={pickupMarkerIcon}
                       >
                         <Popup>
                           <div className="dispatcher-fleet-popup">
-                            <strong>{item.driver || "Unassigned"}</strong>
+                            <strong>Pickup Point</strong>
                             <p>
-                              <strong>Vehicle:</strong> {item.vehiclePlate || "-"}
+                              <strong>Booking:</strong>{" "}
+                              {selectedRoute.booking_reference || "-"}
                             </p>
                             <p>
-                              <strong>Booking:</strong> {item.voucher || "-"}
+                              <strong>Distance:</strong>{" "}
+                              {selectedRoute.distance_text || "-"}
                             </p>
                             <p>
-                              <strong>Status:</strong> {item.status}
-                            </p>
-                            <p>
-                              <strong>Last GPS:</strong> {item.lastGpsTime || "-"}
+                              <strong>Estimated time:</strong>{" "}
+                              {selectedRoute.eta_minutes || "-"} minutes
                             </p>
                           </div>
                         </Popup>
                       </Marker>
-                    ))}
+                    )}
+
+                    {fleetMapItems.map((item) => {
+                      const gpsState = getGpsState(item.lastGpsRecordedAt);
+
+                      return (
+                        <Marker
+                          key={item.id ?? item.voucher}
+                          position={[
+                            item.latestLocation.latitude,
+                            item.latestLocation.longitude,
+                          ]}
+                          icon={getDriverMarkerIcon(item.lastGpsRecordedAt)}
+                        >
+                          <Popup>
+                            <div className="dispatcher-fleet-popup">
+                              <strong>{item.driver || "Unassigned"}</strong>
+                              <p>
+                                <strong>Vehicle:</strong> {item.vehiclePlate || "-"}
+                              </p>
+                              <p>
+                                <strong>Booking:</strong> {item.voucher || "-"}
+                              </p>
+                              <p>
+                                <strong>Status:</strong> {item.status}
+                              </p>
+                              <p>
+                                <strong>GPS:</strong>{" "}
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    padding: "3px 8px",
+                                    borderRadius: "999px",
+                                    border: `1px solid ${gpsState.border}`,
+                                    background: gpsState.background,
+                                    color: gpsState.color,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  {gpsState.label}
+                                </span>
+                              </p>
+                              <p>
+                                <strong>Last GPS:</strong> {item.lastGpsTime || "-"}
+                              </p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      );
+                    })}
                   </MapContainer>
                 ) : (
                   <div className="dispatcher-empty-state">
@@ -962,11 +1490,25 @@ const summaryCards = useMemo(() => [
                         <th>Booking</th>
                         <th>Status</th>
                         <th>Last GPS</th>
+                        <th>Route</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {fleetMapItems.map((item) => (
-                        <tr key={item.id ?? item.voucher}>
+                      {fleetMapItems.map((item) => {
+                        const gpsState = getGpsState(item.lastGpsRecordedAt);
+
+                        return (
+                        <tr
+                          key={item.id ?? item.voucher}
+                          style={
+                            selectedRoute?.transfer_id === item.id
+                              ? {
+                                  background: "#dbeafe",
+                                  boxShadow: "inset 4px 0 0 #2563eb",
+                                }
+                              : undefined
+                          }
+                        >
                           <td>{item.driver || "Unassigned"}</td>
                           <td>{item.vehiclePlate || "-"}</td>
                           <td>{item.voucher || "-"}</td>
@@ -975,9 +1517,55 @@ const summaryCards = useMemo(() => [
                               {item.status}
                             </span>
                           </td>
-                          <td>{item.lastGpsTime || "-"}</td>
+                          <td>
+                            <div style={{ display: "grid", gap: "6px" }}>
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  width: "fit-content",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  padding: "4px 9px",
+                                  borderRadius: "999px",
+                                  border: `1px solid ${gpsState.border}`,
+                                  background: gpsState.background,
+                                  color: gpsState.color,
+                                  fontSize: "12px",
+                                  fontWeight: 800,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: "7px",
+                                    height: "7px",
+                                    borderRadius: "50%",
+                                    background: gpsState.color,
+                                  }}
+                                />
+                                {gpsState.label}
+                              </span>
+                              <small style={{ color: "#64748b" }}>
+                                {item.lastGpsTime || "-"}
+                              </small>
+                            </div>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="dispatcher-action-button"
+                              disabled={loadingRouteId !== null}
+                              onClick={() => handleShowRoute(item)}
+                            >
+                              {loadingRouteId === item.id
+                                ? "Loading..."
+                                : selectedRoute?.transfer_id === item.id
+                                  ? "Route Active"
+                                  : "Show Route"}
+                            </button>
+                          </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1025,15 +1613,11 @@ const summaryCards = useMemo(() => [
         onClose={() => setAssignmentTransfer(null)}
         onAssign={handleAssignDriver}
       />
+
+      <TransferTimelineModal
+        transfer={timelineTransfer}
+        onClose={() => setTimelineTransfer(null)}
+      />
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

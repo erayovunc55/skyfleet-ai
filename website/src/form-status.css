@@ -1,0 +1,22 @@
+.form-submit button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.form-notice.submitting {
+  color: #075f98;
+  border-color: #9bd5f8;
+  background: #edf8ff;
+}
+
+.form-notice.success {
+  color: #08734d;
+  border-color: #91dfbd;
+  background: #edfff7;
+}
+
+.form-notice.error {
+  color: #a52d38;
+  border-color: #efafb5;
+  background: #fff1f2;
+}

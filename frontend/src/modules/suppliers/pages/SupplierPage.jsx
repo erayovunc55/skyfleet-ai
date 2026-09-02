@@ -1,73 +1,62 @@
-import {
-  Button,
-  Card,
-} from "../../../components/ui";
+import { useEffect, useMemo, useState } from "react";
 
-import SupplierList from "../components/SupplierList";
-import SupplierStats from "../components/SupplierStats";
-import useSuppliers from "../hooks/useSuppliers";
+import CreateSupplierModal from "../components/CreateSupplierModal";
+import EditSupplierModal from "../components/EditSupplierModal";
+import SupplierDetailCenter from "../components/SupplierDetailCenter";
+import supplierService from "../services/supplierService";
+import { getDrivers } from "../../../services/driverService";
+import { getVehicles } from "../../../services/vehicleService";
+import { useLanguage } from "../../../i18n";
+
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
+
+const TEXT = {
+  tr: { eyebrow:"TEDARİKÇİ OPERASYONU",title:"Tedarikçi Kontrol Merkezi",subtitle:"Global tedarikçi ağını, ekipleri, araçları ve operasyon uygunluğunu ölçeklenebilir tek ekrandan yönetin.",add:"+ Tedarikçi Ekle",refresh:"Yenile",total:"Toplam Tedarikçi",active:"Operasyona Açık",approved:"Onaylı",review:"İnceleme Bekleyen",inventory:"TEDARİKÇİ AĞI",suppliers:"Tedarikçiler",searchPlaceholder:"Şirket, yetkili, e-posta, telefon veya vergi no ara...",allStatuses:"Tüm durumlar",country:"Ülke kodu",city:"Şehir",company:"Tedarikçi",location:"Konum",contact:"Yetkili / İletişim",drivers:"Sürücü",vehicles:"Araç",currency:"Para Birimi",status:"Durum",operation:"Operasyon",actions:"İşlem",open:"Açık",closed:"Kapalı",details:"Detay",edit:"Düzenle",delete:"Sil",resetPassword:"Şifre Sıfırla",deleteConfirm:"Bu tedarikçiyi silmek istediğinize emin misiniz? Aktif transferi varsa sistem silmeye izin vermeyecek.",resetConfirm:"Bu tedarikçinin portal giriş e-postasına şifre sıfırlama bağlantısı gönderilsin mi?",updated:"Tedarikçi güncellendi.",deleted:"Tedarikçi silindi.",pending:"Bekliyor",under_review:"İncelemede",revision_requested:"Revizyon",approvedStatus:"Onaylı",rejected:"Reddedildi",suspended:"Askıda",noLocation:"Konum belirtilmedi",noContact:"Yetkili belirtilmedi",noContactInfo:"İletişim bilgisi yok",noCurrency:"—",showing:"Gösterilen",of:"/",page:"Sayfa",previous:"Önceki",next:"Sonraki",perPage:"sayfa başına",loading:"Tedarikçiler yükleniyor...",empty:"Filtrelere uyan tedarikçi bulunamadı.",loadError:"Tedarikçiler yüklenemedi.",created:"Tedarikçi ve portal hesabı başarıyla oluşturuldu." },
+  en: { eyebrow:"SUPPLIER OPERATIONS",title:"Supplier Control Center",subtitle:"Manage the global supplier network, teams, vehicles and operational readiness from one scalable workspace.",add:"+ Add Supplier",refresh:"Refresh",total:"Total Suppliers",active:"Operational",approved:"Approved",review:"Awaiting Review",inventory:"SUPPLIER NETWORK",suppliers:"Suppliers",searchPlaceholder:"Search company, contact, email, phone or tax number...",allStatuses:"All statuses",country:"Country code",city:"City",company:"Supplier",location:"Location",contact:"Contact",drivers:"Drivers",vehicles:"Vehicles",currency:"Currency",status:"Status",operation:"Operation",actions:"Actions",open:"Open",closed:"Closed",details:"Details",edit:"Edit",delete:"Delete",resetPassword:"Reset Password",deleteConfirm:"Delete this supplier? The system will block deletion if active transfers exist.",resetConfirm:"Send a password reset link to this supplier's portal email?",updated:"Supplier updated.",deleted:"Supplier deleted.",pending:"Pending",under_review:"Under Review",revision_requested:"Revision",approvedStatus:"Approved",rejected:"Rejected",suspended:"Suspended",noLocation:"Location not provided",noContact:"Contact not provided",noContactInfo:"No contact information",noCurrency:"—",showing:"Showing",of:"of",page:"Page",previous:"Previous",next:"Next",perPage:"per page",loading:"Loading suppliers...",empty:"No suppliers match these filters.",loadError:"Suppliers could not be loaded.",created:"Supplier and portal account created successfully." },
+};
 
 export default function SupplierPage() {
-  const {
-    suppliers,
-    loading,
-    error,
-    reload,
-  } = useSuppliers();
+  const { language } = useLanguage();
+  const text = TEXT[language] || TEXT.en;
+  const [suppliers,setSuppliers]=useState([]); const [drivers,setDrivers]=useState([]); const [vehicles,setVehicles]=useState([]);
+  const [loading,setLoading]=useState(true); const [error,setError]=useState(""); const [successMessage,setSuccessMessage]=useState("");
+  const [showCreateModal,setShowCreateModal]=useState(false); const [selectedSupplierId,setSelectedSupplierId]=useState(null); const [editingSupplier,setEditingSupplier]=useState(null); const [deletingId,setDeletingId]=useState(null); const [resettingId,setResettingId]=useState(null);
+  const [search,setSearch]=useState(""); const [debouncedSearch,setDebouncedSearch]=useState(""); const [status,setStatus]=useState("");
+  const [countryCode,setCountryCode]=useState(""); const [city,setCity]=useState(""); const [pageSize,setPageSize]=useState(20); const [currentPage,setCurrentPage]=useState(1);
+  const [meta,setMeta]=useState({total:0,last_page:1,from:0,to:0}); const [stats,setStats]=useState({total:0,active:0,approved:0,review:0});
 
-  function handleSelectSupplier(supplier) {
-    console.log(
-      "Seçilen tedarikçi:",
-      supplier,
-    );
-  }
+  useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedSearch(search.trim()),300);return()=>window.clearTimeout(timer)},[search]);
+  useEffect(()=>setCurrentPage(1),[debouncedSearch,status,countryCode,city,pageSize]);
+  useEffect(()=>{loadPage()},[currentPage,pageSize,debouncedSearch,status,countryCode,city]);
+  useEffect(()=>{loadSupportingData();loadStats()},[]);
 
-  return (
-    <main className="supplier-page">
-      <header className="supplier-page-header">
-        <div>
-          <p>TEDARİKÇİ AĞI</p>
+  async function loadSupportingData(){try{const[d,v]=await Promise.all([getDrivers(),getVehicles()]);setDrivers(Array.isArray(d)?d:[]);setVehicles(Array.isArray(v)?v:[])}catch{}}
+  async function loadStats(){try{const[a,b,c,d,e]=await Promise.all([supplierService.getSuppliers({per_page:1}),supplierService.getSuppliers({per_page:1,is_active:1}),supplierService.getSuppliers({per_page:1,status:"approved"}),supplierService.getSuppliers({per_page:1,status:"pending"}),supplierService.getSuppliers({per_page:1,status:"under_review"})]);setStats({total:Number(a?.total||0),active:Number(b?.total||0),approved:Number(c?.total||0),review:Number(d?.total||0)+Number(e?.total||0)})}catch{}}
+  async function loadPage(){setLoading(true);setError("");try{const params={page:currentPage,per_page:pageSize};if(debouncedSearch)params.search=debouncedSearch;if(status)params.status=status;if(countryCode.trim())params.country_code=countryCode.trim().toUpperCase();if(city.trim())params.city=city.trim();const response=await supplierService.getSuppliers(params);const rows=Array.isArray(response?.data)?response.data:[];setSuppliers(rows);setMeta({total:Number(response?.total||rows.length),last_page:Math.max(1,Number(response?.last_page||1)),from:Number(response?.from||(rows.length?1:0)),to:Number(response?.to||rows.length)})}catch(err){setSuppliers([]);setError(err?.response?.data?.message||err?.message||text.loadError)}finally{setLoading(false)}}
+  async function refreshAll(){await Promise.all([loadPage(),loadStats(),loadSupportingData()])}
+  async function handleSupplierCreated(){setShowCreateModal(false);setSuccessMessage(text.created);await refreshAll();window.setTimeout(()=>setSuccessMessage(""),5000)}
+  async function handleSupplierSaved(){setEditingSupplier(null);setSuccessMessage(text.updated);await refreshAll();window.setTimeout(()=>setSuccessMessage(""),5000)}
+  async function handleDelete(supplier){if(!window.confirm(text.deleteConfirm))return;setDeletingId(supplier.id);setError("");try{await supplierService.deleteSupplier(supplier.id);setSuccessMessage(text.deleted);if(Number(selectedSupplierId)===Number(supplier.id))setSelectedSupplierId(null);await refreshAll();window.setTimeout(()=>setSuccessMessage(""),5000)}catch(err){setError(err?.response?.data?.message||err?.message||"Tedarikçi silinemedi.")}finally{setDeletingId(null)}}
+  async function handlePasswordReset(supplier){if(!window.confirm(text.resetConfirm))return;setResettingId(supplier.id);setError("");try{const data=await supplierService.sendPasswordReset(supplier.id);setSuccessMessage(data?.message||"Şifre sıfırlama bağlantısı gönderildi.");window.setTimeout(()=>setSuccessMessage(""),7000)}catch(err){setError(err?.response?.data?.message||err?.message||"Şifre sıfırlama bağlantısı gönderilemedi.")}finally{setResettingId(null)}}
 
-          <h1>Supplier Management</h1>
+  const countsBySupplier=useMemo(()=>{const map=new Map();for(const d of drivers){const id=Number(d.supplier_id||d.supplier_company?.id||0);if(!id)continue;const x=map.get(id)||{drivers:0,vehicles:0};x.drivers++;map.set(id,x)}for(const v of vehicles){const id=Number(v.supplier_id||v.supplier_company?.id||0);if(!id)continue;const x=map.get(id)||{drivers:0,vehicles:0};x.vehicles++;map.set(id,x)}return map},[drivers,vehicles]);
 
-          <span>
-            Tedarikçi başvurularını, şubeleri ve
-            operasyon durumlarını yönetin.
-          </span>
-        </div>
-
-        <div className="supplier-page-actions">
-          <Button
-            variant="ghost"
-            loading={loading}
-            onClick={reload}
-          >
-            Yenile
-          </Button>
-
-          <Button variant="primary">
-            Yeni Tedarikçi
-          </Button>
-        </div>
-      </header>
-
-      <SupplierStats
-        suppliers={suppliers}
-      />
-
-      <Card
-        title="Tedarikçiler"
-        subtitle={`${suppliers.length} kayıt görüntüleniyor`}
-      >
-        <SupplierList
-          suppliers={suppliers}
-          loading={loading}
-          error={error}
-          onSelectSupplier={
-            handleSelectSupplier
-          }
-        />
-      </Card>
-    </main>
-  );
+  return <main className="supplier-page supplier-control-center">
+    <header className="supplier-page-header supplier-control-header"><div><small>{text.eyebrow}</small><h1>{text.title}</h1><span>{text.subtitle}</span></div><div className="supplier-page-actions"><button type="button" className="supplier-secondary-button" onClick={refreshAll} disabled={loading}>↻ {text.refresh}</button><button type="button" className="supplier-primary-button" onClick={()=>setShowCreateModal(true)}>{text.add}</button></div></header>
+    <section className="supplier-kpi-grid"><SupplierKpi icon="🏢" label={text.total} value={stats.total} tone="blue"/><SupplierKpi icon="✓" label={text.active} value={stats.active} tone="green"/><SupplierKpi icon="🛡" label={text.approved} value={stats.approved} tone="cyan"/><SupplierKpi icon="◷" label={text.review} value={stats.review} tone="orange"/></section>
+    {successMessage&&<div className="supplier-page-success">{successMessage}</div>}{error&&<div className="supplier-page-error">{error}</div>}
+    <section className="supplier-table-panel"><div className="supplier-table-heading"><div><small>{text.inventory}</small><h2>{text.suppliers}</h2></div><strong>{meta.total}</strong></div>
+      <div className="supplier-filter-bar"><input type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={text.searchPlaceholder}/><select value={status} onChange={e=>setStatus(e.target.value)}><option value="">{text.allStatuses}</option><option value="approved">{text.approvedStatus}</option><option value="pending">{text.pending}</option><option value="under_review">{text.under_review}</option><option value="revision_requested">{text.revision_requested}</option><option value="suspended">{text.suspended}</option><option value="rejected">{text.rejected}</option></select><input value={countryCode} maxLength={2} onChange={e=>setCountryCode(e.target.value)} placeholder={text.country}/><input value={city} onChange={e=>setCity(e.target.value)} placeholder={text.city}/></div>
+      {loading?<div className="supplier-table-state">{text.loading}</div>:suppliers.length===0?<div className="supplier-table-state">{text.empty}</div>:<div className="supplier-table-wrap"><table className="supplier-control-table"><thead><tr><th>{text.company}</th><th>{text.location}</th><th>{text.contact}</th><th>{text.drivers}</th><th>{text.vehicles}</th><th>{text.currency}</th><th>{text.status}</th><th>{text.operation}</th><th>{text.actions}</th></tr></thead><tbody>{suppliers.map(s=>{const counts=countsBySupplier.get(Number(s.id))||{drivers:0,vehicles:0};return <tr key={s.id}><td><div className="supplier-company-cell"><span className="supplier-avatar">{getInitials(s.company_name)}</span><div><strong>{s.company_name}</strong><small>{s.legal_name||`ID #${s.id}`}</small></div></div></td><td><strong>{formatLocation(s,text.noLocation)}</strong></td><td><div className="supplier-contact-cell"><strong>{s.contact_name||text.noContact}</strong><small>{s.email||s.phone||text.noContactInfo}</small></div></td><td><span className="supplier-number-cell">{counts.drivers}</span></td><td><span className="supplier-number-cell">{counts.vehicles}</span></td><td><strong className="supplier-currency-cell">{s.default_currency||text.noCurrency}</strong></td><td><span className={`supplier-status-badge status-${s.status||"pending"}`}>{getStatusLabel(s.status,text)}</span></td><td><span className={`supplier-operation-badge ${s.is_active?"is-open":"is-closed"}`}>{s.is_active?text.open:text.closed}</span></td><td><div style={{display:"flex",gap:6,flexWrap:"wrap"}}><button type="button" className="supplier-detail-button" onClick={()=>setSelectedSupplierId(s.id)}>{text.details}</button><button type="button" className="supplier-detail-button" onClick={()=>setEditingSupplier(s)}>{text.edit}</button><button type="button" className="supplier-detail-button" disabled={resettingId===s.id} onClick={()=>handlePasswordReset(s)}>{resettingId===s.id?"...":text.resetPassword}</button><button type="button" className="supplier-detail-button" disabled={deletingId===s.id} onClick={()=>handleDelete(s)}>{deletingId===s.id?"...":text.delete}</button></div></td></tr>})}</tbody></table></div>}
+      <div className="supplier-pagination"><div>{text.showing} <strong>{meta.from}-{meta.to}</strong> {text.of} <strong>{meta.total}</strong></div><div className="supplier-page-controls"><button type="button" disabled={currentPage<=1||loading} onClick={()=>setCurrentPage(p=>Math.max(1,p-1))}>‹ {text.previous}</button><span>{text.page} <strong>{currentPage}</strong> / {meta.last_page}</span><button type="button" disabled={currentPage>=meta.last_page||loading} onClick={()=>setCurrentPage(p=>Math.min(meta.last_page,p+1))}>{text.next} ›</button></div><label><select value={pageSize} onChange={e=>setPageSize(Number(e.target.value))}>{PAGE_SIZE_OPTIONS.map(size=><option key={size} value={size}>{size}</option>)}</select><span>{text.perPage}</span></label></div>
+    </section>
+    {showCreateModal&&<CreateSupplierModal onClose={()=>setShowCreateModal(false)} onCreated={handleSupplierCreated}/>} 
+    {editingSupplier&&<EditSupplierModal supplier={editingSupplier} onClose={()=>setEditingSupplier(null)} onSaved={handleSupplierSaved}/>} 
+    {selectedSupplierId&&<SupplierDetailCenter supplierId={selectedSupplierId} drivers={drivers} vehicles={vehicles} onClose={()=>setSelectedSupplierId(null)}/>} 
+  </main>;
 }
+
+function SupplierKpi({icon,label,value,tone}){return <article className={`supplier-kpi supplier-kpi-${tone}`}><span>{icon}</span><div><small>{label}</small><strong>{value}</strong></div></article>}
+function getInitials(value){return String(value||"SF").trim().split(/\s+/).map(p=>p.charAt(0)).join("").slice(0,2).toUpperCase()}
+function formatLocation(s,fallback){const parts=[s.city,s.country_name||s.country_code].filter(Boolean);return parts.length?parts.join(", "):fallback}
+function getStatusLabel(status,text){if(status==="approved")return text.approvedStatus;return text[status]||text.pending}

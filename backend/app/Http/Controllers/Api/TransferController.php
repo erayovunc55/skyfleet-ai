@@ -12,8 +12,12 @@ use Illuminate\Validation\Rule;
 
 class TransferController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        if (!in_array($request->user()?->role, ['dispatcher', 'admin', 'super_admin'], true)) {
+            return response()->json(['message' => 'Bu listeyi görüntüleme yetkiniz yok.'], 403);
+        }
+
         $transfers = Transfer::query()
             ->with([
                 'driver.vehicle',
@@ -33,8 +37,18 @@ class TransferController extends Controller
     }
 
     public function show(
+        Request $request,
         Transfer $transfer
     ): JsonResponse {
+        $user = $request->user();
+        $isPanelUser = in_array($user?->role, ['dispatcher', 'admin', 'super_admin'], true);
+        $isAssignedDriver = $user?->role === 'driver'
+            && (int) $transfer->driver_id === (int) $user->id;
+
+        if (!$isPanelUser && !$isAssignedDriver) {
+            return response()->json(['message' => 'Bu transferi görüntüleme yetkiniz yok.'], 403);
+        }
+
         $transfer->load([
             'driver.vehicle',
             'pickupLocation.type',
@@ -45,6 +59,18 @@ class TransferController extends Controller
             'latestEvent',
             'latestLocation',
         ]);
+
+        if ($isAssignedDriver) {
+            $transfer->makeHidden([
+                'ota_source',
+                'supplier',
+                'supplier_id',
+                'supplier_company',
+                'price',
+                'currency',
+                'ota_booking_reference',
+            ]);
+        }
 
         return response()->json([
             'data' => $transfer,
@@ -296,6 +322,26 @@ class TransferController extends Controller
                     'status' => $nextStatus,
                 ]);
 
+                if ($nextStatus === 'on_the_way') {
+                    $lockedTransfer
+                        ->enablePublicTracking();
+                }
+
+                if (
+                    in_array(
+                        $nextStatus,
+                        [
+                            'completed',
+                            'no_show',
+                            'cancelled',
+                        ],
+                        true
+                    )
+                ) {
+                    $lockedTransfer
+                        ->schedulePublicTrackingExpiry();
+                }
+
                 $lockedTransfer
                     ->events()
                     ->create([
@@ -380,11 +426,44 @@ class TransferController extends Controller
             );
         }
 
+        $result['transfer']->makeHidden([
+            'ota_source',
+            'supplier',
+            'supplier_id',
+            'supplier_company',
+            'price',
+            'currency',
+            'ota_booking_reference',
+        ]);
+
+        $responseData =
+            $result['transfer']->toArray();
+
+        if (
+            in_array(
+                $result['transfer']->status,
+                [
+                    'on_the_way',
+                    'arrived',
+                    'passenger_called',
+                    'passenger_on_board',
+                    'trip_started',
+                    'completed',
+                    'no_show',
+                ],
+                true
+            )
+        ) {
+            $responseData['tracking_url'] =
+                $result['transfer']
+                    ->publicTrackingUrl();
+        }
+
         return response()->json([
             'message' =>
                 'Transfer durumu güncellendi.',
 
-            'data' => $result['transfer'],
+            'data' => $responseData,
         ]);
     }
 }

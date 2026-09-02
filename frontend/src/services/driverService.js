@@ -1,77 +1,76 @@
-const API_URL = import.meta.env.VITE_API_URL;
-
-function getAuthHeaders() {
-  const token = localStorage.getItem("skyfleet_token");
-
-  return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-}
-
-async function parseResponse(response) {
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error(
-      "Sunucudan geçersiz bir cevap alındı.",
-    );
-  }
-
-  if (response.status === 401) {
-    localStorage.removeItem("skyfleet_token");
-    localStorage.removeItem("skyfleet_user");
-
-    throw new Error(
-      "Oturum süresi doldu. Tekrar giriş yapmalısınız.",
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-        "Sürücü işlemi gerçekleştirilemedi.",
-    );
-  }
-
-  return data;
-}
+import apiClient from "./apiClient";
 
 export async function getDrivers() {
-  const response = await fetch(
-    `${API_URL}/drivers`,
-    {
-      method: "GET",
-      headers: getAuthHeaders(),
-    },
-  );
+  const response =
+    await apiClient.get("/drivers");
 
-  const data = await parseResponse(response);
-
-  return Array.isArray(data.data)
-    ? data.data
+  return Array.isArray(
+    response.data?.data,
+  )
+    ? response.data.data
     : [];
+}
+
+export async function createDriver(
+  payload,
+) {
+  const response =
+    await apiClient.post(
+      "/drivers",
+      payload,
+    );
+
+  return (
+    response.data?.data ||
+    response.data
+  );
+}
+
+export async function updateDriver(
+  driverId,
+  payload,
+) {
+  if (!driverId) {
+    throw new Error(
+      "Sürücü kimliği bulunamadı.",
+    );
+  }
+
+  const response =
+    await apiClient.patch(
+      `/drivers/${driverId}`,
+      payload,
+    );
+
+  return (
+    response.data?.data ||
+    response.data
+  );
 }
 
 export async function assignVehicleToDriver(
   driverId,
   vehicleId,
 ) {
-  const response = await fetch(
-    `${API_URL}/drivers/${driverId}/vehicle`,
-    {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        vehicle_id: vehicleId || null,
-      }),
-    },
-  );
+  if (!driverId) {
+    throw new Error(
+      "Sürücü kimliği bulunamadı.",
+    );
+  }
 
-  return parseResponse(response);
+  const response =
+    await apiClient.patch(
+      `/drivers/${driverId}/vehicle`,
+      {
+        vehicle_id:
+          vehicleId || null,
+      },
+    );
+
+  return (
+    response.data?.data ||
+    response.data
+  );
 }
 
 export async function removeVehicleFromDriver(

@@ -11,6 +11,12 @@ class AirportTerminal extends Model
 {
     use HasFactory;
 
+    public const TYPES = [
+        'domestic',
+        'international',
+        'mixed',
+    ];
+
     protected $fillable = [
         'airport_id',
         'name',
@@ -28,6 +34,17 @@ class AirportTerminal extends Model
             'sort_order' => 'integer',
             'metadata' => 'array',
         ];
+    }
+
+    public function setTypeAttribute(mixed $value): void
+    {
+        $type = strtolower(trim((string) $value));
+
+        if (!in_array($type, self::TYPES, true)) {
+            $type = 'mixed';
+        }
+
+        $this->attributes['type'] = $type;
     }
 
     public function airport(): BelongsTo

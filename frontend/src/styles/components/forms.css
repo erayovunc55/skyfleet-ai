@@ -1,0 +1,106 @@
+input,
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(75, 112, 148, 0.42);
+  border-radius: 10px;
+  outline: none;
+  color: #eef7ff;
+  background: #071827;
+  font: inherit;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+
+input,
+select {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+textarea {
+  min-height: 96px;
+  padding: 11px 12px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6f879b;
+  opacity: 1;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  background: #081d2e;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #38bdf8;
+  background: #081d2e;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  color: #6f879b;
+  border-color: rgba(75, 112, 148, 0.18);
+  background: #06131f;
+  opacity: 0.68;
+}
+
+select {
+  appearance: auto;
+  color-scheme: dark;
+}
+
+select option {
+  color: #eef7ff;
+  background: #071827;
+}
+
+label {
+  color: #d8e8f5;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.operation-status-field,
+.assignment-field {
+  gap: 7px;
+}
+
+.operation-status-field label,
+.assignment-field label {
+  color: #9fb8cb;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.operation-status-current {
+  min-height: 58px;
+}
+
+.operation-status-current strong {
+  color: #f8fbff;
+}
+
+@media (max-width: 760px) {
+  input,
+  select {
+    min-height: 40px;
+  }
+
+  textarea {
+    min-height: 88px;
+  }
+}

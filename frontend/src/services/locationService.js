@@ -1,197 +1,146 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import apiClient from "./apiClient";
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("skyfleet_token");
+function unwrapList(response) {
+  return Array.isArray(response?.data?.data)
+    ? response.data.data
+    : [];
+}
+
+function unwrapItem(response) {
+  return response?.data?.data ?? null;
+}
+
+function sanitizeLocationPayload(payload = {}) {
+  const allowedTerminalTypes = new Set([
+    "domestic",
+    "international",
+    "mixed",
+  ]);
+
+  const terminals = Array.isArray(payload.terminals)
+    ? payload.terminals
+        .map((terminal) => ({
+          ...terminal,
+          name: String(terminal?.name || "").trim(),
+          code: String(terminal?.code || "").trim() || null,
+          type: allowedTerminalTypes.has(terminal?.type)
+            ? terminal.type
+            : "mixed",
+        }))
+        .filter((terminal) => terminal.name.length > 0)
+    : [];
 
   return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json",
+    ...payload,
+    terminals,
   };
 }
 
-async function parseResponse(response) {
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error(
-      "Lokasyon servisinden geçersiz bir cevap alındı.",
-    );
-  }
-
-  if (response.status === 401) {
-    localStorage.removeItem("skyfleet_token");
-    localStorage.removeItem("skyfleet_user");
-
-    throw new Error(
-      "Oturum süresi doldu. Tekrar giriş yapmalısınız.",
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-        "Lokasyon bilgileri alınamadı.",
-    );
-  }
-
-  return data;
+function locationParams(filters = {}) {
+  const params = {};
+  if (filters.countryId) params.country_id = filters.countryId;
+  if (filters.cityId) params.city_id = filters.cityId;
+  if (filters.type) params.type = filters.type;
+  if (filters.locationTypeId) params.location_type_id = filters.locationTypeId;
+  if (filters.search) params.search = filters.search;
+  if (filters.pickupOnly) params.pickup_only = 1;
+  if (filters.dropoffOnly) params.dropoff_only = 1;
+  return params;
 }
 
 export async function getLocationTypes() {
-  const response = await fetch(
-    `${API_URL}/location-types`,
-    {
-      headers: getAuthHeaders(),
-    },
-  );
-
-  const data = await parseResponse(response);
-
-  return Array.isArray(data.data)
-    ? data.data
-    : [];
+  const response = await apiClient.get("/location-types");
+  return unwrapList(response);
 }
 
 export async function getCountries() {
-  const response = await fetch(
-    `${API_URL}/countries`,
-    {
-      headers: getAuthHeaders(),
-    },
-  );
-
-  const data = await parseResponse(response);
-
-  return Array.isArray(data.data)
-    ? data.data
-    : [];
+  const response = await apiClient.get("/countries");
+  return unwrapList(response);
 }
 
 export async function getCities(countryId) {
-  if (!countryId) {
-    return [];
-  }
-
-  const response = await fetch(
-    `${API_URL}/countries/${countryId}/cities`,
-    {
-      headers: getAuthHeaders(),
-    },
-  );
-
-  const data = await parseResponse(response);
-
-  return Array.isArray(data.data)
-    ? data.data
-    : [];
+  if (!countryId) return [];
+  const response = await apiClient.get(`/countries/${countryId}/cities`);
+  return unwrapList(response);
 }
 
-export async function getLocations(
-  cityId,
-  filters = {},
-) {
-  if (!cityId) {
-    return [];
-  }
+export async function getAirports(cityId) {
+  if (!cityId) return [];
+  const response = await apiClient.get(`/cities/${cityId}/airports`);
+  return unwrapList(response);
+}
 
-  const query = new URLSearchParams();
+export async function searchAirports(query, limit = 12) {
+  const q = String(query || "").trim();
+  if (q.length < 2) return [];
+  const response = await apiClient.get("/airports/search", {
+    params: { q, limit },
+  });
+  return unwrapList(response);
+}
 
-  if (filters.type) {
-    query.set("type", filters.type);
-  }
+export async function getAllLocations(filters = {}) {
+  const response = await apiClient.get("/locations", {
+    params: locationParams(filters),
+  });
+  return unwrapList(response);
+}
 
-  if (filters.locationTypeId) {
-    query.set(
-      "location_type_id",
-      String(filters.locationTypeId),
-    );
-  }
-
-  if (filters.search) {
-    query.set("search", filters.search);
-  }
-
-  if (filters.pickupOnly) {
-    query.set("pickup_only", "1");
-  }
-
-  if (filters.dropoffOnly) {
-    query.set("dropoff_only", "1");
-  }
-
-  const queryString = query.toString();
-
-  const response = await fetch(
-    `${API_URL}/cities/${cityId}/locations${
-      queryString ? `?${queryString}` : ""
-    }`,
-    {
-      headers: getAuthHeaders(),
-    },
-  );
-
-  const data = await parseResponse(response);
-
-  return Array.isArray(data.data)
-    ? data.data
-    : [];
+export async function getLocations(cityId, filters = {}) {
+  if (!cityId) return [];
+  const response = await apiClient.get(`/cities/${cityId}/locations`, {
+    params: locationParams(filters),
+  });
+  return unwrapList(response);
 }
 
 export async function getLocation(locationId) {
-  if (!locationId) {
-    return null;
-  }
-
-  const response = await fetch(
-    `${API_URL}/locations/${locationId}`,
-    {
-      headers: getAuthHeaders(),
-    },
-  );
-
-  const data = await parseResponse(response);
-
-  return data.data || null;
+  if (!locationId) return null;
+  const response = await apiClient.get(`/locations/${locationId}`);
+  return unwrapItem(response);
 }
 
-export async function getLocationPoints(
-  locationId,
-  filters = {},
-) {
-  if (!locationId) {
-    return [];
-  }
-
-  const query = new URLSearchParams();
-
-  if (filters.pointType) {
-    query.set("point_type", filters.pointType);
-  }
-
-  if (filters.pickupOnly) {
-    query.set("pickup_only", "1");
-  }
-
-  if (filters.dropoffOnly) {
-    query.set("dropoff_only", "1");
-  }
-
-  const queryString = query.toString();
-
-  const response = await fetch(
-    `${API_URL}/locations/${locationId}/points${
-      queryString ? `?${queryString}` : ""
-    }`,
-    {
-      headers: getAuthHeaders(),
-    },
+export async function createLocation(payload) {
+  const response = await apiClient.post(
+    "/locations",
+    sanitizeLocationPayload(payload)
   );
+  return unwrapItem(response);
+}
 
-  const data = await parseResponse(response);
+export async function updateLocation(locationId, payload) {
+  const response = await apiClient.patch(
+    `/locations/${locationId}`,
+    sanitizeLocationPayload(payload)
+  );
+  return unwrapItem(response);
+}
 
-  return Array.isArray(data.data)
-    ? data.data
-    : [];
+export async function createLocationPoint(locationId, payload) {
+  const response = await apiClient.post(`/locations/${locationId}/points`, payload);
+  return unwrapItem(response);
+}
+
+export async function updateLocationPoint(locationId, pointId, payload) {
+  const response = await apiClient.patch(
+    `/locations/${locationId}/points/${pointId}`,
+    payload
+  );
+  return unwrapItem(response);
+}
+
+export async function deleteLocationPoint(locationId, pointId) {
+  await apiClient.delete(`/locations/${locationId}/points/${pointId}`);
+}
+
+export async function getLocationPoints(locationId, filters = {}) {
+  if (!locationId) return [];
+
+  const params = {};
+  if (filters.pointType) params.point_type = filters.pointType;
+  if (filters.pickupOnly) params.pickup_only = 1;
+  if (filters.dropoffOnly) params.dropoff_only = 1;
+
+  const response = await apiClient.get(`/locations/${locationId}/points`, { params });
+  return unwrapList(response);
 }

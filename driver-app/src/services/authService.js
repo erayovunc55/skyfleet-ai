@@ -42,6 +42,26 @@ export async function loginDriver({
   return user;
 }
 
+export async function resetDriverPassword({
+  driverId,
+  token,
+  password,
+  passwordConfirmation,
+}) {
+  const response = await apiClient.post(
+    "/driver-password/reset",
+    {
+      driver_id: Number(driverId),
+      token,
+      password,
+      password_confirmation:
+        passwordConfirmation,
+    },
+  );
+
+  return response.data;
+}
+
 export function getStoredDriver() {
   const rawUser =
     localStorage.getItem(USER_KEY);

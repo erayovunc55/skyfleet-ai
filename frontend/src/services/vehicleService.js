@@ -1,120 +1,84 @@
-const API_URL = import.meta.env.VITE_API_URL;
-
-function getAuthHeaders() {
-  const token = localStorage.getItem("skyfleet_token");
-
-  return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-}
-
-async function parseResponse(response) {
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-        "Araç işlemi gerçekleştirilemedi.",
-    );
-  }
-
-  return data;
-}
+import apiClient from "./apiClient";
 
 export async function getVehicles() {
-  const response = await fetch(
-    `${API_URL}/vehicles`,
-    {
-      method: "GET",
-      headers: getAuthHeaders(),
-    },
-  );
+  const response =
+    await apiClient.get("/vehicles");
 
-  const data = await parseResponse(response);
-
-  return data.data;
+  return Array.isArray(
+    response.data?.data,
+  )
+    ? response.data.data
+    : [];
 }
 
-export async function createVehicle(payload) {
-  const response = await fetch(
-    `${API_URL}/vehicles`,
-    {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    },
-  );
+export async function createVehicle(
+  payload,
+) {
+  const response =
+    await apiClient.post(
+      "/vehicles",
+      payload,
+    );
 
-  return parseResponse(response);
+  return response.data;
 }
 
 export async function updateVehicle(
   vehicleId,
   payload,
 ) {
-  const response = await fetch(
-    `${API_URL}/vehicles/${vehicleId}`,
-    {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    },
-  );
+  const response =
+    await apiClient.patch(
+      `/vehicles/${vehicleId}`,
+      payload,
+    );
 
-  return parseResponse(response);
+  return response.data;
 }
 
-export async function deactivateVehicle(vehicleId) {
-  const response = await fetch(
-    `${API_URL}/vehicles/${vehicleId}`,
-    {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    },
-  );
+export async function deactivateVehicle(
+  vehicleId,
+) {
+  const response =
+    await apiClient.delete(
+      `/vehicles/${vehicleId}`,
+    );
 
-  return parseResponse(response);
+  return response.data;
 }
 
 export async function changeVehicleStatus(
   vehicleId,
   operationalStatus,
 ) {
-  const response = await fetch(
-    `${API_URL}/vehicles/${vehicleId}/status`,
-    {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        operational_status: operationalStatus,
-      }),
-    },
-  );
+  const response =
+    await apiClient.patch(
+      `/vehicles/${vehicleId}/status`,
+      {
+        operational_status:
+          operationalStatus,
+      },
+    );
 
-  return parseResponse(response);
+  return response.data;
 }
+
 export async function uploadVehiclePhoto(
   vehicleId,
   photoFile,
 ) {
-  const token = localStorage.getItem("skyfleet_token");
-
   const formData = new FormData();
-  formData.append("photo", photoFile);
 
-  const response = await fetch(
-    `${API_URL}/vehicles/${vehicleId}/photo`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      body: formData,
-    },
+  formData.append(
+    "photo",
+    photoFile,
   );
 
-  return parseResponse(response);
+  const response =
+    await apiClient.post(
+      `/vehicles/${vehicleId}/photo`,
+      formData,
+    );
+
+  return response.data;
 }

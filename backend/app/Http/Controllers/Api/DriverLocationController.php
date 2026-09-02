@@ -17,9 +17,24 @@ class DriverLocationController extends Controller
     ): JsonResponse {
         $driver = $request->user();
 
-        if ($transfer->driver_id !== $driver->id) {
+        if (
+            !$driver
+            || $driver->role !== 'driver'
+            || !$driver->is_active
+        ) {
             return response()->json([
-                'message' => 'Bu transfer için konum gönderme yetkiniz yok.',
+                'message' =>
+                    'Bu işlemi yalnızca aktif bir sürücü yapabilir.',
+            ], 403);
+        }
+
+        if (
+            (int) $transfer->driver_id
+            !== (int) $driver->id
+        ) {
+            return response()->json([
+                'message' =>
+                    'Bu transfer için konum gönderme yetkiniz yok.',
             ], 403);
         }
 
@@ -27,6 +42,7 @@ class DriverLocationController extends Controller
             !in_array(
                 $transfer->status,
                 [
+                    'accepted',
                     'on_the_way',
                     'arrived',
                     'passenger_called',
@@ -37,7 +53,8 @@ class DriverLocationController extends Controller
             )
         ) {
             return response()->json([
-                'message' => 'Bu transfer şu anda canlı konum takibine uygun durumda değil.',
+                'message' =>
+                    'Bu transfer şu anda canlı konum takibine uygun durumda değil.',
             ], 422);
         }
 
@@ -47,21 +64,25 @@ class DriverLocationController extends Controller
                 'numeric',
                 'between:-90,90',
             ],
+
             'longitude' => [
                 'required',
                 'numeric',
                 'between:-180,180',
             ],
+
             'accuracy' => [
                 'nullable',
                 'numeric',
                 'min:0',
             ],
+
             'speed' => [
                 'nullable',
                 'numeric',
                 'min:0',
             ],
+
             'heading' => [
                 'nullable',
                 'numeric',
@@ -83,7 +104,9 @@ class DriverLocationController extends Controller
         DriverLocationUpdated::dispatch($location);
 
         return response()->json([
-            'message' => 'Sürücü konumu kaydedildi.',
+            'message' =>
+                'Sürücü konumu kaydedildi.',
+
             'data' => $location,
         ], 201);
     }

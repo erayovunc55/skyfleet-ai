@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -16,7 +16,10 @@ class DriverController extends Controller
     {
         $drivers = User::query()
             ->where('role', 'driver')
-            ->with('vehicle')
+            ->with([
+                'vehicle',
+                'supplierCompany:id,company_name,city,country_name',
+            ])
             ->orderBy('name')
             ->get();
 
@@ -24,7 +27,225 @@ class DriverController extends Controller
             'data' => $drivers,
         ]);
     }
+public function store(
+    Request $request
+): JsonResponse {
+    $currentUser = $request->user();
 
+    if (
+        !$currentUser ||
+        !in_array(
+            $currentUser->role,
+            [
+                'dispatcher',
+                'admin',
+                'super_admin',
+            ],
+            true
+        )
+    ) {
+        return response()->json([
+            'message' =>
+                'Sürücü oluşturma yetkiniz yok.',
+        ], 403);
+    }
+
+    $validated = $request->validate([
+        'name' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+        'phone' => [
+            'required',
+            'string',
+            'max:50',
+            'unique:users,phone',
+        ],
+        'email' => [
+            'required',
+            'email',
+            'max:255',
+            'unique:users,email',
+        ],
+        'password' => [
+            'required',
+            'string',
+            'min:8',
+            'max:255',
+        ],
+        'vehicle_id' => [
+            'nullable',
+            'integer',
+            'exists:vehicles,id',
+        ],
+        'is_active' => [
+            'sometimes',
+            'boolean',
+        ],
+    ]);
+
+    $vehicleId =
+        $validated['vehicle_id'] ?? null;
+
+    if ($vehicleId !== null) {
+        $vehicle = Vehicle::findOrFail(
+            $vehicleId
+        );
+
+        if (
+            !$vehicle->is_active ||
+            $vehicle->operational_status !==
+                'active'
+        ) {
+            return response()->json([
+                'message' =>
+                    'Yalnızca aktif araçlar sürücüye atanabilir.',
+            ], 422);
+        }
+    }
+
+    $driver = DB::transaction(
+        function () use (
+            $validated,
+            $vehicleId
+        ) {
+            if ($vehicleId !== null) {
+                User::query()
+                    ->where(
+                        'vehicle_id',
+                        $vehicleId
+                    )
+                    ->update([
+                        'vehicle_id' => null,
+                    ]);
+            }
+
+            return User::create([
+                'name' =>
+                    $validated['name'],
+                'phone' =>
+                    $validated['phone'],
+                'email' =>
+                    $validated['email'],
+                'password' =>
+                    Hash::make(
+                        $validated['password']
+                    ),
+                'role' => 'driver',
+                'is_active' =>
+                    $validated[
+                        'is_active'
+                    ] ?? true,
+                'vehicle_id' =>
+                    $vehicleId,
+            ]);
+        }
+    );
+
+    return response()->json([
+        'message' =>
+            'Sürücü başarıyla oluşturuldu.',
+        'data' =>
+            $driver->load(['vehicle', 'supplierCompany']),
+    ], 201);
+}
+public function update(
+    Request $request,
+    User $driver
+): JsonResponse {
+    $currentUser = $request->user();
+
+    if (
+        !$currentUser ||
+        !in_array(
+            $currentUser->role,
+            [
+                'dispatcher',
+                'admin',
+                'super_admin',
+            ],
+            true
+        )
+    ) {
+        return response()->json([
+            'message' =>
+                'Sürücü güncelleme yetkiniz yok.',
+        ], 403);
+    }
+
+    if ($driver->role !== 'driver') {
+        return response()->json([
+            'message' =>
+                'Seçilen kullanıcı bir sürücü değil.',
+        ], 422);
+    }
+
+    $validated = $request->validate([
+        'name' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+        'phone' => [
+            'required',
+            'string',
+            'max:50',
+            'unique:users,phone,'
+                . $driver->id,
+        ],
+        'email' => [
+            'required',
+            'email',
+            'max:255',
+            'unique:users,email,'
+                . $driver->id,
+        ],
+        'password' => [
+            'nullable',
+            'string',
+            'min:8',
+            'max:255',
+        ],
+        'is_active' => [
+            'required',
+            'boolean',
+        ],
+    ]);
+
+    $updateData = [
+        'name' =>
+            $validated['name'],
+        'phone' =>
+            $validated['phone'],
+        'email' =>
+            $validated['email'],
+        'is_active' =>
+            $validated['is_active'],
+    ];
+
+    if (
+        !empty(
+            $validated['password']
+        )
+    ) {
+        $updateData['password'] =
+            Hash::make(
+                $validated['password']
+            );
+    }
+
+    $driver->update($updateData);
+
+    return response()->json([
+        'message' =>
+            'Sürücü bilgileri güncellendi.',
+        'data' =>
+            $driver
+                ->fresh()
+                ->load(['vehicle', 'supplierCompany']),
+    ]);
+}
     public function assignVehicle(
         Request $request,
         User $driver
@@ -79,7 +300,7 @@ class DriverController extends Controller
 
         $updatedDriver = $driver
             ->fresh()
-            ->load('vehicle');
+            ->load(['vehicle', 'supplierCompany']);
 
         return response()->json([
             'message' => $vehicleId
@@ -175,6 +396,18 @@ class DriverController extends Controller
         )
         ->orderBy('pickup_time')
         ->get();
+
+    $transfers->each(function (Transfer $transfer) {
+        $transfer->makeHidden([
+            'ota_source',
+            'supplier',
+            'supplier_id',
+            'supplier_company',
+            'price',
+            'currency',
+            'ota_booking_reference',
+        ]);
+    });
 
     return response()->json([
         'data' => $transfers,

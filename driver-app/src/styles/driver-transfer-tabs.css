@@ -1,0 +1,45 @@
+.driver-transfer-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.driver-transfer-tabs button {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.72);
+  font-weight: 800;
+}
+
+.driver-transfer-tabs button span {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  margin-left: 8px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+.driver-transfer-tabs button.active {
+  border-color: rgba(56, 189, 248, 0.34);
+  color: #e0f2fe;
+  background: rgba(14, 116, 144, 0.18);
+}
+
+.driver-transfer-tabs button.active span {
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+}
+
+@media (max-width: 520px) {
+  .driver-transfer-tabs {
+    grid-template-columns: 1fr;
+  }
+}

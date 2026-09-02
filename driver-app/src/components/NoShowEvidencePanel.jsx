@@ -1,224 +1,193 @@
-import {
-  useEffect,
-  useState,
-} from "react";
-
+import { useEffect, useState } from "react";
 import evidenceService from "../services/evidenceService";
 
-export default function NoShowEvidencePanel({
-  transfer,
-  onEvidenceSaved,
-  onCancel,
-}) {
-  const [photo, setPhoto] =
-    useState(null);
+const LOCATION_CACHE_KEY =
+  "skyfleet_driver_last_location";
 
-  const [previewUrl, setPreviewUrl] =
-    useState("");
+const LOCATION_CACHE_MAX_AGE =
+  10 * 60 * 1000;
 
-  const [location, setLocation] =
-    useState(null);
+const fieldStyle = {
+  width: "100%",
+  padding: "11px 12px",
+  border: "1px solid #cbd5e1",
+  borderRadius: "12px",
+  background: "#fff",
+  color: "#0f172a",
+};
 
-  const [note, setNote] =
-    useState("");
+export default function NoShowEvidencePanel({ transfer, onEvidenceSaved, onCancel }) {
+  const transferEvents = Array.isArray(transfer?.events) ? transfer.events : [];
+  const systemCallAttempts = transferEvents.filter(
+    (event) => event?.event_type === "passenger_call_attempted",
+  ).length;
+  const systemWhatsappAttempted = transferEvents.some(
+    (event) => event?.event_type === "passenger_whatsapp_opened",
+  );
+  const [photo, setPhoto] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [location, setLocation] = useState(null);
+  const [note, setNote] = useState("");
+  const [waitMinutes, setWaitMinutes] = useState(20);
+  const [callAttempts, setCallAttempts] = useState(systemCallAttempts);
+  const [passengerCalled, setPassengerCalled] = useState(systemCallAttempts > 0);
+  const [whatsappAttempted, setWhatsappAttempted] = useState(systemWhatsappAttempted);
+  const [checkingContact, setCheckingContact] = useState(true);
+  const [contactResult, setContactResult] = useState("unreachable");
+  const [locating, setLocating] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const [locating, setLocating] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [message, setMessage] =
-    useState("");
+  useEffect(() => requestLocation(), []);
 
   useEffect(() => {
-    requestLocation();
-  }, []);
+    let mounted = true;
+    evidenceService.getContactSummary(transfer.id)
+      .then((summary) => {
+        if (!mounted) return;
+        setCallAttempts(summary.callAttempts);
+        setPassengerCalled(summary.callAttempts > 0);
+        setWhatsappAttempted(summary.whatsappAttempted);
+      })
+      .catch(() => {
+        if (mounted) setError("İletişim kayıtları kontrol edilemedi.");
+      })
+      .finally(() => {
+        if (mounted) setCheckingContact(false);
+      });
+    return () => { mounted = false; };
+  }, [transfer.id]);
 
   useEffect(() => {
     if (!photo) {
       setPreviewUrl("");
       return undefined;
     }
-
-    const objectUrl =
-      URL.createObjectURL(photo);
-
+    const objectUrl = URL.createObjectURL(photo);
     setPreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(
-        objectUrl,
-      );
-    };
+    return () => URL.revokeObjectURL(objectUrl);
   }, [photo]);
 
   function requestLocation() {
     setError("");
-    setMessage("");
+
+    const cachedLocation =
+      getCachedLocation();
+
+    if (cachedLocation) {
+      setLocation(cachedLocation);
+    }
 
     if (!navigator.geolocation) {
       setLocating(false);
-
-      setError(
-        "Bu cihaz konum hizmetlerini desteklemiyor.",
-      );
-
+      if (!cachedLocation) {
+        setError("Bu cihaz konum hizmetlerini desteklemiyor.");
+      }
       return;
     }
 
     setLocating(true);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude:
-            position.coords.latitude,
+      handleLocationSuccess,
+      () => {
+        navigator.geolocation.getCurrentPosition(
+          handleLocationSuccess,
+          (positionError) => {
+            setLocating(false);
 
-          longitude:
-            position.coords.longitude,
-
-          accuracy:
-            position.coords.accuracy,
-
-          recordedAt:
-            new Date(
-              position.timestamp,
-            ).toISOString(),
-        });
-
-        setLocating(false);
-      },
-
-      (positionError) => {
-        setLocation(null);
-        setLocating(false);
-
-        setError(
-          getLocationErrorMessage(
-            positionError,
-          ),
+            if (!cachedLocation) {
+              setLocation(null);
+              setError(
+                getLocationErrorMessage(
+                  positionError,
+                ),
+              );
+            }
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 12000,
+            maximumAge: LOCATION_CACHE_MAX_AGE,
+          },
         );
       },
-
       {
         enableHighAccuracy: true,
-        timeout: 20000,
-        maximumAge: 3000,
+        timeout: 12000,
+        maximumAge: 60000,
       },
     );
   }
 
-  function handlePhotoChange(
-    event,
-  ) {
+  function handleLocationSuccess(position) {
+    const nextLocation = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+      recordedAt: new Date(
+        position.timestamp,
+      ).toISOString(),
+    };
+
+    setLocation(nextLocation);
+    setLocating(false);
     setError("");
-    setMessage("");
 
-    const selectedPhoto =
-      event.target.files?.[0];
-
-    if (!selectedPhoto) {
-      setPhoto(null);
-      return;
-    }
-
-    if (
-      !selectedPhoto.type.startsWith(
-        "image/",
-      )
-    ) {
-      setPhoto(null);
-
-      setError(
-        "Lütfen geçerli bir fotoğraf çekin veya seçin.",
+    try {
+      sessionStorage.setItem(
+        LOCATION_CACHE_KEY,
+        JSON.stringify(nextLocation),
       );
-
-      return;
+    } catch {
+      // Tarayıcı depolaması kapalıysa kayıt yine devam eder.
     }
+  }
 
-    const maximumFileSize =
-      10 * 1024 * 1024;
-
-    if (
-      selectedPhoto.size >
-      maximumFileSize
-    ) {
+  function handlePhotoChange(event) {
+    setError("");
+    const selectedPhoto = event.target.files?.[0];
+    if (!selectedPhoto) return setPhoto(null);
+    if (!selectedPhoto.type.startsWith("image/")) {
       setPhoto(null);
-
-      setError(
-        "Fotoğraf en fazla 10 MB olabilir.",
-      );
-
-      return;
+      return setError("Lütfen geçerli bir fotoğraf çekin veya seçin.");
     }
-
+    if (selectedPhoto.size > 10 * 1024 * 1024) {
+      setPhoto(null);
+      return setError("Fotoğraf en fazla 10 MB olabilir.");
+    }
     setPhoto(selectedPhoto);
   }
 
   async function handleSave() {
-    if (!photo) {
-      setError(
-        "No Show kanıtı için fotoğraf çekmelisiniz.",
-      );
-
-      return;
-    }
-
-    if (!location) {
-      setError(
-        "GPS konumu alınmadan kanıt kaydedilemez.",
-      );
-
-      return;
-    }
+    if (!photo) return setError("No Show kanıtı için fotoğraf çekmelisiniz.");
+    if (!location) return setError("GPS konumu alınmadan kanıt kaydedilemez.");
+    if (!passengerCalled) return setError("Yolcuyu aradığınızı onaylamalısınız.");
+    if (Number(callAttempts) < 1) return setError("En az bir arama denemesi girilmelidir.");
+    if (Number(waitMinutes) < 1) return setError("Bekleme süresi girilmelidir.");
 
     setSaving(true);
     setError("");
-    setMessage("");
-
     try {
-      const response =
-        await evidenceService.uploadNoShowEvidence({
-          transferId:
-            transfer.id,
-
-          photo,
-
-          location,
-
-          note,
-        });
-
-      setMessage(
-        response?.message ||
-          "No Show kanıtı başarıyla kaydedildi.",
-      );
-
-      await onEvidenceSaved?.(
-        response?.data,
-      );
+      const response = await evidenceService.uploadNoShowEvidence({
+        transferId: transfer.id,
+        photo,
+        location,
+        note,
+        details: {
+          waitMinutes: Number(waitMinutes),
+          callAttempts: Number(callAttempts),
+          passengerCalled,
+          whatsappAttempted,
+          contactResult,
+        },
+      });
+      await onEvidenceSaved?.(response?.data);
     } catch (requestError) {
-      const validationErrors =
-        requestError?.response?.data
-          ?.errors;
-
-      const firstValidationError =
-        validationErrors
-          ? Object.values(
-              validationErrors,
-            )
-              .flat()
-              .find(Boolean)
-          : null;
-
+      const errors = requestError?.response?.data?.errors;
       setError(
-        firstValidationError ||
-          requestError?.response?.data
-            ?.message ||
+        (errors && Object.values(errors).flat().find(Boolean)) ||
+          requestError?.response?.data?.message ||
           requestError?.message ||
           "No Show kanıtı yüklenemedi.",
       );
@@ -230,259 +199,97 @@ export default function NoShowEvidencePanel({
   return (
     <section className="no-show-evidence-card">
       <div className="no-show-evidence-header">
-        <div>
-          <span>
-            OPERASYON KANITI
-          </span>
-
-          <h2>
-            No Show Kaydı
-          </h2>
-        </div>
-
-        <button
-          type="button"
-          disabled={saving}
-          onClick={onCancel}
-          aria-label="No Show ekranını kapat"
-        >
-          ✕
-        </button>
+        <div><span>OPERASYON KANITI</span><h2>No Show Kaydı</h2></div>
+        <button type="button" disabled={saving} onClick={onCancel} aria-label="Kapat">✕</button>
       </div>
 
       <div className="no-show-warning">
-        Yolcunun buluşma noktasına
-        gelmediğini gösteren net bir
-        fotoğraf çekin. GPS konumu ve kayıt
-        zamanı otomatik olarak
-        eklenecektir.
+        Fotoğraf, GPS, bekleme süresi ve iletişim denemeleri kanıt kaydına eklenecektir.
       </div>
 
       <label className="no-show-photo-input">
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          capture="environment"
-          disabled={saving}
-          onChange={
-            handlePhotoChange
-          }
-        />
-
+        <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" disabled={saving} onChange={handlePhotoChange} />
         {previewUrl ? (
-          <div className="no-show-photo-preview">
-            <img
-              src={previewUrl}
-              alt="No Show kanıtı"
-            />
-
-            <span>
-              Fotoğrafı değiştirmek için dokunun
-            </span>
-          </div>
+          <div className="no-show-photo-preview"><img src={previewUrl} alt="No Show kanıtı" /><span>Fotoğrafı değiştirmek için dokunun</span></div>
         ) : (
-          <div className="no-show-photo-empty">
-            <strong>📷</strong>
-
-            <span>
-              Fotoğraf Çek
-            </span>
-
-            <small>
-              Telefonun arka kamerası
-              açılacaktır
-            </small>
-          </div>
+          <div className="no-show-photo-empty"><strong>📷</strong><span>Fotoğraf Çek</span><small>Telefonun arka kamerası açılacaktır</small></div>
         )}
       </label>
 
       <div className="no-show-location-box">
-        <div>
-          <span>
-            GPS Durumu
-          </span>
-
-          <strong>
-            {locating
-              ? "Konum alınıyor..."
-              : location
-                ? "Konum hazır"
-                : "Konum alınamadı"}
-          </strong>
-        </div>
-
-        <button
-          type="button"
-          disabled={
-            locating ||
-            saving
-          }
-          onClick={
-            requestLocation
-          }
-        >
-          {locating
-            ? "Bekleyin"
-            : "GPS Yenile"}
-        </button>
+        <div><span>GPS Durumu</span><strong>{locating ? "Konum alınıyor..." : location ? "Konum hazır" : "Konum alınamadı"}</strong></div>
+        <button type="button" disabled={locating || saving} onClick={requestLocation}>{locating ? "Bekleyin" : "GPS Yenile"}</button>
       </div>
 
       {location && (
         <div className="no-show-location-details">
-          <div>
-            <span>Enlem</span>
-
-            <strong>
-              {Number(
-                location.latitude,
-              ).toFixed(7)}
-            </strong>
-          </div>
-
-          <div>
-            <span>Boylam</span>
-
-            <strong>
-              {Number(
-                location.longitude,
-              ).toFixed(7)}
-            </strong>
-          </div>
-
-          <div>
-            <span>Hassasiyet</span>
-
-            <strong>
-              ±
-              {Math.round(
-                Number(
-                  location.accuracy ||
-                    0,
-                ),
-              )}{" "}
-              metre
-            </strong>
-          </div>
-
-          <div>
-            <span>Kayıt Saati</span>
-
-            <strong>
-              {formatDateTime(
-                location.recordedAt,
-              )}
-            </strong>
-          </div>
+          <div><span>Enlem</span><strong>{Number(location.latitude).toFixed(7)}</strong></div>
+          <div><span>Boylam</span><strong>{Number(location.longitude).toFixed(7)}</strong></div>
+          <div><span>Hassasiyet</span><strong>±{Math.round(Number(location.accuracy || 0))} metre</strong></div>
+          <div><span>Kayıt Saati</span><strong>{formatDateTime(location.recordedAt)}</strong></div>
         </div>
       )}
 
-      <label className="no-show-note-field">
-        <span>
-          Sürücü Açıklaması
-        </span>
-
-        <textarea
-          rows="4"
-          maxLength="2000"
-          value={note}
-          disabled={saving}
-          placeholder="Örnek: Yolcu 25 dakika beklendi. Telefon ve WhatsApp üzerinden ulaşılamadı."
-          onChange={(event) =>
-            setNote(
-              event.target.value,
-            )
-          }
-        />
-
-        <small>
-          {note.length}/2000
-        </small>
-      </label>
-
-      {error && (
-        <div className="driver-action-message error">
-          {error}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px", marginTop: "16px" }}>
+        <label><span>Bekleme Süresi</span><select style={fieldStyle} value={waitMinutes} disabled={saving} onChange={(e) => setWaitMinutes(e.target.value)}>{[10,15,20,25,30,45,50,60,90].map((v) => <option key={v} value={v}>{v} dakika</option>)}</select></label>
+        <label><span>Arama Denemesi (Sistem Kaydı)</span><input style={fieldStyle} type="number" value={callAttempts} disabled readOnly /></label>
+        <label><span>İletişim Sonucu</span><select style={fieldStyle} value={contactResult} disabled={saving} onChange={(e) => setContactResult(e.target.value)}><option value="unreachable">Ulaşılamadı</option><option value="phone_off">Telefon kapalı</option><option value="wrong_number">Numara hatalı</option><option value="answered_needs_time">Cevap verdi, süre istedi</option><option value="other">Diğer</option></select></label>
+        <div style={{ display: "grid", gap: "8px", alignContent: "end" }}>
+          <label><input type="checkbox" checked={passengerCalled} disabled readOnly /> Yolcu arandı (sistem)</label>
+          <label><input type="checkbox" checked={whatsappAttempted} disabled readOnly /> WhatsApp açıldı (sistem)</label>
         </div>
-      )}
+      </div>
 
-      {message && (
-        <div className="driver-action-message success">
-          {message}
-        </div>
-      )}
-
+      <label className="no-show-note-field"><span>Sürücü Açıklaması</span><textarea rows="4" maxLength="2000" value={note} disabled={saving} placeholder="Örnek: Yolcu 25 dakika beklendi. Telefon ve WhatsApp üzerinden ulaşılamadı." onChange={(e) => setNote(e.target.value)} /><small>{note.length}/2000</small></label>
+      {error && <div className="driver-action-message error">{error}</div>}
       <div className="no-show-evidence-actions">
-        <button
-          className="no-show-cancel-button"
-          type="button"
-          disabled={saving}
-          onClick={onCancel}
-        >
-          Vazgeç
-        </button>
-
-        <button
-          className="no-show-save-button"
-          type="button"
-          disabled={
-            saving ||
-            locating ||
-            !photo ||
-            !location
-          }
-          onClick={handleSave}
-        >
-          {saving
-            ? "Kanıt yükleniyor..."
-            : "Kanıtı Kaydet ve No Show Yap"}
-        </button>
+        <button className="no-show-cancel-button" type="button" disabled={saving} onClick={onCancel}>Vazgeç</button>
+        <button className="no-show-save-button" type="button" disabled={saving || locating || checkingContact || !photo || !location || !passengerCalled} onClick={handleSave}>{saving ? "Kanıt yükleniyor..." : checkingContact ? "İletişim kayıtları kontrol ediliyor..." : "Kanıtı Kaydet ve No Show Yap"}</button>
       </div>
     </section>
   );
 }
 
-function getLocationErrorMessage(
-  error,
-) {
-  switch (error.code) {
-    case error.PERMISSION_DENIED:
-      return "Konum izni verilmedi. Tarayıcı ayarlarından konum iznini açın.";
+function getCachedLocation() {
+  try {
+    const rawValue = sessionStorage.getItem(
+      LOCATION_CACHE_KEY,
+    );
 
-    case error.POSITION_UNAVAILABLE:
-      return "Cihaz konumu belirlenemedi. Telefonun GPS hizmetini kontrol edin.";
+    if (!rawValue) {
+      return null;
+    }
 
-    case error.TIMEOUT:
-      return "Konum alınırken zaman aşımı oluştu. Tekrar deneyin.";
+    const value = JSON.parse(rawValue);
+    const recordedAt = new Date(
+      value.recordedAt,
+    ).getTime();
 
-    default:
-      return "Konum alınamadı.";
+    if (
+      !Number.isFinite(Number(value.latitude)) ||
+      !Number.isFinite(Number(value.longitude)) ||
+      !Number.isFinite(recordedAt) ||
+      Date.now() - recordedAt >
+        LOCATION_CACHE_MAX_AGE
+    ) {
+      return null;
+    }
+
+    return value;
+  } catch {
+    return null;
   }
 }
 
+function getLocationErrorMessage(error) {
+  if (error.code === error.PERMISSION_DENIED) return "Konum izni verilmedi. Tarayıcı ayarlarından konum iznini açın.";
+  if (error.code === error.POSITION_UNAVAILABLE) return "Cihaz konumu belirlenemedi. Telefonun GPS hizmetini kontrol edin.";
+  if (error.code === error.TIMEOUT) return "Konum alınırken zaman aşımı oluştu. Tekrar deneyin.";
+  return "Konum alınamadı.";
+}
+
 function formatDateTime(value) {
-  if (!value) {
-    return "Bilinmiyor";
-  }
-
   const date = new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return "Bilinmiyor";
-  }
-
-  return date.toLocaleString(
-    "tr-TR",
-    {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    },
-  );
+  if (Number.isNaN(date.getTime())) return "Bilinmiyor";
+  return date.toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }

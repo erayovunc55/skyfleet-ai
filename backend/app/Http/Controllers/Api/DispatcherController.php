@@ -5,11 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Transfer;
 use App\Models\User;
+use App\Services\GeocodingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DispatcherController extends Controller
 {
+    public function __construct(
+        private readonly GeocodingService $geocoding
+    ) {
+    }
+
     public function transfers(): JsonResponse
     {
         $todayStart = now()->startOfDay();
@@ -18,6 +25,7 @@ class DispatcherController extends Controller
         $transfers = Transfer::query()
             ->with([
                 'driver.vehicle',
+                'supplierCompany',
                 'pickupLocation.type',
                 'pickupPoint.airportTerminal',
                 'dropoffLocation.type',
@@ -36,7 +44,6 @@ class DispatcherController extends Controller
             $todayEnd
         ): array {
             $driver = $transfer->driver;
-            $vehicle = $driver?->vehicle;
 
             $todayTransferCount = 0;
             $todayCompletedCount = 0;
@@ -44,19 +51,19 @@ class DispatcherController extends Controller
             if ($driver) {
                 $todayTransferCount = Transfer::query()
                     ->where('driver_id', $driver->id)
-                    ->whereBetween('pickup_time', [
-                        $todayStart,
-                        $todayEnd,
-                    ])
+                    ->whereBetween(
+                        'pickup_time',
+                        [$todayStart, $todayEnd]
+                    )
                     ->count();
 
                 $todayCompletedCount = Transfer::query()
                     ->where('driver_id', $driver->id)
                     ->where('status', 'completed')
-                    ->whereBetween('pickup_time', [
-                        $todayStart,
-                        $todayEnd,
-                    ])
+                    ->whereBetween(
+                        'pickup_time',
+                        [$todayStart, $todayEnd]
+                    )
                     ->count();
             }
 
@@ -100,9 +107,29 @@ class DispatcherController extends Controller
                 'required',
                 'string',
             ],
+            'pickup_lat' => [
+                'nullable',
+                'numeric',
+                'between:-90,90',
+            ],
+            'pickup_lng' => [
+                'nullable',
+                'numeric',
+                'between:-180,180',
+            ],
             'dropoff' => [
                 'required',
                 'string',
+            ],
+            'dropoff_lat' => [
+                'nullable',
+                'numeric',
+                'between:-90,90',
+            ],
+            'dropoff_lng' => [
+                'nullable',
+                'numeric',
+                'between:-180,180',
             ],
             'pickup_time' => [
                 'required',
@@ -171,6 +198,46 @@ class DispatcherController extends Controller
             }
         }
 
+        $warnings = [];
+
+        if (
+            !isset($data['pickup_lat'])
+            || !isset($data['pickup_lng'])
+        ) {
+            $pickupResult = $this->geocoding
+                ->geocode($data['pickup']);
+
+            if ($pickupResult) {
+                $data['pickup_lat'] =
+                    $pickupResult['latitude'];
+
+                $data['pickup_lng'] =
+                    $pickupResult['longitude'];
+            } else {
+                $warnings[] =
+                    'Pickup koordinatları otomatik bulunamadı.';
+            }
+        }
+
+        if (
+            !isset($data['dropoff_lat'])
+            || !isset($data['dropoff_lng'])
+        ) {
+            $dropoffResult = $this->geocoding
+                ->geocode($data['dropoff']);
+
+            if ($dropoffResult) {
+                $data['dropoff_lat'] =
+                    $dropoffResult['latitude'];
+
+                $data['dropoff_lng'] =
+                    $dropoffResult['longitude'];
+            } else {
+                $warnings[] =
+                    'Dropoff koordinatları otomatik bulunamadı.';
+            }
+        }
+
         $data['booking_reference'] =
             $data['booking_reference']
             ?? $this->generateBookingReference();
@@ -186,15 +253,23 @@ class DispatcherController extends Controller
             ->fresh()
             ->load([
                 'driver.vehicle',
+                'supplierCompany',
                 'pickupLocation.type',
                 'pickupPoint.airportTerminal',
                 'dropoffLocation.type',
                 'dropoffPoint.airportTerminal',
+                'events.driver',
                 'latestEvent',
                 'latestLocation',
             ]);
 
         return response()->json([
+            'message' => empty($warnings)
+                ? 'Transfer oluşturuldu ve koordinatlar hazırlandı.'
+                : 'Transfer oluşturuldu; bazı koordinatlar bulunamadı.',
+
+            'warnings' => $warnings,
+
             'data' => $this->formatTransfer(
                 $createdTransfer
             ),
@@ -240,10 +315,12 @@ class DispatcherController extends Controller
             ->fresh()
             ->load([
                 'driver.vehicle',
+                'supplierCompany',
                 'pickupLocation.type',
                 'pickupPoint.airportTerminal',
                 'dropoffLocation.type',
                 'dropoffPoint.airportTerminal',
+                'events.driver',
                 'latestEvent',
                 'latestLocation',
             ]);
@@ -257,7 +334,67 @@ class DispatcherController extends Controller
             ),
         ]);
     }
+public function bulkAssignSupplier(
+    Request $request
+): JsonResponse {
+    $data = $request->validate([
+        'transfer_ids' => [
+            'required',
+            'array',
+            'min:1',
+        ],
+        'transfer_ids.*' => [
+            'integer',
+            'exists:transfers,id',
+        ],
+        'supplier_id' => [
+            'required',
+            'integer',
+            'exists:suppliers,id',
+        ],
+    ]);
 
+    $transferIds = array_values(
+        array_unique($data['transfer_ids'])
+    );
+
+    $supplierId = (int) $data['supplier_id'];
+
+    $updatedCount = 0;
+    $skippedCount = 0;
+
+    DB::transaction(function () use (
+        $transferIds,
+        $supplierId,
+        &$updatedCount,
+        &$skippedCount
+    ) {
+        $transfers = Transfer::query()
+            ->whereIn('id', $transferIds)
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($transfers as $transfer) {
+            if ($transfer->supplier_id !== null) {
+                $skippedCount++;
+                continue;
+            }
+
+            $transfer->update([
+                'supplier_id' => $supplierId,
+            ]);
+
+            $updatedCount++;
+        }
+    });
+
+    return response()->json([
+        'message' => 'Toplu tedarikçi ataması tamamlandı.',
+        'updated_count' => $updatedCount,
+        'skipped_count' => $skippedCount,
+        'supplier_id' => $supplierId,
+    ]);
+}
     private function formatTransfer(
         Transfer $transfer,
         int $todayTransferCount = 0,
@@ -267,27 +404,38 @@ class DispatcherController extends Controller
         $vehicle = $driver?->vehicle;
 
         return [
-            ...$transfer->toArray(),
+    ...$transfer->toArray(),
 
-            /*
-             * API sözleşmesinde beklenen türetilmiş alanlar.
-             */
-            'voucher' =>
-                $transfer->booking_reference,
+    'voucher' =>
+        $transfer->booking_reference,
 
-            'driver_name' =>
-                $driver?->name,
+    /*
+ * Yalnızca dispatcher/admin paneli için
+ * dış platform rezervasyon numarası.
+ */
+'ota_booking_reference' =>
+    $transfer->ota_booking_reference,
 
-            /*
-             * Transfers tablosunda henüz supplier_id kolonu
-             * bulunmadığı için şimdilik null döndürülür.
-             */
-            'supplier_id' => null,
+/*
+ * Ticari bilgiler genel ve sürücü API
+ * cevaplarında gizlidir. Burada yalnızca
+ * yetkili dispatcher/admin paneline açılır.
+ */
+'price' =>
+    $transfer->price,
 
-            /*
-             * Bu anahtarlar ilişkiler yüklenmemiş veya boş olsa
-             * bile API cevabında her zaman bulunur.
-             */
+'currency' =>
+    $transfer->currency,
+
+'driver_name' =>
+    $driver?->name,
+
+            'supplier_id' =>
+                $transfer->supplier_id,
+
+            'supplier_company' =>
+                $transfer->supplierCompany,
+
             'pickup_location' =>
                 $transfer->pickupLocation,
 

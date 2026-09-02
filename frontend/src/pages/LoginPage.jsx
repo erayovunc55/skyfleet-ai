@@ -2,7 +2,7 @@ import { useState } from "react";
 import { login } from "../services/authService";
 
 export default function LoginPage({ onLogin }) {
-  const [phone, setPhone] = useState("");
+  const [loginValue, setLoginValue] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -10,12 +10,11 @@ export default function LoginPage({ onLogin }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
     setLoading(true);
     setError("");
 
     try {
-      const data = await login(phone, password);
+      const data = await login(loginValue, password);
       onLogin(data.user);
     } catch (err) {
       setError(err.message);
@@ -27,10 +26,8 @@ export default function LoginPage({ onLogin }) {
   return (
     <main className="login-page">
       <section className="login-card">
-
         <div className="brand">
-          <div className="brand-icon">✈</div>
-
+          <div className="brand-icon">SF</div>
           <div>
             <h1>SKYFLEET <span>AI</span></h1>
             <p>Every Transfer, Under Control.</p>
@@ -38,63 +35,46 @@ export default function LoginPage({ onLogin }) {
         </div>
 
         <div className="welcome">
-          <span className="driver-badge">SÜRÜCÜ UYGULAMASI</span>
-
-          <h2>Tekrar hoş geldiniz</h2>
-
-          <p>Devam etmek için hesabınıza giriş yapın.</p>
+          <span className="driver-badge">CONTROL CENTER</span>
+          <h2>Welcome back</h2>
+          <p>Sign in to the dispatcher and administration panel.</p>
         </div>
 
         <form onSubmit={handleSubmit}>
-
-          <label>Telefon numarası</label>
-
+          <label>Phone or email</label>
           <div className="input-group">
-            <span className="input-icon">+90</span>
-
             <input
-              value={phone}
-              onChange={(e)=>setPhone(e.target.value)}
-              placeholder="5XX XXX XX XX"
+              value={loginValue}
+              onChange={(e) => setLoginValue(e.target.value)}
+              placeholder="dispatcher@company.com or phone"
+              autoComplete="username"
             />
           </div>
 
-          <label>Şifre</label>
-
+          <label>Password</label>
           <div className="input-group">
-
             <input
-              type={showPassword ? "text":"password"}
+              type={showPassword ? "text" : "password"}
               value={password}
-              onChange={(e)=>setPassword(e.target.value)}
-              placeholder="Şifreniz"
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              autoComplete="current-password"
             />
-
             <button
               type="button"
               className="password-toggle"
-              onClick={()=>setShowPassword(!showPassword)}
+              onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? "Gizle":"Göster"}
+              {showPassword ? "Hide" : "Show"}
             </button>
-
           </div>
 
-          {error && (
-            <div className="login-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="login-error">{error}</div>}
 
-          <button
-            className="login-button"
-            disabled={loading}
-          >
-            {loading ? "Giriş yapılıyor..." : "GİRİŞ YAP"}
+          <button className="login-button" disabled={loading || !loginValue.trim() || !password}>
+            {loading ? "Signing in..." : "SIGN IN"}
           </button>
-
         </form>
-
       </section>
     </main>
   );

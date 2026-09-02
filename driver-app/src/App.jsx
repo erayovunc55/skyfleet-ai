@@ -2,19 +2,38 @@ import { useEffect, useState } from "react";
 
 import DriverHomePage from "./pages/DriverHomePage";
 import DriverLoginPage from "./pages/DriverLoginPage";
-import DispatcherApp from "./dispatcher/DispatcherApp";
+import DriverPasswordResetPage from "./pages/DriverPasswordResetPage";
 
 import {
   getStoredDriver,
   logoutDriver,
 } from "./services/authService";
 
+import {
+  LanguageProvider,
+  LanguageSwitcher,
+} from "./i18n";
+
 import "./styles/driver-app.css";
+
+function hasPasswordResetLink() {
+  const params = new URLSearchParams(
+    window.location.search,
+  );
+
+  return Boolean(
+    params.get("reset_token") &&
+      params.get("driver"),
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState(
     getStoredDriver(),
   );
+
+  const [resetMode, setResetMode] =
+    useState(hasPasswordResetLink());
 
   useEffect(() => {
     function handleUnauthenticated() {
@@ -32,32 +51,42 @@ export default function App() {
         handleUnauthenticated,
       );
     };
-  }, []);  async function handleLogout() {
+  }, []);
+
+  async function handleLogout() {
     await logoutDriver();
     setUser(null);
   }
 
-  const routePath = window.location.hash ? window.location.hash.replace(/^#/, "") : window.location.pathname;
-  const isDispatcherRoute = routePath.startsWith("/dispatcher") || window.location.pathname.startsWith("/dispatcher");
-
-  if (isDispatcherRoute) {
-    return <DispatcherApp />;
-  }
-
-  if (!user) {
-    return (
-      <DriverLoginPage
-        onLogin={setUser}
-      />
+  function handleResetCompleted() {
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname,
     );
+
+    setResetMode(false);
+    setUser(null);
   }
 
   return (
-    <DriverHomePage
-      user={user}
-      onLogout={handleLogout}
-    />
+    <LanguageProvider>
+      <LanguageSwitcher />
+
+      {resetMode ? (
+        <DriverPasswordResetPage
+          onCompleted={handleResetCompleted}
+        />
+      ) : !user ? (
+        <DriverLoginPage
+          onLogin={setUser}
+        />
+      ) : (
+        <DriverHomePage
+          user={user}
+          onLogout={handleLogout}
+        />
+      )}
+    </LanguageProvider>
   );
 }
-
-

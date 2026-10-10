@@ -826,7 +826,7 @@ body {
 }
 
 .supplier-coverage-group-items.is-scrollable {
-  max-height: 360px;
+  max-height: 300px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: #5a606a #22262d;
@@ -922,7 +922,7 @@ body {
   }
 
   .supplier-coverage-group-items.is-scrollable {
-    max-height: 320px;
+    max-height: 260px;
   }
 }
 

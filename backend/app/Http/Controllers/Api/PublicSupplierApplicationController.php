@@ -535,7 +535,7 @@ class PublicSupplierApplicationController extends Controller
                 "SkyTripTransfer\n" .
                 "Global Mobility Network";
 
-            Mail::raw(
+            \App\Support\SkyMail::raw('supplier', 
                 $body,
                 function ($message) use (
                     $email,

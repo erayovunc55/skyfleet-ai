@@ -112,6 +112,8 @@ export default function LocationsPage(){
     }finally{setLoading(false);}
   }
 
+  // Text search is submitted explicitly; these structured filters reload automatically.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{fetchScope();},[countryId,cityId,type,pickupOnly,dropoffOnly]);
 
   const summary = useMemo(()=>({

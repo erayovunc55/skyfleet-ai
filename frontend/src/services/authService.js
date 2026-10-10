@@ -1,5 +1,7 @@
-const API_URL =
-  import.meta.env.VITE_API_URL;
+import apiClient, {
+  TOKEN_KEY,
+  USER_KEY,
+} from "./apiClient";
 
 const ALLOWED_PANEL_ROLES = [
   "dispatcher",
@@ -11,36 +13,23 @@ export async function login(
   phone,
   password,
 ) {
-  const response = await fetch(
-    `${API_URL}/login`,
-    {
-      method: "POST",
+  const response =
+    await apiClient.post(
+      "/login",
+      {
+        login: String(
+          phone || "",
+        ).trim(),
 
-      headers: {
-        "Content-Type":
-          "application/json",
-
-        Accept:
-          "application/json",
+        password:
+          String(
+            password || "",
+          ),
       },
-
-      body: JSON.stringify({
-        login: phone,
-        password,
-      }),
-    },
-  );
+    );
 
   const data =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data?.errors?.login?.[0] ||
-        data?.message ||
-        "Giriş yapılamadı.",
-    );
-  }
+    response.data;
 
   if (
     !ALLOWED_PANEL_ROLES.includes(
@@ -53,13 +42,15 @@ export async function login(
   }
 
   localStorage.setItem(
-    "skyfleet_panel_token",
+    TOKEN_KEY,
     data.token,
   );
 
   localStorage.setItem(
-    "skyfleet_user",
-    JSON.stringify(data.user),
+    USER_KEY,
+    JSON.stringify(
+      data.user,
+    ),
   );
 
   return data;
@@ -67,27 +58,39 @@ export async function login(
 
 export function logout() {
   localStorage.removeItem(
-    "skyfleet_panel_token",
+    TOKEN_KEY,
   );
 
   localStorage.removeItem(
-    "skyfleet_panel_user",
+    USER_KEY,
   );
 }
 
 export function getStoredUser() {
   const user =
     localStorage.getItem(
-      "skyfleet_panel_user",
+      USER_KEY,
     );
 
-  return user
-    ? JSON.parse(user)
-    : null;
+  if (!user) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(
+      user,
+    );
+  } catch {
+    localStorage.removeItem(
+      USER_KEY,
+    );
+
+    return null;
+  }
 }
 
 export function getStoredToken() {
   return localStorage.getItem(
-    "skyfleet_panel_token",
+    TOKEN_KEY,
   );
 }

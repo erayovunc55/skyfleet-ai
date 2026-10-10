@@ -1,0 +1,120 @@
+C:\Projects\SKYFLEET-AIeski\backend\app\Console\Commands\ProcessFlightPassengerContact.php:25: $mode = strtolower((string) config('services.passenger_contact.mode', 'dry_run'));
+C:\Projects\SKYFLEET-AIeski\backend\app\Console\Commands\ProcessFlightPassengerContact.php:27: if (!in_array($mode, ['dry_run', 'live'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Console\Commands\ProcessFlightPassengerContact.php:28: $this->error('PASSENGER_CONTACT_MODE yalnızca dry_run veya live olabilir.');
+C:\Projects\SKYFLEET-AIeski\backend\app\Console\Commands\ProcessFlightPassengerContact.php:46: && !in_array($transfer->status, ['passenger_on_board', 'trip_started'], true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Console\Commands\ProcessFlightPassengerContact.php:104: $mode === 'dry_run' => 'Passenger contact prepared in dry-run mode; no external message was sent.',
+C:\Projects\SKYFLEET-AIeski\backend\app\Console\Commands\SyncFlightMonitoring.php:47: if (in_array(strtolower((string) $latest->status), ['landed', 'cancelled'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\AdminSupplierInvoiceController.php:389: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\DispatcherController.php:407: ...$transfer->toArray(),
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\DispatcherTransferManagementController.php:25: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\DispatcherTransferManagementController.php:476: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\DriverController.php:37: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\DriverController.php:161: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\DriverLocationController.php:42: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\FinanceBulkController.php:58: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\FinanceController.php:299: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\MetaWhatsAppWebhookController.php:101: if (is_array($statusPayload)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\MetaWhatsAppWebhookController.php:134: || !in_array($metaStatus, $allowedStatuses, true)
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\MetaWhatsAppWebhookController.php:153: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\MetaWhatsAppWebhookController.php.before-sms-fallback-dispatch:100: if (is_array($statusPayload)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\MetaWhatsAppWebhookController.php.before-sms-fallback-dispatch:133: || !in_array($metaStatus, $allowedStatuses, true)
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\MetaWhatsAppWebhookController.php.before-sms-fallback-dispatch:152: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\PassengerTrackingController.php:144: $isPanelUser = in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\SupplierActivityController.php:110: if (!in_array($transfer->status, self::MEANINGFUL_TRANSFER_STATUSES, true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\SupplierPortalAssignmentController.php:30: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\SupplierPortalAssignmentController.php:158: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php:18: if (!in_array($request->user()?->role, ['dispatcher', 'admin', 'super_admin'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php:45: $isPanelUser = in_array($user?->role, ['dispatcher', 'admin', 'super_admin'], true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php:332: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php:450: $result['transfer']->toArray();
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php:453: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php.before-passenger-tracking-job:17: if (!in_array($request->user()?->role, ['dispatcher', 'admin', 'super_admin'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php.before-passenger-tracking-job:44: $isPanelUser = in_array($user?->role, ['dispatcher', 'admin', 'super_admin'], true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php.before-passenger-tracking-job:331: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php.before-passenger-tracking-job:440: $result['transfer']->toArray();
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferController.php.before-passenger-tracking-job:443: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferEvidenceController.php:18: $isDispatcher = $user && in_array($user->role, ['dispatcher', 'admin', 'super_admin'], true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferEvidenceController.php:67: if (!in_array($transfer->status, ['arrived', 'passenger_called'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferExcelImportController.php:58: ->toArray(null, true, true, false);
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferExcelImportController.php:611: return in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferRouteController.php:25: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TransferRouteController.php:155: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php:150: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php:164: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php:186: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php:226: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php.before-email-fallback-dispatch:149: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php.before-email-fallback-dispatch:163: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php.before-email-fallback-dispatch:185: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Controllers\Api\TwilioSmsWebhookController.php.before-email-fallback-dispatch:219: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Http\Middleware\EnsurePanelRole.php:21: || !in_array($user->role, $roles, true)
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\AirportTerminal.php:43: if (!in_array($type, self::TYPES, true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\Supplier.php:60: return in_array($this->status, [self::STATUS_PENDING,self::STATUS_UNDER_REVIEW,self::STATUS_REVISION_REQUESTED], true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\SupplierInvoice.php:141: return in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\SupplierInvoice.php:153: return in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\Transfer.php:82: return in_array($nextStatus, $this->allowedNextStatuses(), true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\Transfer.php:87: return in_array($this->status, self::TERMINAL_STATUSES, true);
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\TransferSupportMessage.php:59: return in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Models\User.php:113: return in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\FlightOperationalAlertService.php:95: && !in_array($transfer->status, [
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\FlightTrackingService.php:68: $items = is_array($payload['data'] ?? null) ? $payload['data'] : [];
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\FlightTrackingService.php:78: $arrival = is_array($flight['arrival'] ?? null) ? $flight['arrival'] : [];
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\FlightTrackingService.php:79: $departure = is_array($flight['departure'] ?? null) ? $flight['departure'] : [];
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\GeocodingService.php:129: if (!is_array($feature)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\GeocodingService.php:150: is_array($coordinates)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\GeocodingService.php:234: if (!is_array($features)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\GeocodingService.php:257: is_array($coordinates)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\GeocodingService.php:321: is_array($item)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\HeytripService.php:124: if (! is_array($data)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php:38: || !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php:83: 'mode' => 'dry_run',
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php:124: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php:133: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php:167: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php:190: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php.before-unavailable-sms-fallback:79: 'mode' => 'dry_run',
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php.before-unavailable-sms-fallback:120: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php.before-unavailable-sms-fallback:129: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php.before-unavailable-sms-fallback:163: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingEmailFallbackService.php.before-unavailable-sms-fallback:186: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php:38: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php:41: if (!in_array($mode, ['dry_run', 'live'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php:43: 'PASSENGER_TRACKING_NOTIFICATION_MODE yalnızca dry_run veya live olabilir.'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php:139: && !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php:201: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php:224: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-collection-fix:37: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-collection-fix:40: if (!in_array($mode, ['dry_run', 'live'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-collection-fix:42: 'PASSENGER_TRACKING_NOTIFICATION_MODE yalnızca dry_run veya live olabilir.'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-collection-fix:138: && !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-collection-fix:200: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-collection-fix:223: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-immediate-whatsapp-fallback:37: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-immediate-whatsapp-fallback:40: if (!in_array($mode, ['dry_run', 'live'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-immediate-whatsapp-fallback:42: 'PASSENGER_TRACKING_NOTIFICATION_MODE yalnızca dry_run veya live olabilir.'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-immediate-whatsapp-fallback:138: && !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-immediate-whatsapp-fallback:200: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-immediate-whatsapp-fallback:223: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-meta-live-connection:30: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-meta-live-connection:33: if (!in_array($mode, ['dry_run', 'live'], true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingNotificationService.php.before-meta-live-connection:35: 'PASSENGER_TRACKING_NOTIFICATION_MODE yalnızca dry_run veya live olabilir.'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php:76: 'mode' => 'dry_run',
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php:115: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php:124: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php:169: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php:198: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php.before-immediate-email-fallback:75: 'mode' => 'dry_run',
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php.before-immediate-email-fallback:110: 'dry_run'
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php.before-immediate-email-fallback:119: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php.before-immediate-email-fallback:164: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\PassengerTrackingSmsFallbackService.php.before-immediate-email-fallback:193: $metadata = is_array($delivery->metadata)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\RegionalPricingService.php:19: !in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\RegionalPricingService.php:103: !is_array($polygon) ||
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\RegionalPricingService.php:377: !is_array($current) ||
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\RegionalPricingService.php:378: !is_array($prior) ||
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\RoutingService.php:110: if (!is_array($feature)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\RoutingService.php:132: || !is_array($geometry)
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\SupplierApprovalService.php:251: if (!in_array($supplier->status, $allowedStatuses, true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\SupplierApprovalService.php.backup-20260826:187: if (!in_array($supplier->status, $allowedStatuses, true)) {
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\SupplierMatchingService.php:911: in_array(
+C:\Projects\SKYFLEET-AIeski\backend\app\Services\TransferFinancialService.php:76: in_array(

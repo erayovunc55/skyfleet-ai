@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
     getCountries,
@@ -10,8 +10,6 @@ import {
 export default function LocationSelector({
 
     title,
-
-    value,
 
     onChange,
 
@@ -30,6 +28,11 @@ export default function LocationSelector({
     const [cityId,setCityId]=useState("");
     const [locationId,setLocationId]=useState("");
     const [pointId,setPointId]=useState("");
+    const onChangeRef=useRef(onChange);
+
+    useEffect(()=>{
+        onChangeRef.current=onChange;
+    },[onChange]);
 
     useEffect(()=>{
 
@@ -69,7 +72,7 @@ export default function LocationSelector({
 
         }).then(setLocations);
 
-    },[cityId]);
+    },[cityId,pickup,dropoff]);
 
     useEffect(()=>{
 
@@ -88,11 +91,11 @@ export default function LocationSelector({
 
         }).then(setPoints);
 
-    },[locationId]);
+    },[locationId,pickup,dropoff]);
 
     useEffect(()=>{
 
-        onChange({
+        onChangeRef.current?.({
 
             countryId,
 

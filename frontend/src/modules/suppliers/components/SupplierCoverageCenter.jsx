@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { MapContainer, Marker, Polygon, TileLayer, useMapEvents } from "react-leaflet";
+import L from "leaflet";
 import { getCities, getCountries, getLocations } from "../../../services/locationService";
 import supplierService from "../services/supplierService";
 import "../../../styles/modules/supplier-coverage.css";
+import "leaflet/dist/leaflet.css";
 
 const COPY = {
   tr: {
@@ -31,6 +34,23 @@ const COPY = {
     deleted: "Hizmet bölgesi kaldırıldı.",
     error: "İşlem tamamlanamadı.",
     airports: "Havalimanı",
+    basePrice: "Taban fiyat",
+    zoneName: "Bölge adı",
+    zoneNameHint: "Örn. İstanbul Havalimanı - Avrupa Yakası",
+    currency: "Para birimi",
+    vehiclePrices: "Araç fiyatları JSON",
+    airportPickup: "Airport Pickup fiyatları",
+    airportDropoff: "Airport Dropoff fiyatları",
+    vehicleStandard: "Standard Car",
+    vehiclePeople: "People Carrier",
+    vehicleLargePeople: "Large People Carrier",
+    vehicleExecutive: "Executive People Carrier",
+    perTransfer: "transfer başına",
+    polygon: "Polygon koordinatları JSON",
+    pricingHint: "Örnek: {\"sedan\":45,\"van\":65}",
+    polygonHint: "Örnek: [[41.05,28.97],[41.02,29.02],[40.99,28.98]]",
+    drawHint: "Haritaya tıklayarak bölge sınırı çizin.", clearPolygon: "Polygonu temizle", undoPoint: "Son noktayı geri al", points: "nokta", polygonReady: "Polygon hazır",
+    selectLocationError: "Önce bir havalimanı/lokasyon seçin.", polygonPointsError: "Polygon için en az 3 nokta çizin.",
   },
   en: {
     title: "Service Coverage",
@@ -59,6 +79,23 @@ const COPY = {
     deleted: "Service coverage removed.",
     error: "Operation failed.",
     airports: "Airport",
+    basePrice: "Base price",
+    zoneName: "Zone name",
+    zoneNameHint: "E.g. Istanbul Airport - European Side",
+    currency: "Currency",
+    vehiclePrices: "Vehicle prices JSON",
+    airportPickup: "Airport Pickup prices",
+    airportDropoff: "Airport Dropoff prices",
+    vehicleStandard: "Standard Car",
+    vehiclePeople: "People Carrier",
+    vehicleLargePeople: "Large People Carrier",
+    vehicleExecutive: "Executive People Carrier",
+    perTransfer: "per transfer",
+    polygon: "Polygon coordinates JSON",
+    pricingHint: "Example: {\"sedan\":45,\"van\":65}",
+    polygonHint: "Example: [[41.05,28.97],[41.02,29.02],[40.99,28.98]]",
+    drawHint: "Click the map to draw the service boundary.", clearPolygon: "Clear polygon", undoPoint: "Undo last point", points: "points", polygonReady: "Polygon ready",
+    selectLocationError: "Select an airport/location first.", polygonPointsError: "Draw at least 3 points for a polygon.",
   },
 };
 COPY.ar = { ...COPY.en, title: "نطاق الخدمة", remove: "إزالة" };
@@ -68,10 +105,15 @@ const EMPTY_FORM = {
   country_id: "",
   city_id: "",
   location_id: "",
+  label: "",
   service_radius_km: 15,
   pickup_enabled: true,
   dropoff_enabled: true,
   is_active: true,
+  base_price: "",
+  currency: "EUR",
+  vehicle_prices: { pickup: {}, dropoff: {} },
+  polygon: "",
 };
 
 export default function SupplierCoverageCenter({ supplierId, language = "en" }) {
@@ -86,8 +128,10 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
+  const [polygonPoints, setPolygonPoints] = useState([]);
+  const [priceMode, setPriceMode] = useState("pickup");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [coverageRows, countryRows] = await Promise.all([
@@ -101,11 +145,11 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
     } finally {
       setLoading(false);
     }
-  }
+  }, [supplierId, text.error]);
 
   useEffect(() => {
     load();
-  }, [supplierId]);
+  }, [load]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +169,7 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
     }
     loadCities();
     return () => { cancelled = true; };
-  }, [form.country_id]);
+  }, [form.country_id, text.error]);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,16 +188,18 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
     }
     loadLocations();
     return () => { cancelled = true; };
-  }, [form.city_id]);
+  }, [form.city_id, text.error]);
 
-  const available = useMemo(() => {
-    const used = new Set(rows.map((row) => Number(row.location_id)));
-    return locations.filter((location) => !used.has(Number(location.id)));
-  }, [rows, locations]);
+  const available = useMemo(() => locations, [locations]);
 
   function changeCountry(value) {
     setNotice("");
     setForm((current) => ({ ...current, country_id: value, city_id: "", location_id: "" }));
+  }
+
+  function changeLocation(value) {
+    setForm((current) => ({ ...current, location_id: value }));
+    setPolygonPoints([]);
   }
 
   function changeCity(value) {
@@ -163,25 +209,44 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
 
   async function addCoverage(event) {
     event.preventDefault();
-    if (!form.location_id) return;
-    if (rows.some((row) => Number(row.location_id) === Number(form.location_id))) {
-      setNotice(text.duplicate);
+    if (!form.location_id) {
+      setNotice(text.selectLocationError);
       return;
     }
-
+    if (polygonPoints.length > 0 && polygonPoints.length < 3) {
+      setNotice(text.polygonPointsError);
+      return;
+    }
+    if (polygonPoints.length >= 3 && (!form.label.trim() || form.base_price === "")) {
+      setNotice(language === "tr" ? "Polygon için bölge adı ve taban fiyat zorunludur." : "Zone name and base price are required for a polygon.");
+      return;
+    }
     setBusy(true);
     setNotice("");
     try {
       const radiusKm = Number(form.service_radius_km);
+      const cleanPrices = (form.vehicle_prices?.["pickup"] || {}) || {};
+      const cleanDropoffPrices = (form.vehicle_prices?.["dropoff"] || {}) || {};
+      const vehiclePrices = {
+        pickup: Object.fromEntries(Object.entries(cleanPrices).filter(([, value]) => value !== "" && value !== null && value !== undefined)),
+        dropoff: Object.fromEntries(Object.entries(cleanDropoffPrices).filter(([, value]) => value !== "" && value !== null && value !== undefined)),
+      };
       await supplierService.addCoverage(supplierId, {
         location_id: Number(form.location_id),
         service_radius_meters: Number.isFinite(radiusKm) ? Math.round(radiusKm * 1000) : null,
         pickup_enabled: form.pickup_enabled,
         dropoff_enabled: form.dropoff_enabled,
         is_active: form.is_active,
-        coverage_type: "airport",
+        coverage_type: polygonPoints.length >= 3 ? "polygon" : "airport",
+        label: form.label.trim() || undefined,
+        base_price: form.base_price === "" ? null : Number(form.base_price),
+        currency: form.currency,
+        vehicle_prices: vehiclePrices,
+        polygon: polygonPoints.length >= 3 ? polygonPoints : null,
       });
       setForm(EMPTY_FORM);
+      setPolygonPoints([]);
+      setPriceMode("pickup");
       setCities([]);
       setLocations([]);
       await load();
@@ -250,7 +315,7 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
 
         <label>
           <span>{text.airport}</span>
-          <select required disabled={!form.city_id || loadingLocations} value={form.location_id} onChange={(event) => setForm((current) => ({ ...current, location_id: event.target.value }))}>
+          <select required disabled={!form.city_id || loadingLocations} value={form.location_id} onChange={(event) => changeLocation(event.target.value)}>
             <option value="">{loadingLocations ? "…" : text.selectAirport}</option>
             {available.map((location) => (
               <option key={location.id} value={location.id}>
@@ -261,17 +326,71 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
           {form.city_id && !loadingLocations && locations.length === 0 && <small>{text.noLocations}</small>}
         </label>
 
+        <label className="supplier-coverage-wide-field">
+          <span>{text.zoneName}</span>
+          <input type="text" required={polygonPoints.length >= 3} placeholder={text.zoneNameHint} value={form.label} onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))} />
+        </label>
+
         <label>
           <span>{text.radius}</span>
           <input type="number" min="0" max="500" step="1" value={form.service_radius_km} onChange={(event) => setForm((current) => ({ ...current, service_radius_km: event.target.value }))} />
         </label>
+
+        <label>
+          <span>{text.basePrice}</span>
+          <input type="number" min="0" step="0.01" value={form.base_price} onChange={(event) => setForm((current) => ({ ...current, base_price: event.target.value }))} />
+        </label>
+
+        <label>
+          <span>{text.currency}</span>
+          <select value={form.currency} onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}><option>EUR</option><option>USD</option><option>GBP</option><option>TRY</option></select>
+        </label>
+
+        <section className="supplier-coverage-pricing">
+          <div className="supplier-coverage-pricing-head">
+            <div><span>{text.vehiclePrices}</span><small>{text.perTransfer}</small></div>
+            <div className="supplier-coverage-price-tabs">
+              <button type="button" className={priceMode === "pickup" ? "active" : ""} onClick={() => setPriceMode("pickup")}>{text.airportPickup}</button>
+              <button type="button" className={priceMode === "dropoff" ? "active" : ""} onClick={() => setPriceMode("dropoff")}>{text.airportDropoff}</button>
+            </div>
+          </div>
+          <div className="supplier-coverage-vehicle-cards">
+            {[
+              ["standard_car", text.vehicleStandard, "🚘"],
+              ["people_carrier", text.vehiclePeople, "🚐"],
+              ["large_people_carrier", text.vehicleLargePeople, "🚌"],
+              ["executive_people_carrier", text.vehicleExecutive, "✨"],
+            ].map(([key, label, icon]) => (
+              <label className="supplier-coverage-vehicle-card" key={key}>
+                <span className="supplier-coverage-vehicle-icon">{icon}</span>
+                <strong>{label}</strong>
+                <div><input type="number" min="0" step="0.01" placeholder="0.00" value={form.vehicle_prices?.[priceMode]?.[key] || ""} onChange={(event) => setForm((current) => ({ ...current, vehicle_prices: { ...current.vehicle_prices, [priceMode]: { ...current.vehicle_prices[priceMode], [key]: event.target.value === "" ? "" : Number(event.target.value) } } }))} /><small>{form.currency}</small></div>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <div className="supplier-coverage-map-field">
+          <span>{text.polygon}</span>
+          <PolygonEditor
+            center={getLocationCenter(locations, form.location_id)}
+            points={polygonPoints}
+            onChange={setPolygonPoints}
+          />
+          <div className="supplier-coverage-map-actions">
+            <small>{text.drawHint} {polygonPoints.length > 0 ? `${polygonPoints.length} ${text.points}` : ""}</small>
+            {polygonPoints.length > 0 && <button type="button" className="supplier-coverage-undo" onClick={() => setPolygonPoints((current) => current.slice(0, -1))}>{text.undoPoint}</button>}
+            {polygonPoints.length > 0 && <button type="button" className="supplier-coverage-clear" onClick={() => setPolygonPoints([])}>{text.clearPolygon}</button>}
+            {polygonPoints.length >= 3 && <span className="supplier-coverage-ready">✓ {text.polygonReady}</span>}
+          </div>
+        </div>
 
         <div className="supplier-coverage-checks">
           <label><input type="checkbox" checked={form.pickup_enabled} onChange={(event) => setForm((current) => ({ ...current, pickup_enabled: event.target.checked }))} />{text.pickup}</label>
           <label><input type="checkbox" checked={form.dropoff_enabled} onChange={(event) => setForm((current) => ({ ...current, dropoff_enabled: event.target.checked }))} />{text.dropoff}</label>
         </div>
 
-        <button className="primary" disabled={busy || !form.location_id}>{busy ? "…" : `+ ${text.save}`}</button>
+        <button className="primary" disabled={busy}>{busy ? "…" : `+ ${text.save}`}</button>
       </form>
 
       {loading ? (
@@ -285,6 +404,7 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
                 <strong>{row.label || row.location?.name || "Location"}</strong>
                 <span>{row.city?.name || "—"}, {row.country?.name || "—"}</span>
                 <small>{row.service_radius_meters ? `${Math.round(row.service_radius_meters / 1000)} km ${text.coverage}` : "—"}</small>
+                {row.base_price !== null && row.base_price !== undefined && <small>{row.base_price} {row.currency} · {row.polygon?.length || 0} polygon points</small>}
               </div>
               <div className="supplier-coverage-flags">
                 <label><input type="checkbox" checked={Boolean(row.pickup_enabled)} disabled={busy} onChange={(event) => patch(row, "pickup_enabled", event.target.checked)} />{text.pickup}</label>
@@ -302,4 +422,69 @@ export default function SupplierCoverageCenter({ supplierId, language = "en" }) 
       )}
     </div>
   );
+}
+
+function PolygonEditor({ center, points, onChange }) {
+  const mapCenter = center || [41.0082, 28.9784];
+
+  return (
+    <div className="supplier-coverage-map-wrap">
+      <MapContainer center={mapCenter} zoom={12} scrollWheelZoom className="supplier-coverage-map">
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <PolygonClickHandler onChange={onChange} />
+        {points.map((point, index) => (
+          <DraggablePolygonPoint
+            key={`${point[0]}-${point[1]}-${index}`}
+            position={point}
+            radius={index === 0 ? 7 : 5}
+            index={index}
+            onMove={(nextPoint) => onChange((current) => current.map((item, itemIndex) => itemIndex === index ? nextPoint : item))}
+          />
+        ))}
+        {points.length >= 3 && <Polygon positions={points} pathOptions={{ color: "#22d3ee", fillColor: "#0ea5e9", fillOpacity: 0.2 }} />}
+      </MapContainer>
+    </div>
+  );
+}
+
+function DraggablePolygonPoint({ position, index, onMove }) {
+  const icon = L.divIcon({
+    className: "supplier-polygon-vertex-wrap",
+    html: `<span class="supplier-polygon-vertex ${index === 0 ? "start" : ""}">${index + 1}</span>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  });
+
+  return (
+    <Marker
+      position={position}
+      icon={icon}
+      draggable
+      eventHandlers={{
+        dragend: (event) => {
+          const next = event.target.getLatLng();
+          onMove([Number(next.lat.toFixed(6)), Number(next.lng.toFixed(6))]);
+        },
+      }}
+    />
+  );
+}
+
+function PolygonClickHandler({ onChange }) {
+  useMapEvents({
+    click(event) {
+      onChange((current) => [...current, [Number(event.latlng.lat.toFixed(6)), Number(event.latlng.lng.toFixed(6))]]);
+    },
+  });
+
+  return null;
+}
+
+function getLocationCenter(locations, locationId) {
+  const location = locations.find((item) => Number(item.id) === Number(locationId));
+  if (!location || !Number.isFinite(Number(location.latitude)) || !Number.isFinite(Number(location.longitude))) return null;
+  return [Number(location.latitude), Number(location.longitude)];
 }

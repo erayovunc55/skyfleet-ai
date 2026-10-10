@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import CreateDriverModal from "../components/CreateDriverModal";
 import { useLanguage } from "../i18n";
@@ -74,9 +74,7 @@ export default function DriversPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -88,7 +86,9 @@ export default function DriversPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [text.loadError]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   async function handleVehicleChange(driver, value) {
     setSavingDriverId(driver.id);

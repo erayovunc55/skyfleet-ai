@@ -20,9 +20,10 @@ export default function TransferEvidenceCard({
   const [evidences, setEvidences] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const transferId = transfer?.id;
 
   const loadEvidences = useCallback(async () => {
-    if (!transfer?.id) {
+    if (!transferId) {
       setEvidences([]);
       return;
     }
@@ -33,7 +34,7 @@ export default function TransferEvidenceCard({
     try {
       const items =
         await transferService.getTransferEvidences(
-          transfer.id,
+          transferId,
         );
 
       setEvidences(items);
@@ -47,7 +48,7 @@ export default function TransferEvidenceCard({
     } finally {
       setLoading(false);
     }
-  }, [transfer?.id]);
+  }, [transferId]);
 
   useEffect(() => {
     loadEvidences();
@@ -268,7 +269,7 @@ function formatCount(value) {
 }
 
 function formatBoolean(value) {
-  return Boolean(value) ? "Evet" : "Hayır";
+  return value ? "Evet" : "Hayır";
 }
 
 function formatAccuracy(value) {

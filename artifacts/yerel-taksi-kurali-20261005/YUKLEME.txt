@@ -1,0 +1,35 @@
+YEREL TAKSI TARIFESI KURALI - 05.10.2026
+
+Bu paket onceki SKYFLEET-fiyat-servisi-duzeltme-20261005.zip yerine kullanilir.
+Onceki paket yuklenmisse bu paketteki dosyalar onun uzerine yuklenmelidir.
+
+KURAL
+Public fiyat icin uygun, kaynak/gecerlilik bilgili yerel taksi tarifesi zorunludur.
+Hesaplanan taksi referansina pricing_engine.php icindeki mevcut arac katsayilari
+ve mevcut dinamik fiyat/maliyet koruma kurallari uygulanir.
+Tarife yoksa, suresi dolmussa veya taksimetre tarifesinde rota hesaplanamiyorsa
+fiyat uretilmez; manuel teklif talebine gecilir. Tedarikci fiyati veya genel
+kilometre tahmini yerel taksi tarifesinin yerine gecemez.
+
+Tarife mevcut database/data/airport_taxi_tariffs.json dosyasindan okunur.
+Canli kaynaktan otomatik tarife guncellemesi bu pakette yoktur.
+Onceki belirlenen arac oranlari degistirilmemistir.
+
+YUKLEME
+1. ZIP'teki dosyalara karsilik gelen canli dosyalari yedekleyin.
+2. ZIP'i /home/wbmtfkkcez3m/skyfleet-backend klasorune yukleyin.
+3. Extract hedefini ayni klasor secin. app/ ve config/ burada birlesmelidir.
+4. Website'i yenileyin, havalimanini listeden yeniden secin ve fiyat deneyin.
+5. Fiyat gelmezse regional-pricing isteginin Response sonucunu paylasin.
+   verified_tariff_unavailable: rotaya/tarihe uygun gecerli tarife yok.
+   route_unavailable: taksimetre hesaplamasi icin rota mesafesi alinamadi.
+6. Islem bitince gecici skyfleet-pricing-check-20261005.php dosyasini silin.
+
+Veritabanina veya tedarikci tarifelerine yazilmaz. Migration gerekmiyor.
+Mevcut taxi_pricing.php ve tarife JSON dosyasi korunur.
+
+DOGRULAMA
+6 test / 31 assertion basarili. 7 PHP dosyasinin sozdizimi basarili.
+Sentetik testte 100 yerel taksi referansi x 1.65 mevcut Vito katsayisi = 165.
+Bu sentetik deger gercek bir havalimani fiyat teklifi degildir.
+Paket henuz otomatik olarak canliya yuklenmedi.

@@ -32,7 +32,7 @@ export default function OperationStatusCard() {
   useEffect(() => {
     setStatus(selectedTransfer?.status || "");
     setNote(""); setError(""); setMessage("");
-  }, [selectedTransfer?.id]);
+  }, [selectedTransfer?.id, selectedTransfer?.status]);
 
   if (!selectedTransfer) return null;
   const statusChanged = status !== selectedTransfer.status;
@@ -42,7 +42,13 @@ export default function OperationStatusCard() {
     if (status === selectedTransfer.status && !note.trim()) { setError(text.unchanged); return; }
     setSaving(true); setError(""); setMessage("");
     try {
-      const response = await apiClient.patch(`/transfers/${selectedTransfer.id}/status`, { status, note: note.trim() || null });
+     const response = await apiClient.patch(
+  `/dispatcher/transfers/${selectedTransfer.id}/status`,
+  {
+    status,
+    note: note.trim() || null,
+  }
+);
       const updatedTransfer = response.data?.data || {};
       updateSelectedTransfer(updatedTransfer);
       setMessage(response.data?.message || text.success);

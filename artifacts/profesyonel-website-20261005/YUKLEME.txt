@@ -1,0 +1,19 @@
+﻿SKYFLEET — Profesyonel web tasarımı / 05.10.2026
+
+ZIP: SKYFLEET-profesyonel-website-20261005.zip
+Hedef: /home/wbmtfkkcez3m/public_html
+
+1. cPanel Dosya Yöneticisi'nde public_html klasörünü açın.
+2. Mevcut index.html dosyasını indirin veya index.onceki-20261005.html adıyla yedekleyin.
+3. ZIP dosyasını public_html içine yükleyin ve aynı klasöre Extract (Çıkart) yapın.
+4. index.html doğrudan public_html içinde, yeni görseller/CSS/JS assets klasöründe olmalı.
+5. Siteyi Ctrl+F5 ile yenileyin. Varsa hosting/CDN önbelleğini temizleyin.
+6. İstanbul Havalimanı → The Marmara Taksim adreslerini listeden seçerek, ileri bir tarih/saat için araç fiyatlarını kontrol edin.
+
+Arşiv yalnızca index.html, skyfleet-mark.svg ve assets dosyalarını içerir. api, panel, supplier, agency, config ve mevcut .htaccess dosyalarını silmeyin. Bu tasarım için backend dosyası yüklemeniz gerekmez; daha önce yüklenen yerel taksi tarifesi ayarları kullanılmaya devam eder.
+
+Geri dönüş: yedek index.html dosyasını eski adıyla geri koyun. Eski assets dosyalarını koruyun.
+
+Yerel önizleme: http://localhost:5188/
+Tasarım canlıya otomatik yüklenmedi.
+

@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_URL =
+const API_URL = (
   import.meta.env.VITE_API_URL ||
-  "http://127.0.0.1:8000/api";
+  "/api"
+).replace(/\/+$/, "");
 
 const TOKEN_KEY =
   "skyfleet_panel_token";
@@ -34,15 +35,8 @@ apiClient.interceptors.request.use(
         `Bearer ${token}`;
     }
 
-    /*
-     * FormData gönderilirken Content-Type
-     * değerini tarayıcı belirlemelidir.
-     * Böylece multipart boundary otomatik
-     * olarak eklenir.
-     */
     if (
-      config.data instanceof
-      FormData
+      config.data instanceof FormData
     ) {
       if (
         typeof config.headers
@@ -75,9 +69,24 @@ apiClient.interceptors.response.use(
   (response) => response,
 
   (error) => {
+    const status =
+      error?.response?.status;
+
+    const url =
+      error?.config?.url || "";
+
+    /*
+     * Alert endpoint'lerindeki
+     * 401 oturumu kapatmasın.
+     */
     if (
-      error?.response?.status ===
-      401
+      status === 401 &&
+      !url.includes(
+        "/admin/alerts"
+      ) &&
+      !url.includes(
+        "/admin/flight-alerts"
+      )
     ) {
       localStorage.removeItem(
         TOKEN_KEY,
@@ -89,8 +98,8 @@ apiClient.interceptors.response.use(
 
       window.dispatchEvent(
         new CustomEvent(
-          "skyfleet:unauthenticated",
-        ),
+          "skyfleet:unauthenticated"
+        )
       );
     }
 

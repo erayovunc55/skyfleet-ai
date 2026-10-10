@@ -24,7 +24,7 @@
 .supplier-job-pool-hero h1 {
   margin: 0;
   font-size: 32px;
-  color: #0f172a;
+  color: #1c2027;
 }
 
 .supplier-job-pool-hero p {
@@ -64,7 +64,7 @@
 }
 
 .supplier-job-pool-live strong {
-  color: #0f172a;
+  color: #1c2027;
   font-size: 13px;
 }
 
@@ -76,7 +76,7 @@
 .supplier-job-pool-refresh {
   border: 1px solid #cbd5e1;
   background: #fff;
-  color: #0f172a;
+  color: #1c2027;
   border-radius: 12px;
   padding: 11px 16px;
   font-weight: 700;
@@ -111,7 +111,7 @@
 
 .supplier-job-summary-card strong {
   display: block;
-  color: #0f172a;
+  color: #1c2027;
   font-size: 24px;
   margin: 6px 0;
 }
@@ -178,7 +178,7 @@
 }
 
 .supplier-job-pool-empty h2 {
-  color: #0f172a;
+  color: #1c2027;
   margin-bottom: 8px;
 }
 
@@ -216,7 +216,7 @@
 .supplier-job-card-topline h2 {
   margin: 0;
   font-size: 20px;
-  color: #0f172a;
+  color: #1c2027;
 }
 
 .supplier-job-payout {
@@ -283,7 +283,7 @@
 
 .supplier-job-route-point strong {
   display: block;
-  color: #0f172a;
+  color: #1c2027;
   line-height: 1.45;
   margin-top: 3px;
 }
@@ -321,7 +321,7 @@
 
 .supplier-job-meta strong {
   display: block;
-  color: #0f172a;
+  color: #1c2027;
   font-size: 13px;
   margin-top: 3px;
 }
@@ -359,7 +359,7 @@
 .supplier-job-best-vehicle strong,
 .supplier-job-best-vehicle small {
   display: block;
-  color: #0f172a;
+  color: #1c2027;
 }
 
 .supplier-job-best-vehicle small {

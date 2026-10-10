@@ -16,6 +16,8 @@ class DispatcherTransfersApiTest extends TestCase
     {
         $user = User::factory()->create([
             'phone' => '+10000000000',
+            'role' => 'dispatcher',
+            'is_active' => true,
         ]);
         Sanctum::actingAs($user);
 

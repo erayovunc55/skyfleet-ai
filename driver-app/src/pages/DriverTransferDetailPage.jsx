@@ -22,7 +22,7 @@ const NO_SHOW_ALLOWED_STATUSES = ["arrived", "passenger_called"];
 const GPS_ACTIVE_STATUSES = ["accepted", "on_the_way", "arrived", "passenger_called", "passenger_on_board", "trip_started"];
 const TRACKING_SHARE_STATUSES = ["on_the_way", "arrived", "passenger_called", "passenger_on_board", "trip_started", "completed", "no_show"];
 
-export default function DriverTransferDetailPage({ user, initialTransfer, onBack, onTransferUpdated }) {
+export default function DriverTransferDetailPage({ initialTransfer, onBack, onTransferUpdated }) {
   const [transfer, setTransfer] = useState(initialTransfer);
   const [showNoShowEvidence, setShowNoShowEvidence] = useState(false);
   const shouldEnableGps = Boolean(transfer?.id && GPS_ACTIVE_STATUSES.includes(transfer.status));

@@ -17,6 +17,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'supplier_id',
+        'agency_id',
         'vehicle_id',
         'name',
         'phone',
@@ -24,6 +25,7 @@ class User extends Authenticatable
         'password',
         'role',
         'is_active',
+        'permissions',
         'vehicle_plate',
         'supplier',
     ];
@@ -36,23 +38,13 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' =>
-                'datetime',
-
-            'password' =>
-                'hashed',
-
-            'is_active' =>
-                'boolean',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
+            'permissions' => 'array',
         ];
     }
 
-    /*
-     * Kullanıcının bağlı olduğu tedarikçi.
-     *
-     * Dispatcher ve ana yönetici
-     * kullanıcılarında supplier_id boştur.
-     */
     public function supplierCompany(): BelongsTo
     {
         return $this->belongsTo(
@@ -61,9 +53,14 @@ class User extends Authenticatable
         );
     }
 
-    /*
-     * Sürücüye sürekli olarak tanımlanan araç.
-     */
+    public function agencyCompany(): BelongsTo
+    {
+        return $this->belongsTo(
+            Agency::class,
+            'agency_id'
+        );
+    }
+
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(
@@ -72,9 +69,6 @@ class User extends Authenticatable
         );
     }
 
-    /*
-     * Sürücüye atanmış transferler.
-     */
     public function assignedTransfers(): HasMany
     {
         return $this->hasMany(
@@ -108,6 +102,12 @@ class User extends Authenticatable
             && $this->supplier_id === null;
     }
 
+    public function isAgencyUser(): bool
+    {
+        return $this->role === 'agency'
+            && $this->agency_id !== null;
+    }
+
     public function isPanelUser(): bool
     {
         return in_array(
@@ -124,6 +124,12 @@ class User extends Authenticatable
     public function canManageSupplierOperations(): bool
     {
         return $this->isSupplierUser()
+            || $this->isPanelUser();
+    }
+
+    public function canManageAgencyOperations(): bool
+    {
+        return $this->isAgencyUser()
             || $this->isPanelUser();
     }
 }

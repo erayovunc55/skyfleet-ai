@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Transfer;
 use App\Observers\TransferObserver;
+use App\Support\ResendHttpTransport;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Mail::extend('resend-http', fn (array $config) => new ResendHttpTransport($config['key'] ?? null));
+
         Transfer::observe(TransferObserver::class);
     }
 }

@@ -1,0 +1,45 @@
+SKYFLEET FIYAT SERVISI DUZELTMESI - 05.10.2026
+
+CANLI RAPORDAKI SORUN
+PublicRegionalPricingController eski RegionalPricingService'e bagli.
+Website ise AirportTaxiPricingService'in public_price ve quote_token yanitlarini
+bekliyor. Ayrica IST kayitlarinda bolge/vehicle fiyatlari yok; SAW-Taksim icin
+executive_people_carrier (Vito) fiyat kaydi var.
+
+PAKET
+7 PHP dosyasi: controller, AirportTaxiPricingService, DynamicPricingService,
+CurrencyService, RoutingService, pricing_engine.php ve currency.php.
+Mevcut yerel projenin uyumlu surumleridir. Tedarikci fiyat kaydi eklenmez.
+Bu paket projenin mevcut fiyat katsayilari ve mesafe bazli tahmin ayarlarini
+canliya tasir. Fiyatlar rota, arac sinifi, tarih/saat ve para birimine gore hesaplanir.
+Mevcut taxi_pricing.php ve airport_taxi_tariffs.json dosyalari kullanilir.
+
+YUKLEME
+1. cPanel'de su Laravel klasorunu acin:
+   /home/wbmtfkkcez3m/skyfleet-backend
+2. ZIP'teki ayni yollara karsilik gelen mevcut dosyalari yedekleyin.
+3. ZIP'i skyfleet-backend klasorune yukleyip burada Extract yapin.
+   Extract hedefi /home/wbmtfkkcez3m/skyfleet-backend olmalidir.
+   app/ ve config/ klasorleri bu Laravel klasorunun altina birlesmelidir.
+   public_html/api klasorune veya frontend assets klasorune acmayin.
+4. Kontrol baglantisini yenileyin. pricing_controller_dependencies icinde
+   App\Services\AirportTaxiPricingService gorunmelidir.
+5. Website'i Ctrl+F5 ile yenileyin. Havalimanini listeden yeniden secin.
+   IST veya SAW -> The Marmara Taksim, ileri tarih/saat ile Search Vehicles deneyin.
+6. Hata devam ederse Network'teki regional-pricing isteginin Response sonucunu
+   paylasin. Bu yanit havalimani uygunlugundan sonraki hatayi belirleyecektir.
+7. Kontrol bittiginde public_html/api/skyfleet-pricing-check-20261005.php dosyasini silin.
+
+PHP OPcache dosya degisikliklerini algilamiyorsa hosting panelinden PHP'yi yenileyin.
+Mevcut raporda configuration_cached:false; artisan komutu gerekmiyor.
+
+DOGRULAMA
+- 7 PHP dosyasinin sozdizimi basarili.
+- Controller: 3 test / 14 assertion basarili.
+- Gercek fiyat servisiyle mesafe tahmini ve rota yoklugu: 2 test / 15 assertion basarili.
+- Testlerde rota/kur dis baglantilari yerine kontrollu veriler kullanildi.
+- Canlidaki gercek rota ve fiyat sonuclari yuklemeden sonra kontrol edilmelidir.
+
+Tahmini fiyat, tedarikci bolge fiyatinin yerine yeni bir tedarikci tarife kaydi
+olusturmaz. Rota veya kur alinamazsa manuel teklif davranisi korunur.
+Paket henuz otomatik olarak canliya yuklenmedi. Veritabani migration'i gerekmez.

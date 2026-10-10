@@ -10,6 +10,7 @@ class SupplierCoverage extends Model
     protected $fillable = [
         'supplier_id','country_id','city_id','location_id','coverage_type','label',
         'service_radius_meters','pickup_enabled','dropoff_enabled','is_active','polygon','metadata',
+        'base_price','currency','vehicle_prices',
     ];
 
     protected function casts(): array
@@ -17,6 +18,7 @@ class SupplierCoverage extends Model
         return [
             'pickup_enabled'=>'boolean','dropoff_enabled'=>'boolean','is_active'=>'boolean',
             'polygon'=>'array','metadata'=>'array',
+            'base_price'=>'decimal:2','vehicle_prices'=>'array',
         ];
     }
 

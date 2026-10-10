@@ -1,0 +1,57 @@
+SKYFLEET - Adres arama duzeltmesi - 05.10.2026
+
+CANLIYA YUKLEME
+
+1. Sunucudaki mevcut website index.html dosyasini, assets klasorunu ve
+   PublicAddressSearchController.php dosyasini geri donus icin yedekleyin.
+
+2. Paketteki backend/app/Http/Controllers/Api/PublicAddressSearchController.php
+   dosyasini sunucuda Laravel projesinin ayni goreli yoluna yukleyin.
+   Laravel projesinin kokunu artisan ve composer.json dosyalarinin bulundugu
+   klasorden taniyabilirsiniz. Bu PHP dosyasi herkese acik web kokune konmaz.
+
+3. website-public/ icindeki assets klasorunu website'in mevcut web kokune
+   yukleyin. Ardindan website-public/ icindeki diger dosyalari ve en son
+   index.html dosyasini ayni web kokune yukleyin. Ornek web koku: public_html/.
+   website-public klasorunun kendisini degil, ICERIGINI yukleyin.
+   Mevcut API, supplier ve agency klasorlerini silmeyin.
+
+4. Hosting PHP OPcache kullaniyor ve dosya degisikliklerini otomatik algilamiyorsa,
+   hosting panelinden PHP uygulamasini yeniden baslatin veya OPcache'i yenileyin.
+   CDN kullaniyorsaniz index.html onbellegini temizleyin.
+
+5. Ana sayfa ve /transfer sayfasinda kontrol edin:
+   - Taksim Istanbul / Taksim Istanbul hotel: normal adres onerileri.
+   - IST / Istanbul Airport / Istanbul hava: havalimani onerileri.
+   - SAW / Sabiha Gokcen: havalimani onerileri.
+   - Adresi hizla degistirin veya silin: onceki sorgunun sonuclari geri gelmemeli.
+   - Bir adres secin: koordinatlar alinmali ve fiyat hesaplama devam etmeli.
+
+source/website/src/App.jsx kaynak kod kopyasidir. Derlenmis website yerine
+canli web kokune yuklenmez. Yerel kaynak projenizi guncellemek icin verilmistir.
+
+DEGISIKLIKLER
+- IST/SAW kodlari kelimelerin icinde yanlislikla eslesmez.
+- Normal alis adresleri sirf pickup alaninda diye havalimani aramasina donusmez.
+- Yeni yazi girildigi anda onceki arama gecersiz olur ve eski oneriler temizlenir.
+- Eski Google adres ayrintisi yanitlari yeni yazilan adresi degistiremez.
+- Ana sayfa ve transfer formunun her iki adres alanina uygulanmistir.
+
+DOGRULAMA
+- Website production build: basarili.
+- PHP controller sozdizimi kontrolu: basarili.
+- Backend PublicAddressSearchTest: 3 test, 44 assertion basarili.
+- Frontend gecikmeli yanit testleri: 16 test basarili.
+- Website lint: hata yok, mevcut 4 uyari devam ediyor.
+- Canli Google/Geoapify yanitlari ve hosting uzerindeki akis bu ortamda test edilmedi.
+
+Bu paket mevcut yerel website'in tam derlemesini ve mevcut controller'in
+duzeltilmis halini icerir; canlidaki onceki surumden baska yerel degisiklikler
+varsa onlar da bu dosyalarla birlikte tasinir.
+
+GERI DONUS
+Sorun halinde yedeklenen PHP controller'ini ve website dosyalarini geri yukleyin.
+
+Bu pakette .env dosyasi yoktur. Mevcut canli ortam ayarlari kullanilir.
+Website API adresi mevcut proje ayarina gore /api/index.php/public yoludur.
+Veritabani migration'i veya yeni Composer/NPM bagimliligi gerekmez.

@@ -7,7 +7,9 @@ use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class SupplierApprovalService
 {
@@ -41,7 +43,7 @@ class SupplierApprovalService
         ?Request $request = null,
         ?string $note = null
     ): Supplier {
-        return $this->transition(
+        $approvedSupplier = $this->transition(
             supplier: $supplier,
             newStatus: Supplier::STATUS_APPROVED,
             actor: $actor,
@@ -63,6 +65,68 @@ class SupplierApprovalService
                 'is_active' => true,
             ],
         );
+
+        try {
+            $portalUser = User::query()
+                ->where('supplier_id', $approvedSupplier->id)
+                ->where('role', 'supplier')
+                ->first();
+
+            $email = $portalUser?->email ?: $approvedSupplier->email;
+
+            if ($email) {
+                $contactName =
+                    $approvedSupplier->contact_name
+                    ?: $portalUser?->name
+                    ?: $approvedSupplier->company_name
+                    ?: 'Supplier';
+
+                $companyName =
+                    $approvedSupplier->company_name
+                    ?: 'Your company';
+
+                $username = $email;
+                $portalUrl = 'https://skytriptransfer.com/supplier/';
+
+                $subject =
+                    'SkyTripTransfer - Supplier Application Approved';
+
+                $body =
+                    "Dear {$contactName},\n\n" .
+                    "We are pleased to inform you that your supplier application has been approved.\n\n" .
+                    "Your SkyTripTransfer Supplier Portal account is now active.\n\n" .
+                    "Company: {$companyName}\n" .
+                    "Username: {$username}\n\n" .
+                    "You can now sign in using your registered email address and the password you created during your application.\n\n" .
+                    "Supplier Portal:\n{$portalUrl}\n\n" .
+                    "From the portal, you can manage your transfers, drivers, vehicles, coverage areas, earnings and invoices.\n\n" .
+                    "If you have forgotten your password, please use the password reset option on the Supplier Portal login page.\n\n" .
+                    "Welcome to the SkyTripTransfer supplier network.\n\n" .
+                    "Best regards,\n" .
+                    "SkyTripTransfer\n" .
+                    "Global Mobility Network";
+
+                \App\Support\SkyMail::raw('supplier', 
+                    $body,
+                    function ($message) use (
+                        $email,
+                        $contactName,
+                        $subject
+                    ): void {
+                        $message
+                            ->to(
+                                $email,
+                                $contactName
+                            )
+                            ->subject($subject);
+                    }
+                );
+            }
+        } catch (Throwable $mailException) {
+            report($mailException);
+        }
+
+        return $approvedSupplier;
     }
 
     public function requestRevision(
@@ -211,6 +275,17 @@ class SupplierApprovalService
                 ...$supplierUpdates,
                 'status' => $newStatus,
             ]);
+
+            $portalUserActive =
+                $newStatus === Supplier::STATUS_APPROVED
+                && (bool) $supplier->is_active;
+
+            User::query()
+                ->where('supplier_id', $supplier->id)
+                ->where('role', 'supplier')
+                ->update([
+                    'is_active' => $portalUserActive,
+                ]);
 
             ApprovalLog::create([
                 'approvable_type' => $supplier->getMorphClass(),

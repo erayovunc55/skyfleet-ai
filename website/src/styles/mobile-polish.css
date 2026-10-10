@@ -1,0 +1,42 @@
+/* Mobile polish: readable type, comfortable tap targets, no iOS input zoom */
+@media (max-width: 700px) {
+  html { -webkit-text-size-adjust: 100%; }
+  body { -webkit-tap-highlight-color: transparent; }
+
+  input, select, textarea { font-size: 16px !important; }
+
+  button, .sky-text-link, .language, .brand, select, input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+  }
+
+  .sky-eyebrow, .brand small, .site-footer small { font-size: 11px !important; letter-spacing: .12em; }
+  form label > span, .sky-booking label span, .sky-search label span { font-size: 12px !important; }
+  .sky-tabs button, [role="tab"] { font-size: 13px !important; min-height: 44px; }
+  small { font-size: 12px; }
+
+  .site-footer { padding-top: 32px; padding-bottom: 28px; }
+  .site-footer a { display: inline-block; padding: 8px 0; min-height: 40px; }
+
+  h1 { line-height: 1.08; word-break: normal; overflow-wrap: break-word; }
+  h2 { line-height: 1.15; }
+
+  img, video, svg { max-width: 100%; }
+  .section-pad, .sky-container { padding-left: 20px; padding-right: 20px; }
+}
+
+@supports (padding: max(0px)) {
+  @media (max-width: 700px) {
+    .site-header { padding-top: env(safe-area-inset-top); }
+    .site-footer { padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+@media (max-width: 700px) {
+  .sky-booking-heading span, .sky-booking-note span, .sky-hero-caption span,
+  .sky-service-image span, .sky-fleet-image span, .sky-fleet-copy small,
+  .brand small { font-size: 11px !important; }
+}
+@media (max-width:700px){.footer-brand small,.brand small{font-size:11px!important}}

@@ -1,3 +1,4 @@
+/* eslint-disable react/only-export-components -- provider module intentionally exports helpers and its hook */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "skyfleet_language";

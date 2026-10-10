@@ -157,7 +157,7 @@ export default function Topbar({
     try {
       await operationAlertService
         .markRead(uniqueKeys);
-    } catch (requestError) {
+    } catch {
       loadAlerts({ silent: true });
     }
   }

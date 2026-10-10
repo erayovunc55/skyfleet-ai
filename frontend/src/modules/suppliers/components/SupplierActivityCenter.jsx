@@ -15,7 +15,9 @@ export default function SupplierActivityCenter({supplierId,language}){
   const [error,setError]=useState("");
 
   const load=async(nextPage=page)=>{setLoading(true);setError("");try{setData(await supplierService.getActivity(supplierId,{search:search||undefined,type:type||undefined,page:nextPage,per_page:size}));}catch(e){setError(e?.response?.data?.message||e?.message||copy(language,"Activity could not be loaded.","Aktivite kayıtları yüklenemedi.","تعذر تحميل سجل النشاط.","No se pudo cargar la actividad."));}finally{setLoading(false);}};
-  useEffect(()=>{setPage(1);load(1)},[supplierId,type,size]);
+  // Search is applied explicitly with Enter/Search; the other filters reload automatically.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(()=>{setPage(1);load(1)},[supplierId,type,size,language]);
 
   const meta=data.meta||{};
   return <div className="supplier-activity-workspace">

@@ -1,0 +1,39 @@
+SKYFLEET ADRES ARAMA V2 - 05.10.2026
+
+Bu guncelleme website dosyalarini degistirir.
+
+1. Canlidaki mevcut index.html ve assets klasorunu yedekleyin.
+2. website-public/assets ICERIGINI mevcut sitenin assets klasorune yukleyin.
+3. website-public icindeki favicon.svg ve icons.svg dosyalarini web kokune yukleyin.
+4. En son website-public/index.html dosyasini mevcut index.html uzerine yukleyin.
+   Web koku genellikle public_html klasorudur; sitenin mevcut index.html dosyasinin
+   bulundugu klasoru kullanin. website-public klasorunun kendisini yuklemeyin.
+5. Tarayicida Ctrl+F5 ile yenileyin. CDN varsa index.html onbellegini temizleyin.
+6. Ana sayfada IST, istanbul hava, SAW ve Taksim Istanbul aramalarini kontrol edin.
+
+Bu pakette source klasoru yoktur. YUKLEME.txt dosyasini siteye yuklemeniz gerekmez.
+Onceki paketteki PHP controller duzeltmesi gecerlidir; V2 icin yeni PHP dosyasi yoktur.
+Mevcut api, supplier ve agency klasorlerini silmeyin.
+
+TESPIT
+Canli GET /api/index.php/public/address-search?q=IST&field=pickup yaniti
+Istanbul Havalimani adresini Geoapify uzerinden getiriyor, fakat provider=skyfleet
+ve location_id iceren bir havalimani kaydi dondurmuyor. Eski frontend filtresi
+Geoapify sonucunu gizleyerek listeyi bos birakiyordu. V2 bu filtreyi duzeltir:
+Skyfleet kaydi varsa onu tercih eder, yoksa saglayicinin adreslerini gosterir.
+
+ANLIK FIYAT
+V2 eksik location_id bilgisini uydurmaz. Anlik fiyat icin canli backend'in gercek
+Skyfleet havalimani kaydini dondurmesi gerekir. API yanitinda bu kaydin neden
+bulunmadigi (aktif/public location, airport baglantisi, ulke/havalimani fiyat
+konfigurasyonu ve scheduled_service metadata) sunucuda ayrica kontrol edilmelidir.
+Bu paket veritabanini veya fiyat konfigurasyonunu degistirmez.
+
+DOGRULAMA
+Website production build basarili. Frontend regresyon testleri: 21/21 basarili.
+IST/SAW icin Skyfleet kaydi bulunmayan API yaniti senaryosu da testlere eklendi.
+Mevcut lint uyarilari: 4; lint hata sayisi: 0.
+Canli API salt okunur olarak kontrol edildi. Paket henuz canliya yuklenmedi.
+
+Paket mevcut yerel website'in tam derlemesidir; diger yerel website degisiklikleri
+de bu derlemeye dahildir. Geri donus icin yedeklenen index.html ve assets kullanilir.

@@ -3,17 +3,28 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   base: "/",
-  plugins: [react()],
+
+  plugins: [
+    react(),
+  ],
+
   server: {
     host: "0.0.0.0",
     port: 5177,
     strictPort: true,
     allowedHosts: true,
+
     proxy: {
-      "/api": {
+      "/api/index.php/public": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
         secure: false,
+
+        rewrite: (path) =>
+          path.replace(
+            /^\/api\/index\.php\/public/,
+            "/public",
+          ),
       },
     },
   },

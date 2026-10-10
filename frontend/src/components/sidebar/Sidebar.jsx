@@ -1,3 +1,5 @@
+import { canAccessPage } from "../../constants/access";
+
 const menuItems = [
   {
     id: "dashboard",
@@ -10,9 +12,19 @@ const menuItems = [
     icon: "🛰️",
   },
   {
+  id: "live-support",
+  title: "Live Support",
+  icon: "💬",
+},
+  {
     id: "transfers",
     title: "Transfers",
     icon: "📅",
+  },
+  {
+    id: "transfer-requests",
+    title: "Transfer Requests",
+    icon: "📨",
   },
   {
     id: "fleet",
@@ -25,15 +37,20 @@ const menuItems = [
     icon: "👤",
   },
   {
-    id: "suppliers",
-    title: "Suppliers",
-    icon: "🏢",
-  },
-  {
-    id: "locations",
-    title: "Locations",
-    icon: "🌍",
-  },
+  id: "suppliers",
+  title: "Suppliers",
+  icon: "🏢",
+},
+{
+  id: "agencies",
+  title: "Agencies",
+  icon: "🤝",
+},
+{
+  id: "locations",
+  title: "Locations",
+  icon: "🌍",
+},
   {
     id: "documents",
     title: "Documents",
@@ -50,18 +67,29 @@ const menuItems = [
     icon: "💰",
   },
   {
-    id: "ai-dispatcher",
-    title: "AI Dispatcher",
-    icon: "🤖",
-  },
+  id: "ai-training",
+  title: "AI Training Center",
+  icon: "🧠",
+},
   {
     id: "settings",
     title: "Settings",
     icon: "⚙️",
   },
+  {
+    id: "tour-packages",
+    title: "Tour Packages",
+    icon: "🗺️",
+  },
+  {
+    id: "users",
+    title: "Users & Access",
+    icon: "🔐",
+  },
 ];
 
 export default function Sidebar({
+  user,
   activePage,
   onNavigate,
   isOpen,
@@ -101,7 +129,7 @@ export default function Sidebar({
             PLATFORM
           </span>
 
-          {menuItems.map((item) => (
+          {menuItems.filter((item) => canAccessPage(user, item.id)).map((item) => (
             <button
               className={
                 activePage === item.id

@@ -24,11 +24,16 @@ class SupplierCoverageController extends Controller
         $data = $request->validate([
             'location_id'=>['required','integer','exists:locations,id'],
             'coverage_type'=>['nullable',Rule::in(['airport','city','service_area','polygon'])],
-            'label'=>['nullable','string','max:150'],
+            'label'=>['nullable','string','max:150','required_if:coverage_type,polygon'],
             'service_radius_meters'=>['nullable','integer','min:0','max:500000'],
             'pickup_enabled'=>['nullable','boolean'],
             'dropoff_enabled'=>['nullable','boolean'],
             'is_active'=>['nullable','boolean'],
+            'polygon'=>['nullable','array','min:3'],
+            'base_price'=>['nullable','numeric','min:0','required_if:coverage_type,polygon'],
+            'currency'=>['nullable','string','size:3'],
+            'vehicle_prices'=>['nullable','array'],
+            'vehicle_prices.*'=>['numeric','min:0'],
         ]);
 
         $location = Location::with(['country','city'])->findOrFail($data['location_id']);
@@ -40,6 +45,10 @@ class SupplierCoverageController extends Controller
                 'service_radius_meters'=>$data['service_radius_meters'] ?? $location->geofence_radius_meters,
                 'pickup_enabled'=>$data['pickup_enabled'] ?? true,'dropoff_enabled'=>$data['dropoff_enabled'] ?? true,
                 'is_active'=>$data['is_active'] ?? true,
+                'polygon'=>$data['polygon'] ?? null,
+                'base_price'=>$data['base_price'] ?? null,
+                'currency'=>strtoupper($data['currency'] ?? 'EUR'),
+                'vehicle_prices'=>$data['vehicle_prices'] ?? null,
             ]
         );
 
@@ -53,7 +62,15 @@ class SupplierCoverageController extends Controller
             'service_radius_meters'=>['nullable','integer','min:0','max:500000'],
             'pickup_enabled'=>['nullable','boolean'],'dropoff_enabled'=>['nullable','boolean'],'is_active'=>['nullable','boolean'],
             'label'=>['nullable','string','max:150'],
+            'polygon'=>['nullable','array','min:3'],
+            'base_price'=>['nullable','numeric','min:0'],
+            'currency'=>['nullable','string','size:3'],
+            'vehicle_prices'=>['nullable','array'],
+            'vehicle_prices.*'=>['numeric','min:0'],
         ]);
+        if (array_key_exists('currency', $data)) {
+            $data['currency'] = strtoupper($data['currency']);
+        }
         $coverage->update($data);
         return response()->json(['data'=>$coverage->fresh()->load(['country:id,name,iso2','city:id,name,country_id','location:id,name,code,airport_id,latitude,longitude,geofence_radius_meters'])]);
     }

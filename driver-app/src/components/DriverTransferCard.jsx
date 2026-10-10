@@ -79,23 +79,47 @@ export default function DriverTransferCard({
 }
 
 function getPickupLabel(transfer) {
-  return (
-    transfer.pickup_location?.code ||
-    transfer.pickup_location?.name ||
-    transfer.pickup ||
-    "Alış noktası"
+  return getRouteLabel(
+    transfer.pickup_location,
+    transfer.pickup,
+    "Alış noktası",
   );
 }
 
 function getDropoffLabel(transfer) {
-  return (
-    transfer.dropoff_location?.code ||
-    transfer.dropoff_location?.name ||
-    transfer.dropoff ||
-    "Bırakış noktası"
+  return getRouteLabel(
+    transfer.dropoff_location,
+    transfer.dropoff,
+    "Bırakış noktası",
   );
 }
 
+function getRouteLabel(location, address, fallback) {
+  const addressText = String(address || "").trim();
+  const locationName = String(location?.name || "").trim();
+  const code = String(location?.code || "").trim().toUpperCase();
+
+  if (code && isAirportAddress(addressText, code)) {
+    return code;
+  }
+
+  if (addressText) {
+    return addressText.split(",")[0].trim();
+  }
+
+  return locationName || code || fallback;
+}
+
+function isAirportAddress(address, code) {
+  const normalizedAddress = String(address || "").trim();
+  const upperAddress = normalizedAddress.toUpperCase();
+
+  return upperAddress === code
+    || upperAddress.includes(`(${code})`)
+    || /\b(airport|havalimanı|havalimani|aeropuerto|aéroport)\b/i.test(
+      normalizedAddress,
+    );
+}
 function getPassengerCount(transfer) {
   return (
     Number(transfer.adult || 0) +

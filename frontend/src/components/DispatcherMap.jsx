@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
   Marker,
@@ -55,6 +55,7 @@ export default function DispatcherMap({
   transfers = [],
   onSelectTransfer,
 }) {
+  const [routePositions, setRoutePositions] = useState([]);
   const pickupPosition = useMemo(
     () =>
       getCoordinatePair(
@@ -118,6 +119,44 @@ export default function DispatcherMap({
     pickupPosition ||
     dropoffPosition ||
     defaultCenter;
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRoute() {
+      if (!pickupPosition || !dropoffPosition) {
+        setRoutePositions([]);
+        return;
+      }
+
+      const coordinates = `${pickupPosition[1]},${pickupPosition[0]};${dropoffPosition[1]},${dropoffPosition[0]}`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false`;
+
+      try {
+        const response = await fetch(url, {
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) throw new Error("Route request failed");
+
+        const data = await response.json();
+        const geometry = data?.routes?.[0]?.geometry?.coordinates;
+        const positions = Array.isArray(geometry)
+          ? geometry
+              .filter((point) => Array.isArray(point) && point.length >= 2)
+              .map(([longitude, latitude]) => [latitude, longitude])
+          : [];
+
+        if (active) setRoutePositions(positions);
+      } catch {
+        if (active) setRoutePositions([]);
+      }
+    }
+
+    loadRoute();
+    return () => {
+      active = false;
+    };
+  }, [pickupPosition, dropoffPosition]);
 
   return (
     <div className="dispatcher-map">
@@ -192,10 +231,10 @@ export default function DispatcherMap({
           );
         })}
 
-        {pickupPosition && dropoffPosition && (
+        {routePositions.length > 1 && (
           <Polyline
-            positions={[pickupPosition, dropoffPosition]}
-            pathOptions={{ weight: 5, opacity: 0.8 }}
+            positions={routePositions}
+            pathOptions={{ color: "#0ea5e9", weight: 5, opacity: 0.9 }}
           />
         )}
 

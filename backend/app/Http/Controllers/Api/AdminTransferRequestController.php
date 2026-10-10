@@ -35,7 +35,7 @@ class AdminTransferRequestController extends Controller
             ->when(
                 trim((string) ($validated['search'] ?? '')),
                 function ($query, string $search): void {
-                    $term = '%' . $search . '%';
+                    $term = '%'.$search.'%';
                     $query->where(function ($query) use ($term): void {
                         $query
                             ->where('request_reference', 'like', $term)
@@ -43,7 +43,9 @@ class AdminTransferRequestController extends Controller
                             ->orWhere('passenger_phone', 'like', $term)
                             ->orWhere('passenger_email', 'like', $term)
                             ->orWhere('pickup', 'like', $term)
-                            ->orWhere('dropoff', 'like', $term);
+                            ->orWhere('dropoff', 'like', $term)
+                            ->orWhere('tour_code', 'like', $term)
+                            ->orWhere('tour_title', 'like', $term);
                     });
                 }
             )

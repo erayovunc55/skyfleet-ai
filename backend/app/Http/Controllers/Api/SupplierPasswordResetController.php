@@ -113,7 +113,7 @@ class SupplierPasswordResetController extends Controller
             .'/?reset_token='.urlencode($token)
             .'&email='.urlencode((string) $user->email);
 
-        Mail::raw(
+        \App\Support\SkyMail::raw('supplier', 
             "Merhaba {$user->name},\n\nSkyfleet AI tedarikçi portalı şifrenizi yenilemek için aşağıdaki bağlantıyı kullanın.\n\n{$url}\n\nBu bağlantı 60 dakika geçerlidir ve yalnızca şifre sıfırlama amacıyla kullanılmalıdır.\n\nBu talebi siz oluşturmadıysanız bu e-postayı yok sayabilirsiniz.\n\nSkyfleet AI",
             function ($message) use ($user): void {
                 $message

@@ -1,0 +1,652 @@
+===== AirportTaxiPricingService.php =====
+<?php
+
+namespace App\Services;
+
+use App\Models\Airport;
+use App\Models\Location;
+use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Validation\ValidationException;
+
+class AirportTaxiPricingService
+{
+    public function __construct(private readonly RoutingService $routing) {}
+
+    public function scopeMarkets(Builder $query): Builder
+    {
+        return $query->where('is_active', true)->where(function (Builder $markets) {
+            foreach (config('taxi_pricing.markets') as $iso => $market) {
+                $markets->orWhere(function (Builder $country) use ($iso, $market) {
+                    $country->whereHas('country', fn (Builder $q) => $q->where('iso2', $iso)->where('is_active', true));
+                    if (isset($market['airports'])) {
+                        $country->whereIn('iata_code', $market['airports']);
+                    }
+                    if (isset($market['region'])) {
+                        $country->where('metadata->iso_region', $market['region']);
+                    }
+                });
+            }
+        });
+    }
+
+    public function marketEnabled(Airport $airport): bool
+    {
+        $market = config('taxi_pricing.markets.'.strtoupper($airport->country?->iso2 ?? ''));
+        if (!$market || !$airport->is_active || !$airport->country?->is_active) {
+            return false;
+        }
+        if (isset($market['airports']) && !in_array($airport->iata_code, $market['airports'], true)) {
+            return false;
+        }
+        return !isset($market['region']) || ($airport->metadata['iso_region'] ?? null) === $market['region'];
+    }
+
+    public function quote(array $input): array
+    {
+        $location = Location::with('airport.country')->where('is_active', true)
+            ->where('is_public', true)->whereNotNull('airport_id')->find($input['airport_location_id']);
+        if (!$location || !$this->marketEnabled($location->airport)) {
+            return $this->unavailable('market_unavailable', false);
+        }
+
+        $airport = $location->airport;
+        $date = CarbonImmutable::parse($input['pickup_date'].' '.$input['pickup_time'], $airport->timezone);
+        $matched = null;
+        foreach (config('taxi_pricing.tariffs', []) as $tariff) {
+            if (!($tariff['enabled'] ?? false)
+                || !in_array($airport->iata_code, $tariff['airports'], true)
+                || !in_array($input['direction'], $tariff['directions'], true)
+                || !in_array($input['vehicle_type'], $tariff['vehicle_types'], true)
+                || $input['passengers'] > $tariff['max_passengers']
+                || ($input['luggage_count'] ?? 0) > $tariff['max_luggage']
+                || empty($tariff['source_url'])
+                || CarbonImmutable::parse($tariff['verified_at'])->addDays(config('taxi_pricing.review_interval_days'))->endOfDay()->isPast()
+                || $date->toDateString() < $tariff['valid_from']
+                || $date->toDateString() > $tariff['valid_until']
+                || !$this->insideZone($tariff['zone'], (float) $input['latitude'], (float) $input['longitude'])) {
+                continue;
+            }
+            $matched = $tariff;
+            break;
+        }
+        if (!$matched) {
+            return $this->unavailable('verified_tariff_unavailable');
+        }
+
+        $distanceKm = null;
+        if ($matched['type'] === 'fixed') {
+            $taxiPrice = (float) $matched['amount'];
+        } elseif ($matched['type'] === 'metered') {
+            if ($airport->latitude === null || $airport->longitude === null) {
+                return $this->unavailable('route_unavailable');
+            }
+            $airportPoint = [(float) $airport->latitude, (float) $airport->longitude];
+            $addressPoint = [(float) $input['latitude'], (float) $input['longitude']];
+            $route = $this->routing->route(...array_merge(
+                $input['direction'] === 'pickup' ? $airportPoint : $addressPoint,
+                $input['direction'] === 'pickup' ? $addressPoint : $airportPoint,
+            ));
+            if (!$route || $route['distance_meters'] <= 0 || $route['distance_meters'] > $matched['max_distance_km'] * 1000) {
+                return $this->unavailable('route_unavailable');
+            }
+            $distanceKm = $route['distance_meters'] / 1000;
+            $taxiPrice = max($matched['minimum'], $matched['base'] + $matched['per_km'] * $distanceKm);
+        } else {
+            return $this->unavailable('verified_tariff_unavailable');
+        }
+        // Round once to currency minor units, then apply the discount once.
+        $taxiMinor = (int) round($taxiPrice * 100);
+        $customerMinor = (int) round($taxiMinor * (100 - config('taxi_pricing.passenger_discount_percent')) / 100);
+        if ($customerMinor <= 0) {
+            return $this->unavailable('verified_tariff_unavailable');
+        }
+        $expires = now()->addMinutes(config('taxi_pricing.quote_lifetime_minutes'));
+        $snapshot = [
+            'version' => 1,
+            'tariff_id' => $matched['id'],
+            'source_url' => $matched['source_url'],
+            'verified_at' => $matched['verified_at'],
+            'taxi_reference_minor' => $taxiMinor,
+            'customer_price_minor' => $customerMinor,
+            'customer_price' => $customerMinor / 100,
+            'currency' => $matched['currency'],
+            'discount_percent' => config('taxi_pricing.passenger_discount_percent'),
+            'distance_km' => $distanceKm,
+            'airport_location_id' => $location->id,
+            'direction' => $input['direction'],
+            'airport_latitude' => (float) $location->latitude,
+            'airport_longitude' => (float) $location->longitude,
+            'latitude' => (float) $input['latitude'],
+            'longitude' => (float) $input['longitude'],
+            'vehicle_type' => $input['vehicle_type'],
+            'passengers' => (int) $input['passengers'],
+            'luggage_count' => (int) ($input['luggage_count'] ?? 0),
+            'pickup_date' => $input['pickup_date'],
+            'pickup_time' => $input['pickup_time'],
+            'timezone' => $airport->timezone,
+            'expires_at' => $expires->toIso8601String(),
+            'is_estimate' => true,
+        ];
+
+        // Only the discounted price is public. Reference rates remain encrypted.
+        return [
+            'available' => true,
+            'customer_price' => $snapshot['customer_price'],
+            'currency' => $snapshot['currency'],
+            'is_estimate' => true,
+            'timezone' => $snapshot['timezone'],
+            'expires_at' => $snapshot['expires_at'],
+            'quote_token' => Crypt::encryptString(json_encode($snapshot, JSON_THROW_ON_ERROR)),
+        ];
+    }
+
+    public function validateQuote(string $token, array $request): array
+    {
+        try {
+            $quote = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
+        } catch (DecryptException|\JsonException $exception) {
+            throw ValidationException::withMessages(['quote_token' => 'Fiyat doğrulanamadı. Lütfen yeniden hesaplayın.']);
+        }
+        if (($quote['version'] ?? null) !== 1 || CarbonImmutable::parse($quote['expires_at'])->isPast()) {
+            throw ValidationException::withMessages(['quote_token' => 'Fiyatın süresi doldu. Lütfen yeniden hesaplayın.']);
+        }
+        foreach (['vehicle_type', 'passengers', 'luggage_count', 'pickup_date', 'pickup_time', 'timezone'] as $field) {
+            if ((string) ($request[$field] ?? '') !== (string) $quote[$field]) {
+                throw ValidationException::withMessages(['quote_token' => 'Yolculuk bilgileri değişti. Lütfen fiyatı yeniden hesaplayın.']);
+            }
+        }
+        $airportEnd = $quote['direction'] === 'pickup' ? 'pickup' : 'dropoff';
+        $addressEnd = $airportEnd === 'pickup' ? 'dropoff' : 'pickup';
+        foreach ([$airportEnd => ['airport_latitude', 'airport_longitude'], $addressEnd => ['latitude', 'longitude']] as $end => $fields) {
+            foreach (['lat', 'lng'] as $i => $axis) {
+                if (!isset($request[$end.'_'.$axis]) || abs((float) $request[$end.'_'.$axis] - $quote[$fields[$i]]) > 0.00001) {
+                    throw ValidationException::withMessages(['quote_token' => 'Güzergâh değişti. Lütfen fiyatı yeniden hesaplayın.']);
+                }
+            }
+        }
+        return $quote;
+    }
+
+    private function insideZone(array $zone, float $latitude, float $longitude): bool
+    {
+        // Deliberately conservative subsets of published tariff zones; never extend
+        // a city-centre flat rate to a suburb or to the whole country.
+        $a = sin(deg2rad($latitude - $zone['latitude']) / 2) ** 2
+            + cos(deg2rad($latitude)) * cos(deg2rad($zone['latitude']))
+            * sin(deg2rad($longitude - $zone['longitude']) / 2) ** 2;
+        return 6371 * 2 * asin(sqrt(min(1, $a))) <= $zone['radius_km'];
+    }
+
+    private function unavailable(string $reason, bool $manual = true): array
+    {
+        return ['available' => false, 'manual_quote_available' => $manual, 'reason' => $reason];
+    }
+}
+
+===== taxi_pricing.php =====
+<?php
+
+return [
+    'passenger_discount_percent' => 5,
+    'quote_lifetime_minutes' => 30,
+    'review_interval_days' => 90,
+    // These are booking markets, not a claim that every airport has a verified fare.
+    'markets' => [
+        'ME' => ['name' => 'Karadağ'],
+        'RO' => ['name' => 'Romanya'],
+        'BG' => ['name' => 'Bulgaristan — Sofya', 'airports' => ['SOF']],
+        'RS' => ['name' => 'Sırbistan'],
+        'BA' => ['name' => 'Bosna-Hersek'],
+        'AT' => ['name' => 'Avusturya'],
+        'PL' => ['name' => 'Polonya'],
+        'LV' => ['name' => 'Letonya'],
+        'LT' => ['name' => 'Litvanya'],
+        'SI' => ['name' => 'Slovenya'],
+        'MK' => ['name' => 'Kuzey Makedonya'],
+        'EG' => ['name' => 'Mısır'],
+        'FR' => ['name' => 'Fransa'],
+        'GB' => ['name' => 'İngiltere', 'region' => 'GB-ENG'],
+        'ES' => ['name' => 'İspanya'],
+        'SE' => ['name' => 'İsveç'],
+        'MA' => ['name' => 'Fas'],
+        'RU' => ['name' => 'Rusya — Moskova', 'airports' => ['SVO', 'DME', 'VKO', 'ZIA']],
+        'HR' => ['name' => 'Hırvatistan'],
+        'PT' => ['name' => 'Portekiz'],
+        'TR' => ['name' => 'Türkiye'],
+    ],
+    'tariffs' => json_decode(file_get_contents(database_path('data/airport_taxi_tariffs.json')), true, 512, JSON_THROW_ON_ERROR),
+];
+
+===== PublicRegionalPricingController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Services\AirportTaxiPricingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class PublicRegionalPricingController extends Controller
+{
+    public function __construct(
+        private readonly AirportTaxiPricingService $pricing
+    ) {
+    }
+
+    public function __invoke(
+        Request $request
+    ): JsonResponse {
+        $data = $request->validate([
+            'pickup_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'pickup_time' => ['required', 'date_format:H:i'],
+            'passengers' => ['required', 'integer', 'between:1,100'],
+            'luggage_count' => ['required', 'integer', 'between:0,100'],
+            'latitude' => [
+                'required',
+                'numeric',
+                'between:-90,90',
+            ],
+
+            'longitude' => [
+                'required',
+                'numeric',
+                'between:-180,180',
+            ],
+
+            'direction' => [
+                'required',
+                'in:pickup,dropoff',
+            ],
+
+            'vehicle_type' => [
+                'required',
+                'string',
+                'max:80',
+            ],
+
+            'airport_location_id' => [
+                'required',
+                'integer',
+                'exists:locations,id',
+            ],
+        ]);
+
+        return response()->json($this->pricing->quote($data));
+    }
+}
+
+===== PublicAddressSearchController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Location;
+use App\Services\GeocodingService;
+use App\Services\AirportTaxiPricingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class PublicAddressSearchController extends Controller
+{
+    public function __invoke(
+        Request $request,
+        GeocodingService $geocodingService
+    ): JsonResponse {
+        $validated = $request->validate([
+            'q' => [
+                'required',
+                'string',
+                'min:2',
+                'max:150',
+            ],
+        ]);
+
+        $query = trim($validated['q']);
+        $upperQuery = strtoupper($query);
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1. Exact airport code matches
+        |--------------------------------------------------------------------------
+        |
+        | SAW -> SAW
+        | IST -> IST
+        | AYT -> AYT
+        |
+        | These always come first.
+        |
+        */
+
+        $exactAirportLocations = Location::query()
+            ->where('is_public', true)
+            ->whereHas('airport', fn ($q) => app(AirportTaxiPricingService::class)->scopeMarkets($q))
+            ->with([
+                'city:id,name,country_id',
+                'country:id,name,iso2',
+                'airport:id,name,iata_code,icao_code',
+            ])
+            ->whereNotNull('airport_id')
+            ->where('is_active', true)
+            ->where(function ($builder) use ($upperQuery): void {
+                $builder
+                    ->where('code', $upperQuery)
+                    ->orWhereHas(
+                        'airport',
+                        function ($airportQuery) use ($upperQuery): void {
+                            $airportQuery
+                                ->where('iata_code', $upperQuery)
+                                ->orWhere('icao_code', $upperQuery);
+                        }
+                    );
+            })
+            ->limit(5)
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2. Fuzzy airport search
+        |--------------------------------------------------------------------------
+        */
+
+        $fuzzyAirportLocations = Location::query()
+            ->where('is_public', true)
+            ->whereHas('airport', fn ($q) => app(AirportTaxiPricingService::class)->scopeMarkets($q))
+            ->with([
+                'city:id,name,country_id',
+                'country:id,name,iso2',
+                'airport:id,name,iata_code,icao_code',
+            ])
+            ->whereNotNull('airport_id')
+            ->where('is_active', true)
+            ->where(function ($builder) use ($query): void {
+                $builder
+                    ->where('name', 'like', "%{$query}%")
+                    ->orWhereHas('city', fn ($q) => $q->where('name', 'like', "%{$query}%"))
+                    ->orWhereHas('country', fn ($q) => $q->where('name', 'like', "%{$query}%"))
+                    ->orWhere('code', 'like', "%{$query}%")
+                    ->orWhereHas(
+                        'airport',
+                        function ($airportQuery) use ($query): void {
+                            $airportQuery
+                                ->where('name', 'like', "%{$query}%")
+                                ->orWhere(
+                                    'iata_code',
+                                    'like',
+                                    "%{$query}%"
+                                )
+                                ->orWhere(
+                                    'icao_code',
+                                    'like',
+                                    "%{$query}%"
+                                );
+                        }
+                    );
+            })
+            ->orderBy('sort_order')
+            ->limit(8)
+            ->get();
+
+        $airportLocations = $exactAirportLocations
+            ->concat($fuzzyAirportLocations)
+            ->unique('id')
+            ->take(6)
+            ->map(function (Location $location): array {
+                $airport = $location->airport;
+
+                $code =
+                    $location->code
+                    ?: $airport?->iata_code
+                    ?: $airport?->icao_code;
+
+                $labelParts = array_filter([
+                    $airport?->name ?: $location->name,
+                    $location->city?->name,
+                    $location->country?->name,
+                ]);
+
+                return [
+                    'label' => implode(', ', $labelParts),
+
+                    'name' =>
+                        $airport?->name
+                        ?: $location->name,
+
+                    'formatted_address' =>
+                        implode(', ', $labelParts),
+
+                    'latitude' =>
+                        $location->latitude !== null
+                            ? (float) $location->latitude
+                            : null,
+
+                    'longitude' =>
+                        $location->longitude !== null
+                            ? (float) $location->longitude
+                            : null,
+
+                    'place_id' =>
+                        'skyfleet-location-' . $location->id,
+
+                    'country' =>
+                        $location->country?->name,
+                    'timezone' => $location->timezone,
+
+                    'city' =>
+                        $location->city?->name,
+
+                    'postcode' =>
+                        $location->postal_code,
+
+                    'provider' =>
+                        'skyfleet',
+
+                    'is_airport' =>
+                        true,
+
+                    'location_id' =>
+                        $location->id,
+
+                    'airport_id' =>
+                        $location->airport_id,
+
+                    'iata' =>
+                        $airport?->iata_code
+                        ?: $location->code,
+
+                    'icao' =>
+                        $airport?->icao_code,
+
+                    'code' =>
+                        $code,
+                ];
+            })
+            ->values()
+            ->all();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 3. General Geoapify address search
+        |--------------------------------------------------------------------------
+        */
+
+        $geoResults = $geocodingService->search(
+            $query,
+            6
+        );
+
+        $geoResults = collect($geoResults)
+            ->map(function (array $item): array {
+                return [
+                    ...$item,
+
+                    'is_airport' => false,
+                    'location_id' => null,
+                    'airport_id' => null,
+                    'iata' => null,
+                    'icao' => null,
+                    'code' => null,
+                ];
+            })
+            ->all();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 4. Merge results
+        |--------------------------------------------------------------------------
+        */
+
+        $results = collect([
+            ...$airportLocations,
+            ...$geoResults,
+        ])
+            ->unique(function (array $item): string {
+                if (!empty($item['location_id'])) {
+                    return 'location-' . $item['location_id'];
+                }
+
+                if (!empty($item['place_id'])) {
+                    return 'place-' . $item['place_id'];
+                }
+
+                return sprintf(
+                    '%s-%s',
+                    $item['latitude'] ?? '',
+                    $item['longitude'] ?? ''
+                );
+            })
+            ->take(8)
+            ->values()
+            ->all();
+
+        return response()->json([
+            'data' => $results,
+        ]);
+    }
+}
+
+===== PublicTransferRequestController.php =====
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\TransferRequest;
+use App\Services\AirportTaxiPricingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+
+class PublicTransferRequestController extends Controller
+{
+    public function store(Request $request, AirportTaxiPricingService $pricing): JsonResponse
+    {
+        $validated = $request->validate([
+            'quote_token' => ['nullable', 'string', 'max:12000'],
+            'pickup' => ['required', 'string', 'max:1000'],
+            'pickup_place_id' => ['nullable', 'string', 'max:255'],
+            'pickup_lat' => [
+                'nullable',
+                'numeric',
+                'between:-90,90',
+                'required_with:pickup_lng',
+            ],
+            'pickup_lng' => [
+                'nullable',
+                'numeric',
+                'between:-180,180',
+                'required_with:pickup_lat',
+            ],
+            'dropoff' => ['required', 'string', 'max:1000'],
+            'dropoff_place_id' => ['nullable', 'string', 'max:255'],
+            'dropoff_lat' => [
+                'nullable',
+                'numeric',
+                'between:-90,90',
+                'required_with:dropoff_lng',
+            ],
+            'dropoff_lng' => [
+                'nullable',
+                'numeric',
+                'between:-180,180',
+                'required_with:dropoff_lat',
+            ],
+            'pickup_date' => ['required', 'date', 'after_or_equal:today'],
+            'pickup_time' => ['required', 'date_format:H:i'],
+            'timezone' => ['required', 'timezone'],
+            'flight_number' => ['nullable', 'string', 'max:50'],
+            'passengers' => ['required', 'integer', 'min:1', 'max:100'],
+            'luggage_count' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'vehicle_type' => ['nullable', 'string', 'max:100'],
+            'passenger_name' => ['required', 'string', 'max:255'],
+            'passenger_phone' => ['required', 'string', 'max:50'],
+            'passenger_email' => ['required', 'email:rfc', 'max:255'],
+            'note' => ['nullable', 'string', 'max:3000'],
+            'locale' => ['nullable', 'string', Rule::in(['en', 'tr'])],
+            'terms_accepted' => ['accepted'],
+        ]);
+
+        $snapshot = !empty($validated['quote_token'])
+            ? $pricing->validateQuote($validated['quote_token'], $validated)
+            : null;
+
+        $transferRequest = TransferRequest::query()->create([
+            ...collect($validated)->except(['terms_accepted', 'quote_token'])->all(),
+            'pricing_snapshot' => $snapshot,
+            'request_reference' => $this->newReference(),
+            'status' => TransferRequest::STATUS_NEW,
+            'luggage_count' => $validated['luggage_count'] ?? 0,
+            'locale' => $validated['locale'] ?? 'en',
+            'source' => 'public_website',
+        ]);
+
+        return response()->json([
+            'message' => 'Transfer request received.',
+            'data' => [
+                'request_reference' => $transferRequest->request_reference,
+                'status' => $transferRequest->status,
+            ],
+        ], 201);
+    }
+
+    private function newReference(): string
+    {
+        do {
+            $reference = 'STR-'.now()->format('Ymd').'-'
+                .Str::upper(Str::random(6));
+        } while (
+            TransferRequest::query()
+                ->where('request_reference', $reference)
+                ->exists()
+        );
+
+        return $reference;
+    }
+}
+
+===== Pricing Snapshot Migration =====
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('transfer_requests', function (Blueprint $table) {
+            $table->json('pricing_snapshot')->nullable();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('transfer_requests', fn (Blueprint $table) => $table->dropColumn('pricing_snapshot'));
+    }
+};

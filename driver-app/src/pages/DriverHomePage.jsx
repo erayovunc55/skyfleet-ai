@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import DriverTransferCard from "../components/DriverTransferCard";
+import { useCallback } from "react";
 import DriverTransferDetailPage from "./DriverTransferDetailPage";
 import transferService from "../services/transferService";
 import { useLanguage } from "../i18n";
@@ -21,11 +22,64 @@ export default function DriverHomePage({ user, onLogout }) {
   const [error, setError] = useState("");
   const [selectedTransfer, setSelectedTransfer] = useState(null);
 
+  const addNotification = useCallback((item) => {
+    setNotifications((current) => {
+      if (current.some((existing) => existing.id === item.id)) return current;
+      const updated = [item, ...current].slice(0, 100);
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+      return updated;
+    });
+  }, [storageKey]);
+
+  const createPickupReminders = useCallback((items) => {
+    const now = Date.now();
+    const eligibleStatuses = new Set(["pending", "assigned", "accepted"]);
+    items.forEach((transfer) => {
+      if (!eligibleStatuses.has(transfer.status)) return;
+      const pickupDate = parseDate(transfer.pickup_time);
+      if (!pickupDate) return;
+      const minutesRemaining = Math.ceil((pickupDate.getTime() - now) / 60000);
+      if (minutesRemaining <= 0 || minutesRemaining > 60) return;
+      addNotification({
+        id: `pickup-60-${transfer.id}`,
+        transferId: transfer.id,
+        title: "Alış saatine 60 dakika kaldı",
+        message: `${transfer.booking_reference || `Transfer #${transfer.id}`} · ${transfer.pickup || "Alış noktası"}`,
+        createdAt: new Date().toISOString(),
+        read: false,
+      });
+    });
+  }, [addNotification]);
+
+  const loadData = useCallback(async (showLoading) => {
+    if (showLoading) setLoading(true);
+    setError("");
+    try {
+      const [items, dashboardData] = await Promise.all([
+        transferService.getAssignedTransfers(),
+        transferService.getDashboard(),
+      ]);
+      const normalizedItems = Array.isArray(items) ? items : [];
+      setTransfers(normalizedItems);
+      setDashboard({
+        assigned: dashboardData?.assigned ?? 0,
+        ongoing: dashboardData?.ongoing ?? 0,
+        waiting: dashboardData?.waiting ?? 0,
+        completedToday: dashboardData?.completedToday ?? 0,
+      });
+      createPickupReminders(normalizedItems);
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || requestError?.message || "Transferler yüklenemedi.");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  }, [createPickupReminders]);
+
   useEffect(() => {
     loadData(true);
     const intervalId = window.setInterval(() => loadData(false), 15000);
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     let stopListening = () => {};
@@ -52,7 +106,7 @@ export default function DriverHomePage({ user, onLogout }) {
     }
 
     return () => stopListening();
-  }, []);
+  }, [addNotification]);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.read).length,
@@ -72,59 +126,6 @@ export default function DriverHomePage({ user, onLogout }) {
   const visibleTransfers = transferTab === "completed"
     ? completedTransfers
     : activeTransfers;
-
-  async function loadData(showLoading) {
-    if (showLoading) setLoading(true);
-    setError("");
-    try {
-      const [items, dashboardData] = await Promise.all([
-        transferService.getAssignedTransfers(),
-        transferService.getDashboard(),
-      ]);
-      const normalizedItems = Array.isArray(items) ? items : [];
-      setTransfers(normalizedItems);
-      setDashboard({
-        assigned: dashboardData?.assigned ?? 0,
-        ongoing: dashboardData?.ongoing ?? 0,
-        waiting: dashboardData?.waiting ?? 0,
-        completedToday: dashboardData?.completedToday ?? 0,
-      });
-      createPickupReminders(normalizedItems);
-    } catch (requestError) {
-      setError(requestError?.response?.data?.message || requestError?.message || "Transferler yüklenemedi.");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  }
-
-  function addNotification(item) {
-    setNotifications((current) => {
-      if (current.some((existing) => existing.id === item.id)) return current;
-      const updated = [item, ...current].slice(0, 100);
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      return updated;
-    });
-  }
-
-  function createPickupReminders(items) {
-    const now = Date.now();
-    const eligibleStatuses = new Set(["pending", "assigned", "accepted"]);
-    items.forEach((transfer) => {
-      if (!eligibleStatuses.has(transfer.status)) return;
-      const pickupDate = parseDate(transfer.pickup_time);
-      if (!pickupDate) return;
-      const minutesRemaining = Math.ceil((pickupDate.getTime() - now) / 60000);
-      if (minutesRemaining <= 0 || minutesRemaining > 60) return;
-      addNotification({
-        id: `pickup-60-${transfer.id}`,
-        transferId: transfer.id,
-        title: "Alış saatine 60 dakika kaldı",
-        message: `${transfer.booking_reference || `Transfer #${transfer.id}`} · ${transfer.pickup || "Alış noktası"}`,
-        createdAt: new Date().toISOString(),
-        read: false,
-      });
-    });
-  }
 
   function handleTransferUpdated(updatedTransfer) {
     setSelectedTransfer(updatedTransfer);

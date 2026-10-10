@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import { useLanguage } from "../i18n";
+
 import {
   assignSupplierVehicleToDriver,
   createDriverPasswordResetLink,
@@ -24,7 +26,332 @@ const EMPTY_FORM = {
   is_active: true,
 };
 
+const TEXT = {
+  tr: {
+    loadError: "Sürücü bilgileri yüklenemedi.",
+    updated: "Sürücü bilgileri güncellendi.",
+    temporaryPasswordRequired:
+      "Yeni sürücü için geçici şifre girmelisiniz.",
+    created: "Sürücü başarıyla oluşturuldu.",
+    saveError: "Sürücü kaydedilemedi.",
+    vehicleAssigned: "Araç sürücüye atandı.",
+    vehicleUnassigned: "Araç ataması kaldırıldı.",
+    vehicleAssignmentError: "Araç ataması kaydedilemedi.",
+    whatsappPhoneMissing:
+      "Sürücünün WhatsApp için telefon numarası bulunmuyor.",
+    whatsappLinkError: "WhatsApp bağlantısı oluşturulamadı.",
+    resetReadySuffix:
+      "için 60 dakikalık şifre sıfırlama bağlantısı hazırlandı.",
+    resetError: "Şifre sıfırlama bağlantısı oluşturulamadı.",
+    deactivateConfirmSuffix:
+      "isimli sürücünün mobil erişimi kapatılsın mı?",
+    deactivated: "Sürücü pasif duruma alındı.",
+    deactivateError: "Sürücü pasif duruma alınamadı.",
+
+    eyebrow: "EKİP YÖNETİMİ",
+    title: "Sürücüler",
+    description:
+      "Sürücü hesaplarını oluşturun, araçlarını belirleyin ve mobil erişimlerini yönetin.",
+    refresh: "Yenile",
+    newDriver: "+ Yeni Sürücü",
+
+    totalDrivers: "Toplam Sürücü",
+    activeDrivers: "Aktif Sürücü",
+    assignedVehicle: "Araç Atanmış",
+    waitingVehicle: "Araç Bekleyen",
+
+    driverTeam: "Sürücü Ekibi",
+    records: "kayıt",
+    loadingDrivers: "Sürücüler yükleniyor...",
+    noDriversTitle: "Henüz sürücü eklenmedi",
+    noDriversDescription: "İlk sürücü hesabınızı oluşturun.",
+
+    contact: "İletişim",
+    noEmail: "E-posta yok",
+    status: "Durum",
+    active: "Aktif",
+    inactive: "Pasif",
+    vehicleAssignment: "Araç ataması",
+    vehicleNotAssigned: "Araç atanmadı",
+    edit: "Düzenle",
+    preparing: "Hazırlanıyor...",
+    whatsappReset: "WhatsApp Şifre Sıfırla",
+    deactivate: "Pasif Yap",
+
+    modalEditAria: "Sürücü düzenle",
+    modalCreateAria: "Yeni sürücü ekle",
+    driverAccount: "SÜRÜCÜ HESABI",
+    editDriver: "Sürücüyü Düzenle",
+    addDriver: "Yeni Sürücü Ekle",
+    modalDescription:
+      "Sürücü bu bilgilerle mobil uygulamaya giriş yapacaktır.",
+
+    fullName: "Ad Soyad",
+    fullNamePlaceholder: "Sürücü adı soyadı",
+    phone: "Telefon",
+    email: "E-posta",
+    newPasswordOptional: "Yeni şifre (isteğe bağlı)",
+    temporaryPassword: "Geçici şifre",
+    passwordPlaceholder: "En az 8 karakter",
+    vehicle: "Araç",
+    noVehicleForNow: "Şimdilik araç atama",
+    accountActive: "Sürücü hesabı aktif olsun",
+
+    mobileLogin: "Mobil uygulama girişi",
+    mobileLoginDescription:
+      "Sürücü telefon numarası veya e-posta adresi ile belirlediğiniz şifreyi kullanacaktır.",
+
+    cancel: "Vazgeç",
+    saving: "Kaydediliyor...",
+    saveChanges: "Değişiklikleri Kaydet",
+    saveDriver: "Sürücüyü Kaydet",
+  },
+
+  en: {
+    loadError: "Driver information could not be loaded.",
+    updated: "Driver information has been updated.",
+    temporaryPasswordRequired:
+      "You must enter a temporary password for the new driver.",
+    created: "Driver created successfully.",
+    saveError: "The driver could not be saved.",
+    vehicleAssigned: "Vehicle assigned to the driver.",
+    vehicleUnassigned: "Vehicle assignment removed.",
+    vehicleAssignmentError: "Vehicle assignment could not be saved.",
+    whatsappPhoneMissing:
+      "The driver does not have a phone number for WhatsApp.",
+    whatsappLinkError: "The WhatsApp link could not be created.",
+    resetReadySuffix:
+      "has a password reset link valid for 60 minutes.",
+    resetError: "The password reset link could not be created.",
+    deactivateConfirmSuffix:
+      "will lose mobile access. Continue?",
+    deactivated: "Driver has been deactivated.",
+    deactivateError: "The driver could not be deactivated.",
+
+    eyebrow: "TEAM MANAGEMENT",
+    title: "Drivers",
+    description:
+      "Create driver accounts, assign vehicles and manage mobile access.",
+    refresh: "Refresh",
+    newDriver: "+ New Driver",
+
+    totalDrivers: "Total Drivers",
+    activeDrivers: "Active Drivers",
+    assignedVehicle: "Vehicle Assigned",
+    waitingVehicle: "Awaiting Vehicle",
+
+    driverTeam: "Driver Team",
+    records: "records",
+    loadingDrivers: "Loading drivers...",
+    noDriversTitle: "No drivers added yet",
+    noDriversDescription: "Create your first driver account.",
+
+    contact: "Contact",
+    noEmail: "No email",
+    status: "Status",
+    active: "Active",
+    inactive: "Inactive",
+    vehicleAssignment: "Vehicle Assignment",
+    vehicleNotAssigned: "No vehicle assigned",
+    edit: "Edit",
+    preparing: "Preparing...",
+    whatsappReset: "Reset Password via WhatsApp",
+    deactivate: "Deactivate",
+
+    modalEditAria: "Edit driver",
+    modalCreateAria: "Add new driver",
+    driverAccount: "DRIVER ACCOUNT",
+    editDriver: "Edit Driver",
+    addDriver: "Add New Driver",
+    modalDescription:
+      "The driver will use these details to sign in to the mobile app.",
+
+    fullName: "Full Name",
+    fullNamePlaceholder: "Driver full name",
+    phone: "Phone",
+    email: "Email",
+    newPasswordOptional: "New password (optional)",
+    temporaryPassword: "Temporary password",
+    passwordPlaceholder: "At least 8 characters",
+    vehicle: "Vehicle",
+    noVehicleForNow: "Do not assign a vehicle yet",
+    accountActive: "Keep driver account active",
+
+    mobileLogin: "Mobile App Login",
+    mobileLoginDescription:
+      "The driver will sign in with their phone number or email address and the password you set.",
+
+    cancel: "Cancel",
+    saving: "Saving...",
+    saveChanges: "Save Changes",
+    saveDriver: "Save Driver",
+  },
+
+  es: {
+    loadError: "No se pudo cargar la información de los conductores.",
+    updated: "La información del conductor ha sido actualizada.",
+    temporaryPasswordRequired:
+      "Debe introducir una contraseña temporal para el nuevo conductor.",
+    created: "Conductor creado correctamente.",
+    saveError: "No se pudo guardar el conductor.",
+    vehicleAssigned: "Vehículo asignado al conductor.",
+    vehicleUnassigned: "Asignación de vehículo eliminada.",
+    vehicleAssignmentError: "No se pudo guardar la asignación del vehículo.",
+    whatsappPhoneMissing:
+      "El conductor no tiene un número de teléfono para WhatsApp.",
+    whatsappLinkError: "No se pudo crear el enlace de WhatsApp.",
+    resetReadySuffix:
+      "tiene un enlace de restablecimiento de contraseña válido durante 60 minutos.",
+    resetError: "No se pudo crear el enlace de restablecimiento de contraseña.",
+    deactivateConfirmSuffix:
+      "perderá el acceso móvil. ¿Continuar?",
+    deactivated: "El conductor ha sido desactivado.",
+    deactivateError: "No se pudo desactivar el conductor.",
+
+    eyebrow: "GESTIÓN DEL EQUIPO",
+    title: "Conductores",
+    description:
+      "Cree cuentas de conductores, asigne vehículos y gestione el acceso móvil.",
+    refresh: "Actualizar",
+    newDriver: "+ Nuevo Conductor",
+
+    totalDrivers: "Total de Conductores",
+    activeDrivers: "Conductores Activos",
+    assignedVehicle: "Vehículo Asignado",
+    waitingVehicle: "Pendiente de Vehículo",
+
+    driverTeam: "Equipo de Conductores",
+    records: "registros",
+    loadingDrivers: "Cargando conductores...",
+    noDriversTitle: "Aún no se han añadido conductores",
+    noDriversDescription: "Cree su primera cuenta de conductor.",
+
+    contact: "Contacto",
+    noEmail: "Sin correo",
+    status: "Estado",
+    active: "Activo",
+    inactive: "Inactivo",
+    vehicleAssignment: "Asignación de Vehículo",
+    vehicleNotAssigned: "Vehículo no asignado",
+    edit: "Editar",
+    preparing: "Preparando...",
+    whatsappReset: "Restablecer Contraseña por WhatsApp",
+    deactivate: "Desactivar",
+
+    modalEditAria: "Editar conductor",
+    modalCreateAria: "Añadir nuevo conductor",
+    driverAccount: "CUENTA DEL CONDUCTOR",
+    editDriver: "Editar Conductor",
+    addDriver: "Añadir Nuevo Conductor",
+    modalDescription:
+      "El conductor utilizará estos datos para iniciar sesión en la aplicación móvil.",
+
+    fullName: "Nombre Completo",
+    fullNamePlaceholder: "Nombre completo del conductor",
+    phone: "Teléfono",
+    email: "Correo electrónico",
+    newPasswordOptional: "Nueva contraseña (opcional)",
+    temporaryPassword: "Contraseña temporal",
+    passwordPlaceholder: "Al menos 8 caracteres",
+    vehicle: "Vehículo",
+    noVehicleForNow: "No asignar vehículo todavía",
+    accountActive: "Mantener activa la cuenta del conductor",
+
+    mobileLogin: "Acceso a la Aplicación Móvil",
+    mobileLoginDescription:
+      "El conductor iniciará sesión con su teléfono o correo electrónico y la contraseña establecida.",
+
+    cancel: "Cancelar",
+    saving: "Guardando...",
+    saveChanges: "Guardar Cambios",
+    saveDriver: "Guardar Conductor",
+  },
+
+  ar: {
+    loadError: "تعذر تحميل معلومات السائقين.",
+    updated: "تم تحديث معلومات السائق.",
+    temporaryPasswordRequired:
+      "يجب إدخال كلمة مرور مؤقتة للسائق الجديد.",
+    created: "تم إنشاء السائق بنجاح.",
+    saveError: "تعذر حفظ السائق.",
+    vehicleAssigned: "تم تعيين المركبة للسائق.",
+    vehicleUnassigned: "تمت إزالة تعيين المركبة.",
+    vehicleAssignmentError: "تعذر حفظ تعيين المركبة.",
+    whatsappPhoneMissing:
+      "لا يوجد رقم هاتف للسائق لاستخدام واتساب.",
+    whatsappLinkError: "تعذر إنشاء رابط واتساب.",
+    resetReadySuffix:
+      "لديه رابط لإعادة تعيين كلمة المرور صالح لمدة 60 دقيقة.",
+    resetError: "تعذر إنشاء رابط إعادة تعيين كلمة المرور.",
+    deactivateConfirmSuffix:
+      "سيتم إيقاف وصوله إلى تطبيق الهاتف. هل تريد المتابعة؟",
+    deactivated: "تم تعطيل السائق.",
+    deactivateError: "تعذر تعطيل السائق.",
+
+    eyebrow: "إدارة الفريق",
+    title: "السائقون",
+    description:
+      "أنشئ حسابات السائقين وعيّن المركبات وأدر الوصول إلى تطبيق الهاتف.",
+    refresh: "تحديث",
+    newDriver: "+ سائق جديد",
+
+    totalDrivers: "إجمالي السائقين",
+    activeDrivers: "السائقون النشطون",
+    assignedVehicle: "تم تعيين مركبة",
+    waitingVehicle: "بانتظار مركبة",
+
+    driverTeam: "فريق السائقين",
+    records: "سجلات",
+    loadingDrivers: "جارٍ تحميل السائقين...",
+    noDriversTitle: "لم تتم إضافة سائقين بعد",
+    noDriversDescription: "أنشئ أول حساب سائق.",
+
+    contact: "التواصل",
+    noEmail: "لا يوجد بريد إلكتروني",
+    status: "الحالة",
+    active: "نشط",
+    inactive: "غير نشط",
+    vehicleAssignment: "تعيين المركبة",
+    vehicleNotAssigned: "لم يتم تعيين مركبة",
+    edit: "تعديل",
+    preparing: "جارٍ التحضير...",
+    whatsappReset: "إعادة تعيين كلمة المرور عبر واتساب",
+    deactivate: "تعطيل",
+
+    modalEditAria: "تعديل السائق",
+    modalCreateAria: "إضافة سائق جديد",
+    driverAccount: "حساب السائق",
+    editDriver: "تعديل السائق",
+    addDriver: "إضافة سائق جديد",
+    modalDescription:
+      "سيستخدم السائق هذه البيانات لتسجيل الدخول إلى تطبيق الهاتف.",
+
+    fullName: "الاسم الكامل",
+    fullNamePlaceholder: "الاسم الكامل للسائق",
+    phone: "الهاتف",
+    email: "البريد الإلكتروني",
+    newPasswordOptional: "كلمة مرور جديدة (اختياري)",
+    temporaryPassword: "كلمة مرور مؤقتة",
+    passwordPlaceholder: "8 أحرف على الأقل",
+    vehicle: "المركبة",
+    noVehicleForNow: "عدم تعيين مركبة الآن",
+    accountActive: "إبقاء حساب السائق نشطاً",
+
+    mobileLogin: "تسجيل الدخول إلى تطبيق الهاتف",
+    mobileLoginDescription:
+      "سيسجل السائق الدخول برقم الهاتف أو البريد الإلكتروني وكلمة المرور التي تحددها.",
+
+    cancel: "إلغاء",
+    saving: "جارٍ الحفظ...",
+    saveChanges: "حفظ التغييرات",
+    saveDriver: "حفظ السائق",
+  },
+};
+
 export default function SupplierDriversPage() {
+  const { language } = useLanguage();
+  const t = TEXT[language] || TEXT.en;
+
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,13 +379,13 @@ export default function SupplierDriversPage() {
       setError(
         getErrorMessage(
           requestError,
-          "Sürücü bilgileri yüklenemedi.",
+          t.loadError,
         ),
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t.loadError]);
 
   useEffect(() => {
     loadData();
@@ -152,16 +479,16 @@ export default function SupplierDriversPage() {
     try {
       if (editingDriver) {
         await updateSupplierDriver(editingDriver.id, payload);
-        setMessage("Sürücü bilgileri güncellendi.");
+        setMessage(t.updated);
       } else {
         if (!payload.password) {
           throw new Error(
-            "Yeni sürücü için geçici şifre girmelisiniz.",
+            t.temporaryPasswordRequired,
           );
         }
 
         await createSupplierDriver(payload);
-        setMessage("Sürücü başarıyla oluşturuldu.");
+        setMessage(t.created);
       }
 
       closeForm();
@@ -170,7 +497,7 @@ export default function SupplierDriversPage() {
       setError(
         getErrorMessage(
           requestError,
-          "Sürücü kaydedilemedi.",
+          t.saveError,
         ),
       );
     } finally {
@@ -190,8 +517,8 @@ export default function SupplierDriversPage() {
 
       setMessage(
         vehicleId
-          ? "Araç sürücüye atandı."
-          : "Araç ataması kaldırıldı.",
+          ? t.vehicleAssigned
+          : t.vehicleUnassigned,
       );
 
       await loadData();
@@ -199,7 +526,7 @@ export default function SupplierDriversPage() {
       setError(
         getErrorMessage(
           requestError,
-          "Araç ataması kaydedilemedi.",
+          t.vehicleAssignmentError,
         ),
       );
     }
@@ -207,7 +534,7 @@ export default function SupplierDriversPage() {
 
   async function handlePasswordReset(driver) {
     if (!driver.phone) {
-      setError("Sürücünün WhatsApp için telefon numarası bulunmuyor.");
+      setError(t.whatsappPhoneMissing);
       return;
     }
 
@@ -219,11 +546,11 @@ export default function SupplierDriversPage() {
       const data = await createDriverPasswordResetLink(driver.id);
 
       if (!data?.whatsapp_url) {
-        throw new Error("WhatsApp bağlantısı oluşturulamadı.");
+        throw new Error(t.whatsappLinkError);
       }
 
       setMessage(
-        `${driver.name} için 60 dakikalık şifre sıfırlama bağlantısı hazırlandı.`,
+        `${driver.name} ${t.resetReadySuffix}`,
       );
 
       window.open(
@@ -235,7 +562,7 @@ export default function SupplierDriversPage() {
       setError(
         getErrorMessage(
           requestError,
-          "Şifre sıfırlama bağlantısı oluşturulamadı.",
+          t.resetError,
         ),
       );
     } finally {
@@ -245,7 +572,7 @@ export default function SupplierDriversPage() {
 
   async function handleDeactivate(driver) {
     const confirmed = window.confirm(
-      `${driver.name} isimli sürücünün mobil erişimi kapatılsın mı?`,
+      `${driver.name} ${t.deactivateConfirmSuffix}`,
     );
 
     if (!confirmed) return;
@@ -255,13 +582,13 @@ export default function SupplierDriversPage() {
 
     try {
       await deactivateSupplierDriver(driver.id);
-      setMessage("Sürücü pasif duruma alındı.");
+      setMessage(t.deactivated);
       await loadData();
     } catch (requestError) {
       setError(
         getErrorMessage(
           requestError,
-          "Sürücü pasif duruma alınamadı.",
+          t.deactivateError,
         ),
       );
     }
@@ -271,12 +598,13 @@ export default function SupplierDriversPage() {
     <main className="supplier-dashboard supplier-management-page">
       <section className="supplier-page-heading">
         <div>
-          <span className="supplier-eyebrow">EKİP YÖNETİMİ</span>
-          <h1>Sürücüler</h1>
-          <p>
-            Sürücü hesaplarını oluşturun, araçlarını belirleyin ve mobil
-            erişimlerini yönetin.
-          </p>
+          <span className="supplier-eyebrow">
+            {t.eyebrow}
+          </span>
+
+          <h1>{t.title}</h1>
+
+          <p>{t.description}</p>
         </div>
 
         <div className="supplier-heading-actions">
@@ -286,7 +614,7 @@ export default function SupplierDriversPage() {
             disabled={loading}
             onClick={loadData}
           >
-            Yenile
+            {t.refresh}
           </button>
 
           <button
@@ -294,42 +622,60 @@ export default function SupplierDriversPage() {
             type="button"
             onClick={openCreateForm}
           >
-            + Yeni Sürücü
+            {t.newDriver}
           </button>
         </div>
       </section>
 
       {error && (
-        <div className="supplier-message error">{error}</div>
+        <div className="supplier-message error">
+          {error}
+        </div>
       )}
 
       {message && (
-        <div className="supplier-message success">{message}</div>
+        <div className="supplier-message success">
+          {message}
+        </div>
       )}
 
       <section className="supplier-summary-grid supplier-management-summary">
-        <SummaryCard label="Toplam Sürücü" value={summary.total} />
-        <SummaryCard label="Aktif Sürücü" value={summary.active} />
-        <SummaryCard label="Araç Atanmış" value={summary.assigned} />
-        <SummaryCard label="Araç Bekleyen" value={summary.waiting} />
+        <SummaryCard
+          label={t.totalDrivers}
+          value={summary.total}
+        />
+        <SummaryCard
+          label={t.activeDrivers}
+          value={summary.active}
+        />
+        <SummaryCard
+          label={t.assignedVehicle}
+          value={summary.assigned}
+        />
+        <SummaryCard
+          label={t.waitingVehicle}
+          value={summary.waiting}
+        />
       </section>
 
       <section className="supplier-management-card">
         <div className="supplier-section-heading">
           <div>
-            <h2>Sürücü Ekibi</h2>
-            <p>{drivers.length} kayıt</p>
+            <h2>{t.driverTeam}</h2>
+            <p>
+              {drivers.length} {t.records}
+            </p>
           </div>
         </div>
 
         {loading ? (
           <div className="supplier-empty-state">
-            Sürücüler yükleniyor...
+            {t.loadingDrivers}
           </div>
         ) : drivers.length === 0 ? (
           <div className="supplier-empty-state">
-            <strong>Henüz sürücü eklenmedi</strong>
-            <p>İlk sürücü hesabınızı oluşturun.</p>
+            <strong>{t.noDriversTitle}</strong>
+            <p>{t.noDriversDescription}</p>
           </div>
         ) : (
           <div className="supplier-management-list">
@@ -350,13 +696,19 @@ export default function SupplierDriversPage() {
                 </div>
 
                 <div>
-                  <span className="supplier-field-label">İletişim</span>
+                  <span className="supplier-field-label">
+                    {t.contact}
+                  </span>
                   <strong>{driver.phone}</strong>
-                  <small>{driver.email || "E-posta yok"}</small>
+                  <small>
+                    {driver.email || t.noEmail}
+                  </small>
                 </div>
 
                 <div>
-                  <span className="supplier-field-label">Durum</span>
+                  <span className="supplier-field-label">
+                    {t.status}
+                  </span>
                   <span
                     className={
                       driver.is_active
@@ -364,22 +716,36 @@ export default function SupplierDriversPage() {
                         : "supplier-driver-status"
                     }
                   >
-                    {driver.is_active ? "Aktif" : "Pasif"}
+                    {driver.is_active
+                      ? t.active
+                      : t.inactive}
                   </span>
                 </div>
 
                 <label className="supplier-driver-vehicle-select">
-                  <span className="supplier-field-label">Araç ataması</span>
+                  <span className="supplier-field-label">
+                    {t.vehicleAssignment}
+                  </span>
+
                   <select
                     value={driver.vehicle_id || ""}
                     disabled={!driver.is_active}
                     onChange={(event) =>
-                      handleVehicleChange(driver, event.target.value)
+                      handleVehicleChange(
+                        driver,
+                        event.target.value,
+                      )
                     }
                   >
-                    <option value="">Araç atanmadı</option>
+                    <option value="">
+                      {t.vehicleNotAssigned}
+                    </option>
+
                     {activeVehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
+                      <option
+                        key={vehicle.id}
+                        value={vehicle.id}
+                      >
                         {vehicle.plate} — {vehicle.brand} {vehicle.model}
                       </option>
                     ))}
@@ -392,7 +758,7 @@ export default function SupplierDriversPage() {
                     type="button"
                     onClick={() => openEditForm(driver)}
                   >
-                    Düzenle
+                    {t.edit}
                   </button>
 
                   {driver.is_active && (
@@ -403,8 +769,8 @@ export default function SupplierDriversPage() {
                       onClick={() => handlePasswordReset(driver)}
                     >
                       {resettingDriverId === driver.id
-                        ? "Hazırlanıyor..."
-                        : "WhatsApp Şifre Sıfırla"}
+                        ? t.preparing
+                        : t.whatsappReset}
                     </button>
                   )}
 
@@ -414,7 +780,7 @@ export default function SupplierDriversPage() {
                       type="button"
                       onClick={() => handleDeactivate(driver)}
                     >
-                      Pasif Yap
+                      {t.deactivate}
                     </button>
                   )}
                 </div>
@@ -438,20 +804,33 @@ export default function SupplierDriversPage() {
             className="supplier-modal-card"
             role="dialog"
             aria-modal="true"
-            aria-label={editingDriver ? "Sürücü düzenle" : "Yeni sürücü ekle"}
+            aria-label={
+              editingDriver
+                ? t.modalEditAria
+                : t.modalCreateAria
+            }
           >
             <div className="supplier-modal-header">
               <div>
-                <span className="supplier-eyebrow">SÜRÜCÜ HESABI</span>
+                <span className="supplier-eyebrow">
+                  {t.driverAccount}
+                </span>
+
                 <h2>
-                  {editingDriver ? "Sürücüyü Düzenle" : "Yeni Sürücü Ekle"}
+                  {editingDriver
+                    ? t.editDriver
+                    : t.addDriver}
                 </h2>
-                <p>
-                  Sürücü bu bilgilerle mobil uygulamaya giriş yapacaktır.
-                </p>
+
+                <p>{t.modalDescription}</p>
               </div>
 
-              <button type="button" onClick={closeForm}>×</button>
+              <button
+                type="button"
+                onClick={closeForm}
+              >
+                ×
+              </button>
             </div>
 
             <form
@@ -459,35 +838,44 @@ export default function SupplierDriversPage() {
               onSubmit={handleSubmit}
             >
               <div className="supplier-form-grid">
-                <FormField label="Ad Soyad">
+                <FormField label={t.fullName}>
                   <input
                     required
                     value={form.name}
-                    placeholder="Sürücü adı soyadı"
+                    placeholder={t.fullNamePlaceholder}
                     onChange={(event) =>
-                      updateField("name", event.target.value)
+                      updateField(
+                        "name",
+                        event.target.value,
+                      )
                     }
                   />
                 </FormField>
 
-                <FormField label="Telefon">
+                <FormField label={t.phone}>
                   <input
                     required
                     value={form.phone}
                     placeholder="+90 5XX XXX XX XX"
                     onChange={(event) =>
-                      updateField("phone", event.target.value)
+                      updateField(
+                        "phone",
+                        event.target.value,
+                      )
                     }
                   />
                 </FormField>
 
-                <FormField label="E-posta">
+                <FormField label={t.email}>
                   <input
                     type="email"
                     value={form.email}
-                    placeholder="surucu@firma.com"
+                    placeholder="driver@company.com"
                     onChange={(event) =>
-                      updateField("email", event.target.value)
+                      updateField(
+                        "email",
+                        event.target.value,
+                      )
                     }
                   />
                 </FormField>
@@ -495,8 +883,8 @@ export default function SupplierDriversPage() {
                 <FormField
                   label={
                     editingDriver
-                      ? "Yeni şifre (isteğe bağlı)"
-                      : "Geçici şifre"
+                      ? t.newPasswordOptional
+                      : t.temporaryPassword
                   }
                 >
                   <input
@@ -504,23 +892,35 @@ export default function SupplierDriversPage() {
                     required={!editingDriver}
                     minLength="8"
                     value={form.password}
-                    placeholder="En az 8 karakter"
+                    placeholder={t.passwordPlaceholder}
                     onChange={(event) =>
-                      updateField("password", event.target.value)
+                      updateField(
+                        "password",
+                        event.target.value,
+                      )
                     }
                   />
                 </FormField>
 
-                <FormField label="Araç">
+                <FormField label={t.vehicle}>
                   <select
                     value={form.vehicle_id}
                     onChange={(event) =>
-                      updateField("vehicle_id", event.target.value)
+                      updateField(
+                        "vehicle_id",
+                        event.target.value,
+                      )
                     }
                   >
-                    <option value="">Şimdilik araç atama</option>
+                    <option value="">
+                      {t.noVehicleForNow}
+                    </option>
+
                     {activeVehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
+                      <option
+                        key={vehicle.id}
+                        value={vehicle.id}
+                      >
                         {vehicle.plate} — {vehicle.brand} {vehicle.model}
                       </option>
                     ))}
@@ -532,19 +932,20 @@ export default function SupplierDriversPage() {
                     type="checkbox"
                     checked={form.is_active}
                     onChange={(event) =>
-                      updateField("is_active", event.target.checked)
+                      updateField(
+                        "is_active",
+                        event.target.checked,
+                      )
                     }
                   />
-                  <span>Sürücü hesabı aktif olsun</span>
+
+                  <span>{t.accountActive}</span>
                 </label>
               </div>
 
               <div className="supplier-driver-login-info">
-                <strong>Mobil uygulama girişi</strong>
-                <p>
-                  Sürücü telefon numarası veya e-posta adresi ile
-                  belirlediğiniz şifreyi kullanacaktır.
-                </p>
+                <strong>{t.mobileLogin}</strong>
+                <p>{t.mobileLoginDescription}</p>
               </div>
 
               <div className="supplier-modal-actions">
@@ -554,7 +955,7 @@ export default function SupplierDriversPage() {
                   disabled={saving}
                   onClick={closeForm}
                 >
-                  Vazgeç
+                  {t.cancel}
                 </button>
 
                 <button
@@ -563,10 +964,10 @@ export default function SupplierDriversPage() {
                   disabled={saving}
                 >
                   {saving
-                    ? "Kaydediliyor..."
+                    ? t.saving
                     : editingDriver
-                      ? "Değişiklikleri Kaydet"
-                      : "Sürücüyü Kaydet"}
+                      ? t.saveChanges
+                      : t.saveDriver}
                 </button>
               </div>
             </form>
@@ -577,7 +978,10 @@ export default function SupplierDriversPage() {
   );
 }
 
-function SummaryCard({ label, value }) {
+function SummaryCard({
+  label,
+  value,
+}) {
   return (
     <article className="supplier-summary-card">
       <span>{label}</span>
@@ -586,7 +990,10 @@ function SummaryCard({ label, value }) {
   );
 }
 
-function FormField({ label, children }) {
+function FormField({
+  label,
+  children,
+}) {
   return (
     <label className="supplier-form-field">
       <span>{label}</span>
@@ -605,13 +1012,22 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-function getErrorMessage(error, fallback) {
-  const validationErrors = error?.response?.data?.errors;
+function getErrorMessage(
+  error,
+  fallback,
+) {
+  const validationErrors =
+    error?.response?.data?.errors;
 
   if (validationErrors) {
-    const firstError = Object.values(validationErrors)?.[0]?.[0];
+    const firstError =
+      Object.values(
+        validationErrors,
+      )?.[0]?.[0];
 
-    if (firstError) return firstError;
+    if (firstError) {
+      return firstError;
+    }
   }
 
   return (

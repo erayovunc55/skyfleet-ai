@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import SupplierAvailableJobsPage from "./pages/SupplierAvailableJobsPage";
 import SupplierDashboardPage from "./pages/SupplierDashboardPage";
+import SupplierCoveragePage from "./pages/SupplierCoveragePage";
 import SupplierDriversPage from "./pages/SupplierDriversPage";
 import SupplierFinancePage from "./pages/SupplierFinancePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
@@ -18,6 +19,7 @@ const NAVIGATION_ITEMS = [
   { id: "history", label: "Geçmiş", icon: "🗂️" },
   { id: "drivers", label: "Sürücüler", icon: "👤" },
   { id: "vehicles", label: "Araçlar", icon: "🚐" },
+  { id: "coverage", label: "Kapsama Alanları", icon: "🌍" },
   { id: "finance", label: "Hakedişlerim", icon: "💶" },
   { id: "invoices", label: "Faturalar", icon: "📄" },
 ];
@@ -119,6 +121,7 @@ export default function App() {
       {currentPage === "history" && <SupplierHistoryPage />}
       {currentPage === "drivers" && <SupplierDriversPage />}
       {currentPage === "vehicles" && <SupplierVehiclesPage />}
+      {currentPage === "coverage" && <SupplierCoveragePage />}
       {currentPage === "finance" && <SupplierFinancePage />}
       {currentPage === "invoices" && <SupplierInvoicesPage />}
     </div>

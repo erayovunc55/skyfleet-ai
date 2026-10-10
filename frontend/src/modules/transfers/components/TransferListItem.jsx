@@ -34,6 +34,8 @@ export default function TransferListItem({
   return (
     <div
       className={active ? "transfer-list-item active" : "transfer-list-item"}
+      data-status={transfer.status}
+      data-assigned={transfer.driver ? "yes" : "no"}
       role="button"
       tabIndex={0}
       onClick={onClick}

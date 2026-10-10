@@ -135,6 +135,9 @@ class AuthController extends Controller
                 'is_active' =>
                     $user->is_active,
 
+                'permissions' =>
+                    $user->permissions,
+
                 'vehicle_id' =>
                     $user->vehicle_id,
 

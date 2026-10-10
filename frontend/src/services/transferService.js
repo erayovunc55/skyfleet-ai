@@ -1,7 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL;
+﻿const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
 export async function getTransfers() {
-  const token = localStorage.getItem("skyfleet_token");
+  const token = localStorage.getItem("skyfleet_panel_token");
 
   const response = await fetch(
     `${API_URL}/transfers`,

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps -- search fields in this legacy workspace submit explicitly */
 import { useEffect, useMemo, useState } from "react";
 
 import { useLanguage } from "../../../i18n";
@@ -24,14 +25,570 @@ L.es={...L.en,eyebrow:"CENTRO DE DETALLE DEL PROVEEDOR",close:"Cerrar",overview:
 export default function SupplierDetailCenter({supplierId,drivers=[],vehicles=[],onClose}){
   const {language}=useLanguage(); const text=L[language]||L.en;
   const [supplier,setSupplier]=useState(null); const [transfers,setTransfers]=useState([]); const [tab,setTab]=useState("overview"); const [loading,setLoading]=useState(true); const [error,setError]=useState("");
+  const [decisionBusy,setDecisionBusy]=useState(false);
+  const [decisionError,setDecisionError]=useState("");
+  const [decisionSuccess,setDecisionSuccess]=useState("");
   useEffect(()=>{let mounted=true;(async()=>{setLoading(true);setError("");try{const [detail,tr]=await Promise.all([supplierService.getSupplier(supplierId),transferService.getDispatcherTransfers()]);if(!mounted)return;setSupplier(detail);const rows=Array.isArray(tr?.data)?tr.data:Array.isArray(tr)?tr:[];setTransfers(rows.filter(x=>Number(x.supplier_id||x.supplier?.id||x.supplier_company?.id)===Number(supplierId)));}catch(e){if(mounted)setError(e?.response?.data?.message||e?.message||text.loadError);}finally{if(mounted)setLoading(false);}})();return()=>{mounted=false}},[supplierId,text.loadError]);
+  async function reloadSupplier(){
+    const detail=await supplierService.getSupplier(supplierId);
+    setSupplier(detail);
+    return detail;
+  }
+
+  async function handleDecision(action,payload={}){
+    if(!supplier||decisionBusy)return;
+
+    setDecisionBusy(true);
+    setDecisionError("");
+    setDecisionSuccess("");
+
+    try{
+      let result;
+
+      if(action==="approve"){
+        result=await supplierService.approveSupplier(
+          supplier.id,
+          payload
+        );
+      }else if(action==="revision"){
+        result=await supplierService.requestRevision(
+          supplier.id,
+          payload
+        );
+      }else if(action==="reject"){
+        result=await supplierService.rejectSupplier(
+          supplier.id,
+          payload
+        );
+      }else if(action==="suspend"){
+        result=await supplierService.suspendSupplier(
+          supplier.id,
+          payload
+        );
+      }else if(action==="reactivate"){
+        result=await supplierService.reactivateSupplier(
+          supplier.id,
+          payload
+        );
+      }
+
+      if(result){
+        setSupplier(result);
+      }else{
+        await reloadSupplier();
+      }
+
+      setDecisionSuccess(
+        language==="tr"
+          ? "Tedarikçi durumu başarıyla güncellendi."
+          : "Supplier status updated successfully."
+      );
+    }catch(e){
+      setDecisionError(
+        e?.response?.data?.message
+        || Object.values(
+          e?.response?.data?.errors||{}
+        ).flat()?.[0]
+        || e?.message
+        || (language==="tr"
+          ? "İşlem tamamlanamadı."
+          : "The action could not be completed.")
+      );
+    }finally{
+      setDecisionBusy(false);
+    }
+  }
   const sDrivers=useMemo(()=>drivers.filter(x=>Number(x.supplier_id||x.supplier_company?.id)===Number(supplierId)),[drivers,supplierId]);
   const sVehicles=useMemo(()=>vehicles.filter(x=>Number(x.supplier_id||x.supplier_company?.id)===Number(supplierId)),[vehicles,supplierId]);
   const summary=useMemo(()=>({completed:transfers.filter(x=>x.status==="completed").length,active:transfers.filter(x=>ACTIVE.includes(x.status)).length,sales:transfers.reduce((a,x)=>a+(Number(x.price)||0),0)}),[transfers]);
   const tabs=["overview","coverage","drivers","vehicles","operations","finance","documents","activity"];
-  return <div className="supplier-detail-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose?.()}><section className="supplier-detail-center" role="dialog" aria-modal="true"><header className="supplier-detail-header"><div><small>{text.eyebrow}</small><h2>{supplier?.company_name||"Supplier"}</h2><p>{loc(supplier)||text.noData}</p></div><div className="supplier-detail-header-side">{supplier&&<span className={`supplier-detail-operation ${supplier.is_active?"is-open":"is-closed"}`}>{supplier.is_active?text.operational:text.closed}</span>}<button onClick={onClose}>× {text.close}</button></div></header><nav className="supplier-detail-tabs">{tabs.map(k=><button key={k} className={tab===k?"is-active":""} onClick={()=>setTab(k)}>{text[k]}</button>)}</nav><div className="supplier-detail-body">{loading&&<div className="supplier-detail-state">{text.loading}</div>}{error&&<div className="supplier-detail-state error">{error}</div>}{!loading&&!error&&supplier&&<>{tab==="overview"&&<Overview supplier={supplier} text={text} drivers={sDrivers.length} vehicles={sVehicles.length} transfers={transfers.length} finance={summary}/>} {tab==="coverage"&&<SupplierCoverageCenter supplierId={supplierId} language={language}/>} {tab==="drivers"&&<Drivers rows={sDrivers} text={text}/>} {tab==="vehicles"&&<Vehicles rows={sVehicles} text={text}/>} {tab==="operations"&&<Operations rows={transfers} text={text} language={language}/>} {tab==="finance"&&<Finance supplierId={supplierId} text={text} language={language}/>} {tab==="documents"&&<SupplierComplianceCenter supplierId={supplierId} text={text} language={language}/>} {tab==="activity"&&<SupplierActivityCenter supplierId={supplierId} language={language}/>}</>}</div></section></div>;
+  return <div className="supplier-detail-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose?.()}><section className="supplier-detail-center" role="dialog" aria-modal="true"><header className="supplier-detail-header"><div><small>{text.eyebrow}</small><h2>{supplier?.company_name||"Supplier"}</h2><p>{loc(supplier)||text.noData}</p></div><div className="supplier-detail-header-side">{supplier&&<span className={`supplier-detail-operation ${supplier.is_active?"is-open":"is-closed"}`}>{supplier.is_active?text.operational:text.closed}</span>}<button onClick={onClose}>× {text.close}</button></div></header><nav className="supplier-detail-tabs">{tabs.map(k=><button key={k} className={tab===k?"is-active":""} onClick={()=>setTab(k)}>{text[k]}</button>)}</nav><div className="supplier-detail-body">{loading&&<div className="supplier-detail-state">{text.loading}</div>}{error&&<div className="supplier-detail-state error">{error}</div>}{!loading&&!error&&supplier&&<>
+  <SupplierDecisionPanel
+    supplier={supplier}
+    language={language}
+    busy={decisionBusy}
+    error={decisionError}
+    success={decisionSuccess}
+    onDecision={handleDecision}
+  />{tab==="overview"&&<Overview supplier={supplier} text={text} drivers={sDrivers.length} vehicles={sVehicles.length} transfers={transfers.length} finance={summary}/>} {tab==="coverage"&&<SupplierCoverageCenter supplierId={supplierId} language={language}/>} {tab==="drivers"&&<Drivers rows={sDrivers} text={text}/>} {tab==="vehicles"&&<Vehicles rows={sVehicles} text={text}/>} {tab==="operations"&&<Operations rows={transfers} text={text} language={language}/>} {tab==="finance"&&<Finance supplierId={supplierId} text={text} language={language}/>} {tab==="documents"&&<SupplierComplianceCenter supplierId={supplierId} text={text} language={language}/>} {tab==="activity"&&<SupplierActivityCenter supplierId={supplierId} language={language}/>}</>}</div></section></div>;
 }
 
+function SupplierDecisionPanel({
+  supplier,
+  language,
+  busy,
+  error,
+  success,
+  onDecision,
+}){
+  const tr=language==="tr";
+  const status=supplier?.status||"pending";
+
+  const [dialog,setDialog]=useState(null);
+  const [reason,setReason]=useState("");
+  const [note,setNote]=useState("");
+
+  const statusText={
+    pending:tr?"Başvuru Bekliyor":"Application Pending",
+    under_review:tr?"İncelemede":"Under Review",
+    revision_requested:tr?"Revizyon İstendi":"Revision Requested",
+    approved:tr?"Onaylandı":"Approved",
+    rejected:tr?"Reddedildi":"Rejected",
+    suspended:tr?"Askıya Alındı":"Suspended",
+  }[status]||status;
+
+  const canApprove=[
+    "pending",
+    "under_review",
+    "revision_requested",
+  ].includes(status);
+
+  const canRevision=[
+    "pending",
+    "under_review",
+  ].includes(status);
+
+  const canReject=[
+    "pending",
+    "under_review",
+    "revision_requested",
+  ].includes(status);
+
+  function openDialog(type){
+    setReason("");
+    setNote("");
+    setDialog(type);
+  }
+
+  function closeDialog(){
+    if(busy)return;
+    setDialog(null);
+    setReason("");
+    setNote("");
+  }
+
+  async function confirmDecision(){
+    if(!dialog||busy)return;
+
+    if(
+      ["revision","reject","suspend"].includes(dialog)
+      && !reason.trim()
+    ){
+      return;
+    }
+
+    const payload={};
+
+    if(
+      ["revision","reject","suspend"].includes(dialog)
+    ){
+      payload.reason=reason.trim();
+    }
+
+    if(note.trim()){
+      payload.note=note.trim();
+    }
+
+    await onDecision(dialog,payload);
+
+    setDialog(null);
+    setReason("");
+    setNote("");
+  }
+
+  const dialogConfig={
+    approve:{
+      eyebrow:tr
+        ?"TEDARİKÇİ ONAYI"
+        :"SUPPLIER APPROVAL",
+      title:tr
+        ?"Tedarikçiyi onayla"
+        :"Approve supplier",
+      text:tr
+        ?"Bu işlem şirketi operasyona açar ve tedarikçi portal hesabını aktif eder."
+        :"This action enables supplier operations and activates portal access.",
+      confirm:tr?"Onayla ve Aktif Et":"Approve & Activate",
+      tone:"approve",
+      reasonRequired:false,
+    },
+
+    revision:{
+      eyebrow:tr
+        ?"REVİZYON TALEBİ"
+        :"REVISION REQUEST",
+      title:tr
+        ?"Tedarikçiden revizyon iste"
+        :"Request revision",
+      text:tr
+        ?"Eksik, hatalı veya yeniden gönderilmesi gereken bilgileri açık şekilde belirtin."
+        :"Clearly describe the information or documents that need to be corrected or resubmitted.",
+      confirm:tr?"Revizyon Talebi Gönder":"Send Revision Request",
+      tone:"revision",
+      reasonRequired:true,
+    },
+
+    reject:{
+      eyebrow:tr
+        ?"BAŞVURU REDDİ"
+        :"APPLICATION REJECTION",
+      title:tr
+        ?"Tedarikçi başvurusunu reddet"
+        :"Reject supplier application",
+      text:tr
+        ?"Ret nedeni aktivite geçmişine kaydedilecektir."
+        :"The rejection reason will be recorded in the supplier activity history.",
+      confirm:tr?"Başvuruyu Reddet":"Reject Application",
+      tone:"reject",
+      reasonRequired:true,
+    },
+
+    suspend:{
+      eyebrow:tr
+        ?"OPERASYON DURDURMA"
+        :"SUPPLIER SUSPENSION",
+      title:tr
+        ?"Tedarikçiyi askıya al"
+        :"Suspend supplier",
+      text:tr
+        ?"Tedarikçinin operasyon ve portal erişimi geçici olarak kapatılacaktır."
+        :"Supplier operations and portal access will be temporarily disabled.",
+      confirm:tr?"Askıya Al":"Suspend Supplier",
+      tone:"suspend",
+      reasonRequired:true,
+    },
+
+    reactivate:{
+      eyebrow:tr
+        ?"YENİDEN AKTİVASYON"
+        :"REACTIVATION",
+      title:tr
+        ?"Tedarikçiyi yeniden aktif et"
+        :"Reactivate supplier",
+      text:tr
+        ?"Operasyon ve portal erişimi tekrar açılacaktır."
+        :"Operational and portal access will be enabled again.",
+      confirm:tr?"Yeniden Aktif Et":"Reactivate Supplier",
+      tone:"approve",
+      reasonRequired:false,
+    },
+  };
+
+  const config=dialog?dialogConfig[dialog]:null;
+
+  return (
+    <>
+      <section className={`supplier-decision-panel decision-${status}`}>
+        <div className="supplier-decision-heading">
+          <div>
+            <small>
+              {tr
+                ?"TEDARİKÇİ BAŞVURU İNCELEMESİ"
+                :"SUPPLIER APPLICATION REVIEW"}
+            </small>
+
+            <h3>{statusText}</h3>
+
+            <p>
+              {status==="approved"
+                ? (
+                  tr
+                    ?"Bu tedarikçi onaylandı. Operasyon ve portal erişimi açık."
+                    :"This supplier is approved. Operational and portal access are enabled."
+                )
+                : status==="suspended"
+                ? (
+                  tr
+                    ?"Tedarikçi geçici olarak operasyonlara ve portal erişimine kapatılmış."
+                    :"This supplier is temporarily suspended from operations and portal access."
+                )
+                : status==="rejected"
+                ? (
+                  tr
+                    ?"Bu başvuru reddedilmiş durumda. Aktivite Geçmişi sekmesinden karar kaydını inceleyebilirsiniz."
+                    :"This application has been rejected. Review the decision history in the Activity Log tab."
+                )
+                : status==="revision_requested"
+                ? (
+                  tr
+                    ?"Tedarikçiden revizyon bekleniyor. Belgeler ve başvuru detaylarını takip edin."
+                    :"A revision is currently requested from the supplier. Monitor the submitted information and documents."
+                )
+                : (
+                  tr
+                    ?"Şirket bilgilerini, operasyon kapasitesini ve Belgeler & Uygunluk sekmesini inceleyerek karar verin."
+                    :"Review company details, operational capacity and the Documents & Compliance tab before making a decision."
+                )}
+            </p>
+          </div>
+
+          <span className={`supplier-review-status status-${status}`}>
+            {statusText}
+          </span>
+        </div>
+
+        {error&&(
+          <div className="supplier-decision-message error">
+            {error}
+          </div>
+        )}
+
+        {success&&(
+          <div className="supplier-decision-message success">
+            {success}
+          </div>
+        )}
+
+        <div className="supplier-decision-actions">
+          {canApprove&&(
+            <button
+              type="button"
+              className="supplier-decision-button approve"
+              disabled={busy}
+              onClick={()=>openDialog("approve")}
+            >
+              ✓ {tr?"Onayla":"Approve"}
+            </button>
+          )}
+
+          {canRevision&&(
+            <button
+              type="button"
+              className="supplier-decision-button revision"
+              disabled={busy}
+              onClick={()=>openDialog("revision")}
+            >
+              ↺ {tr?"Revizyon İste":"Request Revision"}
+            </button>
+          )}
+
+          {canReject&&(
+            <button
+              type="button"
+              className="supplier-decision-button reject"
+              disabled={busy}
+              onClick={()=>openDialog("reject")}
+            >
+              × {tr?"Reddet":"Reject"}
+            </button>
+          )}
+
+          {status==="approved"&&(
+            <button
+              type="button"
+              className="supplier-decision-button suspend"
+              disabled={busy}
+              onClick={()=>openDialog("suspend")}
+            >
+              ⏸ {tr?"Askıya Al":"Suspend"}
+            </button>
+          )}
+
+          {status==="suspended"&&(
+            <button
+              type="button"
+              className="supplier-decision-button reactivate"
+              disabled={busy}
+              onClick={()=>openDialog("reactivate")}
+            >
+              ✓ {tr?"Yeniden Aktif Et":"Reactivate"}
+            </button>
+          )}
+
+          {busy&&(
+            <span className="supplier-decision-working">
+              {tr?"İşleniyor...":"Processing..."}
+            </span>
+          )}
+        </div>
+      </section>
+
+      {dialog&&config&&(
+        <div
+          className="supplier-decision-modal-backdrop"
+          onMouseDown={e=>{
+            if(e.target===e.currentTarget){
+              closeDialog();
+            }
+          }}
+        >
+          <section
+            className={`supplier-decision-modal modal-${config.tone}`}
+            role="dialog"
+            aria-modal="true"
+          >
+            <header className="supplier-decision-modal-header">
+              <div>
+                <small>{config.eyebrow}</small>
+                <h3>{config.title}</h3>
+                <p>{config.text}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDialog}
+                disabled={busy}
+                aria-label={tr?"Kapat":"Close"}
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="supplier-decision-modal-body">
+              {config.reasonRequired&&(
+                <label>
+                  <span>
+                    {dialog==="revision"
+                      ? (tr?"Revizyon açıklaması *":"Revision details *")
+                      : dialog==="reject"
+                      ? (tr?"Ret nedeni *":"Rejection reason *")
+                      : (tr?"Askıya alma nedeni *":"Suspension reason *")}
+                  </span>
+
+                  <textarea
+                    rows="4"
+                    value={reason}
+                    onChange={e=>setReason(e.target.value)}
+                    placeholder={
+                      dialog==="revision"
+                        ? (
+                          tr
+                            ?"Örn: Sigorta belgesinin güncel kopyasını yükleyin."
+                            :"Example: Please upload a current insurance certificate."
+                        )
+                        : dialog==="reject"
+                        ? (
+                          tr
+                            ?"Başvurunun neden reddedildiğini açıklayın."
+                            :"Explain why the application is being rejected."
+                        )
+                        : (
+                          tr
+                            ?"Askıya alma nedenini açıklayın."
+                            :"Explain why the supplier is being suspended."
+                        )
+                    }
+                    autoFocus
+                  />
+                </label>
+              )}
+
+              <label>
+                <span>
+                  {tr
+                    ?"İç operasyon notu"
+                    :"Internal operations note"}
+                  <small>
+                    {tr?" · isteğe bağlı":" · optional"}
+                  </small>
+                </span>
+
+                <textarea
+                  rows="3"
+                  value={note}
+                  onChange={e=>setNote(e.target.value)}
+                  placeholder={
+                    tr
+                      ?"Yalnızca operasyon ekibinin görmesi gereken not..."
+                      :"Internal note for the operations team..."
+                  }
+                  autoFocus={!config.reasonRequired}
+                />
+              </label>
+
+              {dialog==="approve"&&(
+                <div className="supplier-decision-impact impact-positive">
+                  <strong>
+                    {tr
+                      ?"Onay sonrasında"
+                      :"After approval"}
+                  </strong>
+                  <span>
+                    ✓ {tr
+                      ?"Tedarikçi operasyona açılır"
+                      :"Supplier becomes operational"}
+                  </span>
+                  <span>
+                    ✓ {tr
+                      ?"Portal hesabı aktif edilir"
+                      :"Portal access is activated"}
+                  </span>
+                </div>
+              )}
+
+              {dialog==="suspend"&&(
+                <div className="supplier-decision-impact">
+                  <strong>
+                    {tr
+                      ?"Askıya alma sonrasında"
+                      :"After suspension"}
+                  </strong>
+                  <span>
+                    × {tr
+                      ?"Operasyon erişimi kapatılır"
+                      :"Operational access is disabled"}
+                  </span>
+                  <span>
+                    × {tr
+                      ?"Portal hesabı pasif edilir"
+                      :"Portal access is disabled"}
+                  </span>
+                </div>
+              )}
+
+              {dialog==="reactivate"&&(
+                <div className="supplier-decision-impact impact-positive">
+                  <strong>
+                    {tr
+                      ?"Yeniden aktivasyon sonrasında"
+                      :"After reactivation"}
+                  </strong>
+                  <span>
+                    ✓ {tr
+                      ?"Operasyon erişimi tekrar açılır"
+                      :"Operational access is restored"}
+                  </span>
+                  <span>
+                    ✓ {tr
+                      ?"Portal hesabı yeniden aktif edilir"
+                      :"Portal access is reactivated"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <footer className="supplier-decision-modal-footer">
+              <button
+                type="button"
+                className="supplier-modal-cancel"
+                onClick={closeDialog}
+                disabled={busy}
+              >
+                {tr?"Vazgeç":"Cancel"}
+              </button>
+
+              <button
+                type="button"
+                className={`supplier-modal-confirm confirm-${config.tone}`}
+                disabled={
+                  busy
+                  || (
+                    config.reasonRequired
+                    && !reason.trim()
+                  )
+                }
+                onClick={confirmDecision}
+              >
+                {busy
+                  ? (tr?"İşleniyor...":"Processing...")
+                  : config.confirm}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+    </>
+  );
+}
 function Overview({supplier,text,drivers,vehicles,transfers,finance}){const bc=supplier.branches?.length||supplier.branches_count||0;const st=supplier.status==="approved"?text.approved:supplier.status||text.noData;return <div className="supplier-detail-stack"><section className="supplier-detail-section"><h3>{text.operationalSnapshot}</h3><div className="supplier-detail-kpis"><K label={text.totalTransfers} value={transfers}/><K label={text.activeTransfers} value={finance.active}/><K label={text.completed} value={finance.completed}/><K label={text.recordedSales} value={`${finance.sales.toFixed(2)} ${supplier.default_currency||""}`}/></div></section><section className="supplier-detail-section"><h3>{text.readiness}</h3><div className="supplier-detail-kpis"><K label={text.driverCoverage} value={drivers}/><K label={text.vehicleCoverage} value={vehicles}/><K label={text.branchCoverage} value={bc}/><K label={text.approvalState} value={st}/></div></section><section className="supplier-detail-section"><h3>{text.contactProfile}</h3><div className="supplier-detail-info-grid">{[[text.status,st],[text.location,loc(supplier)],[text.contact,supplier.contact_name],[text.email,supplier.email],[text.phone,supplier.phone],[text.whatsapp,supplier.whatsapp],[text.website,supplier.website],[text.tax,supplier.tax_number],[text.registration,supplier.registration_number],[text.currency,supplier.default_currency],[text.timezone,supplier.timezone],[text.branches,bc]].map(([a,b])=><I key={a} label={a} value={b}/>)}</div></section></div>}
 function Drivers({rows,text}){if(!rows.length)return <div className="supplier-detail-state">{text.noDrivers}</div>;return <Table heads={[text.driver,text.phone,text.email,text.assignment,text.status]} rows={rows.map(x=>[x.name,x.phone||"—",x.email||"—",x.vehicle?.plate||x.vehicle_plate||"—",x.is_active?text.active:text.passive])}/>}
 function Vehicles({rows,text}){if(!rows.length)return <div className="supplier-detail-state">{text.noVehicles}</div>;return <Table heads={[text.plate,text.vehicle,text.status,text.capacity,text.insurance]} rows={rows.map(x=>[x.plate,[x.brand,x.model].filter(Boolean).join(" ")||"—",x.is_active?text.active:text.passive,x.passenger_capacity??"—",x.insurance_expiry_date||"—"])}/>}

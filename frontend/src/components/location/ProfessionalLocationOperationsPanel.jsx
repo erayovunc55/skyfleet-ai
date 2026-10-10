@@ -78,7 +78,7 @@ export default function ProfessionalLocationOperationsPanel({ initialLocation, l
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
 
-  const points = location.points || [];
+  const points = useMemo(() => location.points || [], [location.points]);
   const stats = useMemo(() => ({
     terminals: location.airport?.terminals?.length || 0,
     pickup: points.filter(p=>p.is_pickup_allowed).length,

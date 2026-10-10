@@ -11,13 +11,106 @@ class TransferFinancialService
 {
     public function synchronize(
         Transfer $transfer
-    ): TransferFinancial {
+    ): ?TransferFinancial {
         return DB::transaction(
             function () use ($transfer) {
-                $supplier = $this
-                    ->resolveSupplier(
+                $financial =
+                    TransferFinancial::query()
+                        ->where(
+                            'transfer_id',
+                            $transfer->id
+                        )
+                        ->first();
+
+                /*
+                |--------------------------------------------------------------------------
+                | Completed değilse yeni cari oluşturma
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $transfer->status !==
+                    'completed'
+                ) {
+                    if (!$financial) {
+                        return null;
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Approved / Paid kayıtları otomatik bozma
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        in_array(
+                            $financial->status,
+                            [
+                                TransferFinancial::
+                                    STATUS_APPROVED,
+
+                                TransferFinancial::
+                                    STATUS_PAID,
+                            ],
+                            true
+                        )
+                    ) {
+                        return $financial->fresh([
+                            'transfer',
+                            'supplier',
+                        ]);
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Önceden yanlışlıkla açılmış pending/disputed kayıt
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        $financial->status !==
+                        TransferFinancial::
+                            STATUS_CANCELLED
+                    ) {
+                        $financial->update([
+                            'status' =>
+                                TransferFinancial::
+                                    STATUS_CANCELLED,
+
+                            'note' =>
+                                $this->appendNote(
+                                    $financial->note,
+                                    'Transfer completed olmadığı için finans kaydı sistem tarafından iptal edildi.'
+                                ),
+                        ]);
+                    }
+
+                    return $financial->fresh([
+                        'transfer',
+                        'supplier',
+                    ]);
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Completed transfer için supplier çöz
+                |--------------------------------------------------------------------------
+                */
+
+                $supplier =
+                    $this->resolveSupplier(
                         $transfer
                     );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Supplier yoksa cari oluşturma
+                |--------------------------------------------------------------------------
+                */
+
+                if (!$supplier) {
+                    return null;
+                }
 
                 $grossAmount = round(
                     max(
@@ -40,7 +133,7 @@ class TransferFinancialService
                             100,
                             (float) (
                                 $supplier
-                                    ?->payout_percentage
+                                    ->payout_percentage
                                 ?? 0
                             )
                         )
@@ -60,17 +153,26 @@ class TransferFinancialService
                     2
                 );
 
-                $financial =
-                    TransferFinancial::query()
-                        ->firstOrNew([
+                /*
+                |--------------------------------------------------------------------------
+                | Mevcut finans kaydı yoksa oluştur
+                |--------------------------------------------------------------------------
+                */
+
+                if (!$financial) {
+                    $financial =
+                        new TransferFinancial([
                             'transfer_id' =>
                                 $transfer->id,
                         ]);
+                }
 
                 /*
-                 * Onaylanmış veya ödenmiş kayıtların
-                 * mali tutarları sonradan değiştirilmez.
-                 */
+                |--------------------------------------------------------------------------
+                | Approved / Paid kayıtların mali tutarlarını bozma
+                |--------------------------------------------------------------------------
+                */
+
                 if (
                     $financial->exists &&
                     in_array(
@@ -91,17 +193,15 @@ class TransferFinancialService
                     ]);
                 }
 
-                $status =
-                    $transfer->status ===
-                    'cancelled'
-                        ? TransferFinancial::
-                            STATUS_CANCELLED
-                        : TransferFinancial::
-                            STATUS_PENDING;
+                /*
+                |--------------------------------------------------------------------------
+                | Completed olduğunda cari pending açılır
+                |--------------------------------------------------------------------------
+                */
 
                 $financial->fill([
                     'supplier_id' =>
-                        $supplier?->id,
+                        $supplier->id,
 
                     'gross_amount' =>
                         $grossAmount,
@@ -127,7 +227,8 @@ class TransferFinancialService
                         ),
 
                     'status' =>
-                        $status,
+                        TransferFinancial::
+                            STATUS_PENDING,
 
                     'calculation_source' =>
                         'system',
@@ -155,6 +256,9 @@ class TransferFinancialService
     public function synchronizeAll(): array
     {
         $processed = 0;
+        $createdOrUpdated = 0;
+        $skipped = 0;
+        $cancelled = 0;
         $failed = 0;
         $errors = [];
 
@@ -164,6 +268,9 @@ class TransferFinancialService
                 100,
                 function ($transfers) use (
                     &$processed,
+                    &$createdOrUpdated,
+                    &$skipped,
+                    &$cancelled,
                     &$failed,
                     &$errors
                 ) {
@@ -171,12 +278,53 @@ class TransferFinancialService
                         $transfers as $transfer
                     ) {
                         try {
-                            $this->synchronize(
-                                $transfer
-                            );
+                            $before =
+                                TransferFinancial::query()
+                                    ->where(
+                                        'transfer_id',
+                                        $transfer->id
+                                    )
+                                    ->first();
+
+                            $beforeStatus =
+                                $before?->status;
+
+                            $financial =
+                                $this->synchronize(
+                                    $transfer
+                                );
 
                             $processed++;
-                        } catch (\Throwable $exception) {
+
+                            if (
+                                $transfer->status ===
+                                'completed'
+                            ) {
+                                if ($financial) {
+                                    $createdOrUpdated++;
+                                } else {
+                                    $skipped++;
+                                }
+
+                                continue;
+                            }
+
+                            if (
+                                $financial &&
+                                $beforeStatus !==
+                                    TransferFinancial::
+                                        STATUS_CANCELLED &&
+                                $financial->status ===
+                                    TransferFinancial::
+                                        STATUS_CANCELLED
+                            ) {
+                                $cancelled++;
+                            } else {
+                                $skipped++;
+                            }
+                        } catch (
+                            \Throwable $exception
+                        ) {
                             $failed++;
 
                             $errors[] = [
@@ -193,21 +341,69 @@ class TransferFinancialService
             );
 
         return [
-            'processed' => $processed,
-            'failed' => $failed,
-            'errors' => $errors,
+            'processed' =>
+                $processed,
+
+            'created_or_updated' =>
+                $createdOrUpdated,
+
+            'cancelled' =>
+                $cancelled,
+
+            'skipped' =>
+                $skipped,
+
+            'failed' =>
+                $failed,
+
+            'errors' =>
+                $errors,
         ];
     }
 
     private function resolveSupplier(
         Transfer $transfer
     ): ?Supplier {
-        if (!$transfer->supplier_id) {
+        if (
+            !$transfer->supplier_id
+        ) {
             return null;
         }
 
-        return Supplier::query()->find(
-            $transfer->supplier_id
-        );
+        return Supplier::query()
+            ->find(
+                $transfer->supplier_id
+            );
+    }
+
+    private function appendNote(
+        ?string $currentNote,
+        string $message
+    ): string {
+        $currentNote =
+            trim(
+                (string) $currentNote
+            );
+
+        $message =
+            trim($message);
+
+        if ($currentNote === '') {
+            return $message;
+        }
+
+        if (
+            str_contains(
+                $currentNote,
+                $message
+            )
+        ) {
+            return $currentNote;
+        }
+
+        return
+            $currentNote
+            . PHP_EOL
+            . $message;
     }
 }

@@ -1,0 +1,26 @@
+﻿SKYFLEET — Profesyonel Hakkımızda sayfası / 05.10.2026
+
+ZIP: SKYFLEET-hakkimizda-profesyonel-20261005.zip
+Hedef: /home/wbmtfkkcez3m/public_html
+
+1. cPanel Dosya Yöneticisi'nde public_html klasörünü açın.
+2. Mevcut index.html dosyasını indirin veya index.hakkimizda-oncesi-20261005.html adıyla yedekleyin.
+3. ZIP dosyasını public_html içine yükleyin ve aynı klasöre Extract (Çıkart) yapın.
+4. index.html doğrudan public_html içinde, yeni CSS/JS/görseller assets klasöründe olmalı.
+5. https://skytriptransfer.com/about adresini Ctrl+F5 ile yenileyin. Varsa hosting/CDN önbelleğini temizleyin.
+
+Bu paket güncel ana sayfayı ve yeni Hakkımızda sayfasını birlikte içerir.
+Arşiv: index.html, skyfleet-mark.svg ve assets dosyaları.
+Mevcut api, panel, supplier, agency ve .htaccess dosyalarını silmeyin. Backend dosyası yüklemek gerekmez.
+Geri dönüş: yedek index.html dosyasını eski adıyla geri koyun. Eski assets dosyalarını koruyun.
+
+Yerel önizleme: http://localhost:5188/about
+Görsel önizlemeler: about-en-1440.png ve about-tr-390.png
+
+Tasarım: siyah/krem/altın renkler; karşılama görseli; yaklaşım, hizmet ilkeleri, rezervasyon süreci ve iş ortaklığı bölümleri. TR/EN içerik.
+Kaynaklar: website/src/components/AboutExperience.jsx, website/src/styles/about-experience.css, website/src/App.jsx.
+Görseller: önceki ana sayfa çalışmasında üretilen hero-experience-v1.png ve mevcut service-eclass.jpg yeniden kullanıldı.
+
+Doğrulama: lint ve üretim derlemesi geçti. 1440px masaüstü/390px mobil tarayıcı kontrollerinde yatay taşma ve JavaScript hatası yok. TR/EN içerik, görsel yüklemeleri, mobil menü, yaklaşım bağlantısı ve transfer butonu doğrulandı; ekran görüntüleri incelendi.
+Bu düzenleme fiyatlandırma veya rezervasyon hesaplama kodunu değiştirmez.
+Yeni Hakkımızda tasarımı canlıya otomatik yüklenmedi.

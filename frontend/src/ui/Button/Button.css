@@ -79,13 +79,13 @@
 .sf-button-ghost:hover:not(:disabled) {
   color: var(--color-text);
   border-color: var(--color-border-strong);
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(48, 48, 51, 0.6);
 }
 
 .sf-button-secondary {
   color: #bfdbfe;
   border-color: rgba(59, 130, 246, 0.22);
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(201, 162, 74, 0.12);
 }
 
 .sf-button-spinner {

@@ -215,65 +215,6 @@ function getVehicleStatusLabel(status) {
   return labels[status] || "Bilinmiyor";
 }
 
-function formatGpsTime(value) {
-  if (!value) {
-    return "--:--";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "--:--";
-  }
-
-  return date.toLocaleTimeString("tr-TR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatTimeAgo(value) {
-  if (!value) {
-    return "Konum yok";
-  }
-
-  const timestamp = new Date(value).getTime();
-
-  if (Number.isNaN(timestamp)) {
-    return "Zaman bilgisi yok";
-  }
-
-  const seconds = Math.max(
-    0,
-    Math.floor(
-      (Date.now() - timestamp) / 1000,
-    ),
-  );
-
-  if (seconds < 10) {
-    return "Şimdi";
-  }
-
-  if (seconds < 60) {
-    return `${seconds} sn önce`;
-  }
-
-  const minutes = Math.floor(seconds / 60);
-
-  if (minutes < 60) {
-    return `${minutes} dk önce`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-
-  if (hours < 24) {
-    return `${hours} saat önce`;
-  }
-
-  const days = Math.floor(hours / 24);
-
-  return `${days} gün önce`;
-}
 function getInitials(name) {
   if (!name) return "?";
 

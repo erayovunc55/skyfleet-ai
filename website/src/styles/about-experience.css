@@ -1,0 +1,85 @@
+.sky-about { background:#fff; color:var(--sky-black); }
+.sky-about h1,.sky-about h2,.sky-about h3 { font-weight:500; letter-spacing:-.04em; margin:0; }
+.sky-about h2 { font-size:clamp(30px,3.1vw,44px); line-height:1.2; margin-top:16px; }
+.sky-about p { font-size:14px; line-height:1.85; color:var(--sky-muted); }
+.sky-about-section { padding-block:90px; }
+.sky-about-hero { background:var(--sky-cream); padding-block:64px 70px; }
+.sky-about-hero-grid { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
+.sky-about-hero-copy { padding-block:24px; }
+.sky-about h1 { font-size:clamp(44px,4.3vw,64px); line-height:1.09; margin-top:22px; }
+.sky-about h1 em { font-family:Georgia,serif; font-weight:400; color:#81704b; }
+.sky-about-hero-copy>p { max-width:440px; margin:25px 0 30px; }
+.sky-about-button { display:inline-flex; align-items:center; justify-content:space-between; gap:40px; min-height:52px; padding:16px 23px; background:#20271e; color:#fff; border:1px solid #20271e; border-radius:3px; text-decoration:none; font-size:13px; font-weight:600; transition:background .2s; }
+.sky-about-button>span { color:var(--sky-gold); font-size:20px; line-height:1; }
+.sky-about-button:hover { background:#3a4234; }
+.sky-about a:focus-visible { outline:2px solid #967c4c; outline-offset:5px; }
+.sky-about-discover { display:flex; align-items:center; gap:15px; width:fit-content; margin-top:32px; color:#6b7164; font-size:11px; text-decoration:none; }
+.sky-about-discover span { font-size:18px; color:#967c4c; }
+.sky-about figure { margin:0; }
+.sky-about-hero-image { position:relative; min-width:0; aspect-ratio:1.05; border-radius:3px; overflow:hidden; background:#d6d6cc; }
+.sky-about-hero-image img { width:100%; height:100%; object-fit:cover; object-position:75% center; display:block; }
+.sky-about-hero-image::after { content:""; position:absolute; inset:40% 0 0; background:linear-gradient(transparent,#111411ba); pointer-events:none; }
+.sky-about-hero-image figcaption { position:absolute; bottom:30px; left:30px; right:30px; color:#fff; z-index:1; font-size:14px; line-height:1.6; }
+.sky-about-hero-image figcaption span { display:block; font-size:9px; letter-spacing:.2em; color:var(--sky-gold); margin-bottom:7px; }
+.sky-about-intro { display:grid; grid-template-columns:1fr 1fr; gap:80px; scroll-margin-top:110px; }
+.sky-about-intro-copy { padding-top:30px; }
+.sky-about-intro-copy .sky-about-lead { font-size:20px; line-height:1.6; color:#343b30; margin-top:0; }
+.sky-about-values { background:var(--sky-cream); }
+.sky-about-section-heading { margin-bottom:45px; }
+.sky-about-value-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.sky-about-value-grid article { padding:0 34px; border-left:1px solid #dfe0d5; }
+.sky-about-value-grid article:first-child { padding-left:0; border-left:0; }
+.sky-about-value-grid article:last-child { padding-right:0; }
+.sky-about-number { font-size:11px; color:#967c4c; letter-spacing:.15em; }
+.sky-about-value-grid h3 { font-size:23px; margin-top:25px; }
+.sky-about-value-grid p { margin-bottom:0; }
+.sky-about-journey { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
+.sky-about-detail-image { aspect-ratio:1; position:relative; overflow:hidden; border-radius:3px; background:#dedfd7; }
+.sky-about-detail-image img { height:100%; width:100%; object-fit:cover; object-position:45% center; display:block; }
+.sky-about-detail-image figcaption { position:absolute; left:24px; right:24px; bottom:24px; padding:17px 20px; background:#f6f5f0f0; font-size:13px; color:#343b30; }
+.sky-about-steps { list-style:none; margin:25px 0 0; padding:0; }
+.sky-about-steps li { display:flex; align-items:flex-start; gap:20px; border-top:1px solid #e3e6dc; padding-block:23px; }
+.sky-about-steps li:last-child { padding-bottom:0; }
+.sky-about-steps li>span { border:1px solid #d5d7c9; border-radius:50%; flex-shrink:0; width:36px; height:36px; display:grid; place-items:center; font-size:10px; color:#967c4c; }
+.sky-about-steps h3 { font-size:17px; letter-spacing:-.02em; margin-top:5px; }
+.sky-about-steps p { margin:8px 0 0; font-size:13px; }
+.sky-about-network { background:#20271e; color:#fff; }
+.sky-about-network-grid { display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:100px; }
+.sky-about-network .sky-eyebrow { color:var(--sky-gold); }
+.sky-about-network p { color:#b4bdac; max-width:465px; margin-top:25px; }
+.sky-about-network-links a { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:25px 0; border-bottom:1px solid #ffffff25; color:#fff; text-decoration:none; }
+.sky-about-network-links small { display:block; color:#b4bdac; font-size:9px; letter-spacing:.14em; margin-bottom:9px; }
+.sky-about-network-links strong { font-weight:500; font-size:20px; letter-spacing:-.02em; }
+.sky-about-network-links a>span { color:var(--sky-gold); font-size:24px; }
+.sky-about-network-links a:hover strong { color:var(--sky-gold); }
+.sky-about-final { text-align:center; }
+.sky-about-final p { margin:20px 0 28px; }
+@media(max-width:1180px) {
+  .sky-about-hero-grid,.sky-about-intro,.sky-about-journey,.sky-about-network-grid { gap:45px; }
+  .sky-about h1 { font-size:48px; }
+  .sky-about-value-grid article { padding-inline:25px; }
+}
+@media(max-width:800px) {
+  .sky-about-section { padding-block:60px; }
+  .sky-about-hero { padding-block:35px 45px; }
+  .sky-about-hero-grid,.sky-about-intro,.sky-about-journey,.sky-about-network-grid { grid-template-columns:1fr; gap:30px; }
+  .sky-about-hero-copy { padding-block:15px 0; }
+  .sky-about h1 { font-size:clamp(40px,7vw,52px); }
+  .sky-about-hero-copy>p { max-width:520px; }
+  .sky-about-discover { margin-top:23px; }
+  .sky-about-hero-image { aspect-ratio:1.5; }
+  .sky-about-intro-copy { padding-top:0; }
+  .sky-about-value-grid { grid-template-columns:1fr; gap:25px; }
+  .sky-about-value-grid article,.sky-about-value-grid article:first-child { padding:25px 0 0; border-left:0; border-top:1px solid #dfe0d5; }
+  .sky-about-value-grid h3 { margin-top:15px; }
+  .sky-about-section-heading { margin-bottom:30px; }
+  .sky-about-detail-image { aspect-ratio:1.35; }
+}
+@media(max-width:480px) {
+  .sky-about h1 { font-size:40px; }
+  .sky-about-hero-image { aspect-ratio:1.12; }
+  .sky-about-hero-image figcaption { left:22px; right:22px; bottom:22px; font-size:13px; }
+  .sky-about-intro-copy .sky-about-lead { font-size:18px; }
+  .sky-about-network-links strong { font-size:18px; }
+}
+@media(prefers-reduced-motion:reduce) { .sky-about-button { transition:none; } }

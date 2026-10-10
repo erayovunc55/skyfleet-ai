@@ -32,9 +32,9 @@
 }
 
 .sf-badge-info {
-  color: #38bdf8;
-  border-color: rgba(56, 189, 248, 0.18);
-  background: rgba(56, 189, 248, 0.1);
+  color: #e0b85a;
+  border-color: rgba(201, 162, 74, 0.18);
+  background: rgba(201, 162, 74, 0.1);
 }
 
 .sf-badge-warning {

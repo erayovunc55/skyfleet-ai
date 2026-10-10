@@ -48,19 +48,45 @@ class TransferLocationResolver
             return null;
         }
 
+        /*
+         * 1. Adreste açık bir IATA / location kodu varsa
+         *    her zaman en yüksek önceliğe sahip.
+         *
+         * Örn:
+         * Istanbul Sabiha Gokcen Airport (SAW)
+         * Istanbul Airport (IST)
+         */
         if ($location = $this->resolveByCode($text)) {
             return $location;
         }
 
-        if ($location = $this->resolveByName($text)) {
-            return $location;
-        }
-
-        if (is_numeric($latitude) && is_numeric($longitude)) {
-            return $this->resolveByCoordinates(
+        /*
+         * 2. Koordinatlar varsa isim eşleşmesinden önce
+         *    gerçek coğrafi konumu kullan.
+         *
+         * Bu sayede Beyoglu gibi normal bir İstanbul adresi
+         * yanlışlıkla IST havalimanına eşleşmez.
+         */
+        if (
+            is_numeric($latitude)
+            && is_numeric($longitude)
+        ) {
+            $location = $this->resolveByCoordinates(
                 (float) $latitude,
                 (float) $longitude,
             );
+
+            if ($location) {
+                return $location;
+            }
+        }
+
+        /*
+         * 3. Kod veya koordinat sonucu yoksa
+         *    son çare olarak isim eşleştirmesi yap.
+         */
+        if ($location = $this->resolveByName($text)) {
+            return $location;
         }
 
         return null;
@@ -74,7 +100,11 @@ class TransferLocationResolver
             $matches,
         );
 
-        $codes = array_values(array_unique($matches[1] ?? []));
+        $codes = array_values(
+            array_unique(
+                $matches[1] ?? []
+            )
+        );
 
         if ($codes === []) {
             return null;
@@ -102,17 +132,29 @@ class TransferLocationResolver
                     ->orWhereNotNull('native_name');
             })
             ->get()
-            ->first(function (Location $location) use ($normalizedAddress): bool {
-                foreach ([$location->name, $location->native_name] as $name) {
+            ->first(function (
+                Location $location
+            ) use ($normalizedAddress): bool {
+                foreach (
+                    [
+                        $location->name,
+                        $location->native_name,
+                    ]
+                    as $name
+                ) {
                     if (!$name) {
                         continue;
                     }
 
-                    $normalizedName = $this->normalize($name);
+                    $normalizedName =
+                        $this->normalize($name);
 
                     if (
                         mb_strlen($normalizedName) >= 5
-                        && str_contains($normalizedAddress, $normalizedName)
+                        && str_contains(
+                            $normalizedAddress,
+                            $normalizedName
+                        )
                     ) {
                         return true;
                     }
@@ -145,14 +187,20 @@ class TransferLocationResolver
 
             $radius = max(
                 500,
-                (int) ($location->geofence_radius_meters ?: 1500),
+                (int) (
+                    $location->geofence_radius_meters
+                    ?: 1500
+                ),
             );
 
             if ($distance > $radius) {
                 continue;
             }
 
-            if ($bestDistance === null || $distance < $bestDistance) {
+            if (
+                $bestDistance === null
+                || $distance < $bestDistance
+            ) {
                 $bestLocation = $location;
                 $bestDistance = $distance;
             }
@@ -166,7 +214,10 @@ class TransferLocationResolver
         return Str::of($value)
             ->ascii()
             ->lower()
-            ->replaceMatches('/[^a-z0-9]+/', ' ')
+            ->replaceMatches(
+                '/[^a-z0-9]+/',
+                ' '
+            )
             ->squish()
             ->toString();
     }
@@ -179,14 +230,25 @@ class TransferLocationResolver
     ): float {
         $earthRadius = 6371000;
 
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lngDelta = deg2rad($lng2 - $lng1);
+        $latDelta = deg2rad(
+            $lat2 - $lat1
+        );
 
-        $a = sin($latDelta / 2) ** 2
+        $lngDelta = deg2rad(
+            $lng2 - $lng1
+        );
+
+        $a =
+            sin($latDelta / 2) ** 2
             + cos(deg2rad($lat1))
             * cos(deg2rad($lat2))
             * sin($lngDelta / 2) ** 2;
 
-        return $earthRadius * 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius
+            * 2
+            * atan2(
+                sqrt($a),
+                sqrt(1 - $a)
+            );
     }
 }

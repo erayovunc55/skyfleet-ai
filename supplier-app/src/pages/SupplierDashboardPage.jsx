@@ -93,8 +93,7 @@ const TEXT = {
       "SF numarası, yolcu, telefon veya uçuş...",
     status: "Durum",
     allStatuses: "Tüm durumlar",
-    start: "Başlangıç",
-    end: "Bitiş",
+    day: "Transfer günü",
     clear: "Temizle",
 
     assignedTransfers: "Atanan Transferler",
@@ -193,8 +192,7 @@ const TEXT = {
       "SF reference, passenger, phone or flight...",
     status: "Status",
     allStatuses: "All statuses",
-    start: "Start",
-    end: "End",
+    day: "Transfer day",
     clear: "Clear",
 
     assignedTransfers: "Assigned Transfers",
@@ -293,8 +291,7 @@ driversDescription:
       "Referencia SF, pasajero, teléfono o vuelo...",
     status: "Estado",
     allStatuses: "Todos los estados",
-    start: "Inicio",
-    end: "Fin",
+    day: "Día del traslado",
     clear: "Limpiar",
 
     assignedTransfers: "Traslados Asignados",
@@ -393,8 +390,7 @@ driversDescription:
       "مرجع SF أو المسافر أو الهاتف أو الرحلة...",
     status: "الحالة",
     allStatuses: "جميع الحالات",
-    start: "البداية",
-    end: "النهاية",
+    day: "يوم الرحلة",
     clear: "مسح",
 
     assignedTransfers: "الرحلات المخصصة",
@@ -470,6 +466,21 @@ driversDescription:
   "أضف سائقاً واحداً على الأقل لعملياتك.",
   },
 };
+
+function getTodayTransferFilters() {
+  const today = new Date();
+  const date = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  return {
+    dateFrom: date,
+    dateTo: date,
+  };
+}
+
 export default function SupplierDashboardPage({ user }) {
     const { language } = useLanguage();
   const t = TEXT[language] || TEXT.en;
@@ -496,12 +507,7 @@ export default function SupplierDashboardPage({ user }) {
   ] = useState(null);
 
   const [filters, setFilters] =
-    useState({
-      search: "",
-      status: "",
-      dateFrom: "",
-      dateTo: "",
-    });
+    useState(getTodayTransferFilters);
 
     const [loading, setLoading] =
     useState(true);
@@ -705,9 +711,16 @@ export default function SupplierDashboardPage({ user }) {
     setFilters({
       search: "",
       status: "",
-      dateFrom: "",
-      dateTo: "",
+      ...getTodayTransferFilters(),
     });
+  }
+
+  function updateTransferDay(value) {
+    setFilters((current) => ({
+      ...current,
+      dateFrom: value,
+      dateTo: value,
+    }));
   }
 
     async function handleExportToExcel() {
@@ -961,7 +974,7 @@ export default function SupplierDashboardPage({ user }) {
           </label>
 
           <label>
-            <span>{t.start}</span>
+            <span>{t.day}</span>
 
             <input
               type="date"
@@ -969,27 +982,7 @@ export default function SupplierDashboardPage({ user }) {
                 filters.dateFrom
               }
               onChange={(event) =>
-                updateFilter(
-                  "dateFrom",
-                  event.target.value,
-                )
-              }
-            />
-          </label>
-
-          <label>
-            <span>{t.end}</span>
-
-            <input
-              type="date"
-              value={
-                filters.dateTo
-              }
-              onChange={(event) =>
-                updateFilter(
-                  "dateTo",
-                  event.target.value,
-                )
+                updateTransferDay(event.target.value)
               }
             />
           </label>

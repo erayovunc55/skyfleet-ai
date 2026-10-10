@@ -1589,7 +1589,12 @@ export default function SupplierCoveragePage() {
                     </div>
                   </div>
 
-                  <div className="supplier-coverage-group-items">
+                  <div
+                    className={[
+                      "supplier-coverage-group-items",
+                      group.items.length > 4 ? "is-scrollable" : "",
+                    ].filter(Boolean).join(" ")}
+                  >
                     {group.items.map(
                       (
                         coverage,

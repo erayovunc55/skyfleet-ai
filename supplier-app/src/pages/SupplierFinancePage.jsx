@@ -36,6 +36,8 @@ const TEXT = {
     recordsDisplayed: "kayıt görüntüleniyor",
     loadingEarnings: "Hakedişler yükleniyor...",
     noEarnings: "Filtrelere uygun hakediş bulunamadı.",
+    emptyEarningsHint:
+      "Hakediş kayıtlarınız burada görüntülenir. Filtreleri temizleyebilir veya verileri yenileyebilirsiniz.",
 
     reservation: "Rezervasyon",
     date: "Tarih",
@@ -84,6 +86,8 @@ const TEXT = {
     recordsDisplayed: "records displayed",
     loadingEarnings: "Loading earnings...",
     noEarnings: "No earnings matched the filters.",
+    emptyEarningsHint:
+      "Your earnings records will appear here. Clear the filters or refresh the data.",
 
     reservation: "Reservation",
     date: "Date",
@@ -132,6 +136,8 @@ const TEXT = {
     recordsDisplayed: "registros mostrados",
     loadingEarnings: "Cargando ganancias...",
     noEarnings: "No se encontraron ganancias con estos filtros.",
+    emptyEarningsHint:
+      "Sus registros de ganancias aparecerán aquí. Limpie los filtros o actualice los datos.",
 
     reservation: "Reserva",
     date: "Fecha",
@@ -180,6 +186,8 @@ const TEXT = {
     recordsDisplayed: "سجلات معروضة",
     loadingEarnings: "جارٍ تحميل الأرباح...",
     noEarnings: "لا توجد أرباح مطابقة للفلاتر.",
+    emptyEarningsHint:
+      "ستظهر سجلات أرباحك هنا. امسح عوامل التصفية أو حدّث البيانات.",
 
     reservation: "الحجز",
     date: "التاريخ",
@@ -559,8 +567,12 @@ export default function SupplierFinancePage() {
             {t.loadingEarnings}
           </div>
         ) : records.length === 0 ? (
-          <div className="supplier-finance-empty">
-            {t.noEarnings}
+          <div className="supplier-finance-empty-state" role="status">
+            <span className="supplier-finance-empty-icon" aria-hidden="true">
+              €
+            </span>
+            <strong>{t.noEarnings}</strong>
+            <p>{t.emptyEarningsHint}</p>
           </div>
         ) : (
           <div className="supplier-finance-table-wrap">

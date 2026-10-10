@@ -576,3 +576,341 @@ body {
     padding: 14px;
   }
 }
+
+/* Driver team */
+.supplier-management-page {
+  gap: 22px;
+}
+
+.supplier-management-page .supplier-page-heading {
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.supplier-management-page .supplier-page-heading h1 {
+  margin-top: 8px;
+}
+
+.supplier-management-page .supplier-heading-actions {
+  flex: 0 0 auto;
+}
+
+.supplier-management-page .supplier-primary-button {
+  border: 1px solid rgba(210, 180, 119, 0.5);
+  border-radius: 10px;
+  color: #211e18;
+  background: linear-gradient(145deg, #dfc995, #c5a568);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.supplier-management-page .supplier-primary-button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #ead9b4, #d2b477);
+}
+
+.supplier-management-summary .supplier-summary-card {
+  position: relative;
+  min-height: 104px;
+  padding: 18px 20px;
+}
+
+.supplier-management-summary .supplier-summary-card::before {
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--supplier-accent);
+  content: "";
+  opacity: 0.7;
+}
+
+.supplier-management-summary .supplier-summary-card span {
+  font-size: 12px;
+}
+
+.supplier-management-summary .supplier-summary-card strong {
+  font-size: 32px;
+  color: #e0c995;
+}
+
+.supplier-management-card {
+  border-radius: 15px;
+}
+
+.supplier-management-card .supplier-section-heading {
+  min-height: 72px;
+  padding: 18px 22px;
+}
+
+.supplier-management-card .supplier-section-heading h2 {
+  font-size: 17px;
+}
+
+.supplier-management-card .supplier-section-heading p {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.supplier-driver-row {
+  grid-template-columns:
+    minmax(170px, 1.05fr)
+    minmax(170px, 1fr)
+    minmax(100px, 0.65fr)
+    minmax(210px, 1.1fr)
+    auto;
+  gap: clamp(12px, 1.6vw, 22px);
+  min-height: 96px;
+  padding: 16px 22px;
+  transition: background-color 160ms ease;
+}
+
+.supplier-driver-row:hover {
+  background: rgba(210, 180, 119, 0.035);
+}
+
+.supplier-driver-identity {
+  gap: 12px;
+}
+
+.supplier-management-avatar {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  border-color: rgba(210, 180, 119, 0.3);
+  border-radius: 12px;
+  color: #211e18;
+  background: linear-gradient(145deg, #e3d1a9, #c4a265);
+  box-shadow: none;
+}
+
+.supplier-driver-identity strong {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.supplier-driver-identity span,
+.supplier-management-row small {
+  color: #89919d;
+  font-size: 11px;
+}
+
+.supplier-management-row > div:not(
+  .supplier-vehicle-identity
+):not(
+  .supplier-driver-identity
+):not(
+  .supplier-row-actions
+) {
+  gap: 5px;
+}
+
+.supplier-field-label {
+  color: #9a8a68;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.supplier-management-row > div strong {
+  color: #e1e4e9;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.supplier-driver-status {
+  min-height: 25px;
+  padding: 0 9px;
+  color: #d9919a;
+  background: rgba(217, 105, 121, 0.12);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.supplier-driver-status.active {
+  color: #7dc8a7;
+  background: rgba(79, 195, 155, 0.12);
+}
+
+.supplier-driver-vehicle-select select {
+  min-height: 40px;
+  padding-left: 11px;
+  border-color: #3d424b;
+  border-radius: 9px;
+  color: #e3e5e9;
+  background-color: #22262d;
+  font-size: 12px;
+}
+
+.supplier-driver-vehicle-select select:focus {
+  border-color: rgba(210, 180, 119, 0.65);
+  box-shadow: 0 0 0 3px rgba(210, 180, 119, 0.1);
+}
+
+.supplier-row-actions {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.supplier-row-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border-color: #414650;
+  border-radius: 8px;
+  color: #d8c18f;
+  background: #282c33;
+  font-size: 10px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.supplier-row-button:hover {
+  border-color: rgba(210, 180, 119, 0.48);
+  color: #f0dfbb;
+  background: #303139;
+}
+
+.supplier-row-button.danger {
+  border-color: rgba(216, 113, 126, 0.28);
+  color: #dc929b;
+  background: rgba(216, 113, 126, 0.07);
+}
+
+.supplier-row-button.danger:hover {
+  border-color: rgba(216, 113, 126, 0.5);
+  color: #f1b0b7;
+  background: rgba(216, 113, 126, 0.12);
+}
+
+.supplier-management-page .supplier-message {
+  border-radius: 10px;
+}
+
+.supplier-management-page .supplier-modal-card {
+  border-color: #41464f;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #24282f, #1c2026);
+}
+
+.supplier-management-page .supplier-modal-header {
+  border-bottom-color: #373c45;
+}
+
+.supplier-management-page .supplier-form-field > span,
+.supplier-management-page .supplier-checkbox-field {
+  color: #c3c8d0;
+}
+
+.supplier-management-page .supplier-form-field input,
+.supplier-management-page .supplier-form-field select {
+  border-color: #3b4049;
+  border-radius: 9px;
+  background: #171a1f;
+}
+
+.supplier-management-page .supplier-form-field input:focus,
+.supplier-management-page .supplier-form-field select:focus {
+  border-color: rgba(210, 180, 119, 0.7);
+  box-shadow: 0 0 0 3px rgba(210, 180, 119, 0.1);
+}
+
+.supplier-management-page .supplier-driver-login-info {
+  border-color: rgba(210, 180, 119, 0.24);
+  border-radius: 10px;
+  color: #b4ac9b;
+  background: rgba(210, 180, 119, 0.06);
+}
+
+.supplier-management-page .supplier-driver-login-info strong {
+  color: #dfc995;
+}
+
+@media (max-width: 1250px) {
+  .supplier-driver-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 22px;
+  }
+
+  .supplier-driver-row .supplier-row-actions {
+    grid-column: 1 / -1;
+    padding-top: 2px;
+  }
+}
+
+@media (max-width: 760px) {
+  .supplier-management-page {
+    gap: 16px;
+  }
+
+  .supplier-management-page .supplier-page-heading {
+    gap: 12px;
+  }
+
+  .supplier-management-page .supplier-heading-actions {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 8px;
+  }
+
+  .supplier-management-page .supplier-heading-actions button {
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .supplier-management-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .supplier-management-summary .supplier-summary-card {
+    min-height: 90px;
+    padding: 14px 16px;
+  }
+
+  .supplier-management-summary .supplier-summary-card strong {
+    font-size: 27px;
+  }
+
+  .supplier-management-card .supplier-section-heading {
+    padding: 16px;
+  }
+
+  .supplier-driver-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 17px 16px;
+  }
+
+  .supplier-driver-row .supplier-row-actions {
+    grid-column: auto;
+    padding-top: 4px;
+  }
+
+  .supplier-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .supplier-row-button {
+    min-height: 38px;
+  }
+
+  .supplier-management-page .supplier-modal-card {
+    width: min(100%, 560px);
+  }
+}
+
+@media (max-width: 430px) {
+  .supplier-management-summary {
+    gap: 8px;
+  }
+
+  .supplier-management-summary .supplier-summary-card {
+    min-height: 82px;
+    padding: 12px;
+  }
+
+  .supplier-management-summary .supplier-summary-card span {
+    font-size: 10px;
+  }
+}

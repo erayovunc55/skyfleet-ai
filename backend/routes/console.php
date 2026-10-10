@@ -4,6 +4,7 @@ use App\Models\HeytripOrder;
 use App\Models\Transfer;
 use App\Services\HeytripService;
 use App\Services\HeytripEmailImportService;
+use App\Services\ReservationMailboxSync;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -113,6 +114,27 @@ Artisan::command('heytrip:import-email {file} {--subject=}', function (string $f
 })->purpose('Import a HeyTrip reservation email text file into Skyfleet.');
 
 
+Artisan::command('reservations:sync-mailbox', function (ReservationMailboxSync $sync): int {
+    if (! ReservationMailboxSync::configured()) {
+        $this->warn('Reservation mailbox is not configured.');
+
+        return self::SUCCESS;
+    }
+
+    try {
+        $r = $sync->run();
+    } catch (\Throwable $e) {
+        Log::warning('Reservation mailbox sync failed: '.$e->getMessage());
+        $this->error($e->getMessage());
+
+        return self::FAILURE;
+    }
+
+    $this->info("Checked {$r['checked']}, imported {$r['imported']}, failed {$r['failed']}.");
+
+    return self::SUCCESS;
+})->purpose('Import OTA booking emails from the reservations mailbox.');
+
 /*
 |--------------------------------------------------------------------------
 | SCHEDULES
@@ -120,6 +142,10 @@ Artisan::command('heytrip:import-email {file} {--subject=}', function (string $f
 */
 
 
+
+Schedule::command('reservations:sync-mailbox')
+    ->everyMinute()
+    ->withoutOverlapping(10);
 
 Schedule::command('skyfleet:send-pickup-reminders')
     ->everyMinute()

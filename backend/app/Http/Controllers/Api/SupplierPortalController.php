@@ -134,6 +134,7 @@ class SupplierPortalController extends Controller
             ->with([
                 'driver:id,name,phone,vehicle_id',
                 'driver.vehicle',
+                'assignedVehicle:id,plate,vehicle_type',
                 'pickupLocation',
                 'pickupPoint',
                 'dropoffLocation',
@@ -427,6 +428,21 @@ class SupplierPortalController extends Controller
 
             'status' =>
                 $transfer->status,
+
+            'driver_id' =>
+                $transfer->driver_id,
+
+            'assigned_vehicle_id' =>
+                $transfer->assigned_vehicle_id,
+
+            'assigned_vehicle' =>
+                $transfer->assignedVehicle
+                    ? [
+                        'id' => $transfer->assignedVehicle->id,
+                        'plate' => $transfer->assignedVehicle->plate,
+                        'vehicle_type' => $transfer->assignedVehicle->vehicle_type,
+                    ]
+                    : null,
 
             'driver' =>
                 $transfer->driver

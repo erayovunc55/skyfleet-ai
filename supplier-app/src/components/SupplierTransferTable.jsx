@@ -302,54 +302,66 @@ export default function SupplierTransferTable({
                 <td>{transfer.vehicle_type || "-"}</td>
 
                 <td onClick={(event) => event.stopPropagation()}>
-                  <select
-                    value={vehicleId}
-                    disabled={!editable || saving}
-                    title={editable ? undefined : t.locked}
-                    onChange={(event) =>
-                      handleVehicleChange(transfer, event.target.value)
-                    }
-                  >
-                    <option value="">{t.pickVehicle}</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.plate}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                <td onClick={(event) => event.stopPropagation()}>
-                  <div className="driver-cell">
+                  {editable ? (
                     <select
-                      value={driverId}
-                      disabled={!editable || saving}
-                      title={editable ? undefined : t.locked}
+                      value={vehicleId}
+                      disabled={saving}
                       onChange={(event) =>
-                        handleDriverChange(transfer, event.target.value)
+                        handleVehicleChange(transfer, event.target.value)
                       }
                     >
-                      <option value="">{t.choose}</option>
-                      {drivers.map((driver) => (
-                        <option key={driver.id} value={driver.id}>
-                          {driver.name}
+                      <option value="">{t.pickVehicle}</option>
+                      {vehicles.map((vehicle) => (
+                        <option key={vehicle.id} value={vehicle.id}>
+                          {vehicle.plate}
                         </option>
                       ))}
                     </select>
+                  ) : (
+                    <span className="supplier-assignment-value">
+                      {transfer.assigned_vehicle?.plate ||
+                        transfer.driver?.vehicle?.plate ||
+                        "-"}
+                    </span>
+                  )}
+                </td>
 
-                    {assigned && editable && (
-                      <button
-                        type="button"
-                        className="unassign-button"
+                <td onClick={(event) => event.stopPropagation()}>
+                  {editable ? (
+                    <div className="driver-cell">
+                      <select
+                        value={driverId}
                         disabled={saving}
-                        title={t.clear}
-                        aria-label={t.clear}
-                        onClick={() => handleUnassign(transfer)}
+                        onChange={(event) =>
+                          handleDriverChange(transfer, event.target.value)
+                        }
                       >
-                        ×
-                      </button>
-                    )}
-                  </div>
+                        <option value="">{t.choose}</option>
+                        {drivers.map((driver) => (
+                          <option key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      {assigned && (
+                        <button
+                          type="button"
+                          className="unassign-button"
+                          disabled={saving}
+                          title={t.clear}
+                          aria-label={t.clear}
+                          onClick={() => handleUnassign(transfer)}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="supplier-assignment-value">
+                      {transfer.driver?.name || "-"}
+                    </span>
+                  )}
 
                   {saving && <small className="row-hint">{t.saving}</small>}
                   {!saving && driverId && !vehicleId && editable && (

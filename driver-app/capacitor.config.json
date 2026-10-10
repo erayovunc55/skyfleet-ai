@@ -1,0 +1,13 @@
+{
+  "appId": "com.skyfleet.driver",
+  "appName": "Skyfleet Driver",
+  "webDir": "dist",
+  "android": {
+    "useLegacyBridge": true
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}

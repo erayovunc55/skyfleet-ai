@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  base: "/driver/",
+  base: process.env.CAPACITOR_BUILD === "true" ? "/" : "/driver/",
 
   plugins: [
     react(),

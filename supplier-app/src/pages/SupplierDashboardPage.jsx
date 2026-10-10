@@ -470,10 +470,7 @@ driversDescription:
   "أضف سائقاً واحداً على الأقل لعملياتك.",
   },
 };
-export default function SupplierDashboardPage({
-  user,
-  onLogout,
-}) {
+export default function SupplierDashboardPage({ user }) {
     const { language } = useLanguage();
   const t = TEXT[language] || TEXT.en;
   const statusLabels =
@@ -815,50 +812,7 @@ export default function SupplierDashboardPage({
     user?.supplier_company;
 
   return (
-    <div className="supplier-app-shell">
-      <header className="supplier-header">
-        <div className="supplier-header-brand">
-          <div className="supplier-brand-logo">
-            SF
-          </div>
-
-          <div>
-            <strong>
-              SKYFLEET
-              <span> AI</span>
-            </strong>
-
-            <small>
-              Supplier Network
-            </small>
-          </div>
-        </div>
-
-        <div className="supplier-header-user">
-          <div>
-            <strong>
-              {company
-                ?.company_name ||
-                user?.name}
-            </strong>
-
-            <small>
-  {t.supplier}
-</small>
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              onLogout
-            }
-          >
-            {t.logout}
-          </button>
-        </div>
-      </header>
-
-      <main className="supplier-dashboard">
+    <main className="supplier-dashboard">
         <section className="supplier-page-heading">
           <div>
             <span className="supplier-eyebrow">
@@ -1110,8 +1064,7 @@ locale={locale}
             }
           />
         </section>
-      </main>
-    </div>
+    </main>
   );
 }
 

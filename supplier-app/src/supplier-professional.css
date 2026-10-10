@@ -374,10 +374,22 @@ body {
   background: rgba(237, 150, 56, 0.13);
 }
 
+.supplier-transfer-table td.airport-route-ist-dropoff {
+  border-left-color: #a779df;
+  color: #d8bdf7;
+  background: rgba(167, 121, 223, 0.14);
+}
+
 .supplier-transfer-table td.airport-route-saw-pickup {
   border-left-color: #24764a;
   color: #b5e7c5;
   background: rgba(28, 92, 56, 0.48);
+}
+
+.supplier-transfer-table td.airport-route-saw-dropoff {
+  border-left-color: #a8dcb2;
+  color: #315f3b;
+  background: #dff0e2;
 }
 
 .supplier-transfer-table th,

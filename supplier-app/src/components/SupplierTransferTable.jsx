@@ -273,11 +273,13 @@ export default function SupplierTransferTable({
                 </td>
                 <td>{transfer.flight_number || "-"}</td>
                 <td
-                  className={`cell-route ${airportRouteClass(transfer.pickup)}`}
+                  className={`cell-route ${airportRouteClass(transfer.pickup, "pickup")}`}
                 >
                   {transfer.pickup}
                 </td>
-                <td className="cell-route">
+                <td
+                  className={`cell-route ${airportRouteClass(transfer.dropoff, "dropoff")}`}
+                >
                   {transfer.dropoff}
                 </td>
                 <td className="cell-name">
@@ -396,14 +398,14 @@ export default function SupplierTransferTable({
   );
 }
 
-function airportRouteClass(address) {
+function airportRouteClass(address, direction) {
   const normalized = String(address || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
   if (/\bsaw\b/.test(normalized) || normalized.includes("sabiha gokcen")) {
-    return "airport-route airport-route-saw-pickup";
+    return `airport-route airport-route-saw-${direction}`;
   }
 
   if (
@@ -411,7 +413,7 @@ function airportRouteClass(address) {
     normalized.includes("istanbul airport") ||
     normalized.includes("istanbul havalimani")
   ) {
-    return "airport-route airport-route-ist-pickup";
+    return `airport-route airport-route-ist-${direction}`;
   }
 
   return "";

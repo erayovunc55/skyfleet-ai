@@ -42,6 +42,11 @@ export async function loginDriver({
   return user;
 }
 
+export async function requestDriverPasswordReset(login) {
+  const response = await apiClient.post("/driver-password/forgot", { login: login.trim() });
+  return response.data;
+}
+
 export async function resetDriverPassword({
   driverId,
   token,

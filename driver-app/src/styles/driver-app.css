@@ -204,27 +204,27 @@ button {
 }
 
 .driver-login-logo {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  place-items: center;
-  border-radius: 16px;
-  color: #fff;
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #06b6d4
-    );
-  font-weight: 900;
+  display: block;
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
 }
 
 .driver-login-card > p {
   margin: 20px 0 5px;
-  color: #38bdf8;
+  color: #d2b477;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
+}
+
+.driver-brand-subtitle {
+  display: inline-block;
+  margin-left: 8px;
+  color: #a8a8ad;
+  font-size: 10px;
+  letter-spacing: 0.18em;
 }
 
 .driver-login-card h1 {
@@ -284,6 +284,78 @@ button {
 .driver-login-card button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.driver-partner-actions {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.driver-partner-actions a,
+.driver-application-card a {
+  color: #7dd3fc;
+  text-align: center;
+}
+
+.driver-application-card {
+  box-sizing: border-box;
+  width: min(100%, 600px);
+}
+
+.driver-application-card > p,
+.driver-application-card [role="status"] p {
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.6;
+}
+
+.driver-application-card fieldset {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+}
+
+.driver-application-card legend {
+  color: #7dd3fc;
+  padding: 0 6px;
+}
+
+.driver-application-card input,
+.driver-application-card textarea {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.driver-application-card textarea {
+  min-height: 85px;
+  padding: 12px;
+  color: #fff;
+  background: #202023;
+  border: 1px solid rgba(148, 163, 184, 0.17);
+  border-radius: 12px;
+}
+
+.driver-application-card input[type="file"] {
+  padding: 12px;
+}
+
+.driver-application-card .driver-application-consent {
+  flex-direction: row;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+
+.driver-application-consent input[type="checkbox"] {
+  width: 20px;
+  min-height: 20px;
+  flex: 0 0 20px;
 }
 
 .driver-login-error {

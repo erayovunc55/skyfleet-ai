@@ -262,7 +262,11 @@ export default function useDriverLocation({
                   return;
                 }
 
-                if (!position) return;
+                if (
+                  !position ||
+                  !mountedRef.current ||
+                  attempt !== trackingAttemptRef.current
+                ) return;
 
                 saveLocation(
                   {
@@ -380,13 +384,9 @@ export default function useDriverLocation({
     return () => {
       mountedRef.current = false;
 
-      if (watchIdRef.current !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-
-      stopHeartbeat();
+      stopTracking();
     };
-  }, [stopHeartbeat]);
+  }, [stopTracking]);
 
   useEffect(() => {
     if (enabled && transferId) {

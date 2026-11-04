@@ -1,3 +1,5 @@
+import { getRouteAddress } from "../services/transferRoute";
+
 export default function DriverTransferCard({
   transfer,
   onOpen,
@@ -81,7 +83,7 @@ export default function DriverTransferCard({
 function getPickupLabel(transfer) {
   return getRouteLabel(
     transfer.pickup_location,
-    transfer.pickup,
+    getRouteAddress(transfer, "pickup", ""),
     "Alış noktası",
   );
 }
@@ -89,7 +91,7 @@ function getPickupLabel(transfer) {
 function getDropoffLabel(transfer) {
   return getRouteLabel(
     transfer.dropoff_location,
-    transfer.dropoff,
+    getRouteAddress(transfer, "dropoff", ""),
     "Bırakış noktası",
   );
 }

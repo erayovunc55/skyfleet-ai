@@ -1,10 +1,12 @@
 ﻿import useDriverLocation from "../hooks/useDriverLocation";
+import { useLanguage } from "../i18n";
 
 export default function DriverGpsPanel({
   transferId,
   enabled = false,
   sendInterval = 5000,
 }) {
+  const { t } = useLanguage();
   const {
     location,
     permissionState,
@@ -73,6 +75,8 @@ export default function DriverGpsPanel({
           </button>
         )}
       </div>
+      <details className="driver-gps-details">
+        <summary>{t("GPS Ayrıntıları")} · {t("Son Gönderim")}: {formatTime(lastSentAt)}</summary>
       <div className="driver-gps-summary">
         <GpsRow
           label="Konum İzni"
@@ -134,6 +138,7 @@ export default function DriverGpsPanel({
           )}
         />
       </div>
+      </details>
 
       {error && (
         <div className="driver-action-message error">
@@ -193,6 +198,5 @@ function formatTime(value) {
     },
   );
 }
-
 
 

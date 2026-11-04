@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import DriverHomePage from "./pages/DriverHomePage";
 import DriverLoginPage from "./pages/DriverLoginPage";
 import DriverPasswordResetPage from "./pages/DriverPasswordResetPage";
+import DriverApplicationPage from "./pages/DriverApplicationPage";
 
 import {
   getStoredDriver,
@@ -35,6 +36,7 @@ export default function App() {
 
   const [resetMode, setResetMode] =
     useState(hasPasswordResetLink());
+  const [applicationMode, setApplicationMode] = useState(false);
 
   useEffect(() => {
     function handleUnauthenticated() {
@@ -74,13 +76,16 @@ export default function App() {
     <LanguageProvider>
       <LanguageSwitcher />
 
-      {resetMode ? (
+      {applicationMode && !user ? (
+        <DriverApplicationPage onBack={() => setApplicationMode(false)} />
+      ) : resetMode ? (
         <DriverPasswordResetPage
           onCompleted={handleResetCompleted}
         />
       ) : !user ? (
         <DriverLoginPage
           onLogin={setUser}
+          onApply={() => setApplicationMode(true)}
         />
       ) : (
         <DriverHomePage

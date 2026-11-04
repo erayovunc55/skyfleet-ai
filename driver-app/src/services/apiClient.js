@@ -1,4 +1,6 @@
 import axios from "axios";
+import { Capacitor } from "@capacitor/core";
+import nativeHttpAdapter from "./nativeHttpAdapter";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -12,6 +14,7 @@ const USER_KEY =
 
 const apiClient = axios.create({
   baseURL: API_URL,
+  adapter: Capacitor.isNativePlatform() ? nativeHttpAdapter : undefined,
   timeout: 30000,
   headers: {
     Accept: "application/json",
@@ -41,7 +44,7 @@ apiClient.interceptors.request.use(
           ?.setContentType === "function"
       ) {
         config.headers.setContentType(
-          undefined,
+          Capacitor.isNativePlatform() ? false : undefined,
         );
       } else {
         delete config.headers[

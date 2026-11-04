@@ -6,7 +6,10 @@
 
 import DriverGpsPanel from "../components/DriverGpsPanel";
 import NoShowEvidencePanel from "../components/NoShowEvidencePanel";
+import SlideToConfirm from "../components/SlideToConfirm";
 import transferService from "../services/transferService";
+import { createTrackingWhatsAppMessage, createWhatsAppMessage } from "../services/passengerMessages";
+import { getRouteAddress, getRouteDestination } from "../services/transferRoute";
 
 const STATUS_FLOW = [
   { current: "pending", next: "accepted", label: "Transferi Kabul Et", icon: "✓" },
@@ -31,7 +34,7 @@ export default function DriverTransferDetailPage({ initialTransfer, onBack, onTr
   const [message, setMessage] = useState("");
   const [trackingUrl, setTrackingUrl] = useState(initialTransfer?.tracking_url || "");
   const [trackingLoading, setTrackingLoading] = useState(false);
-  const canShareTracking = TRACKING_SHARE_STATUSES.includes(transfer.status);
+  const canShareTracking = !transfer.is_supplier_external && TRACKING_SHARE_STATUSES.includes(transfer.status);
 
   useEffect(() => {
     if (!canShareTracking) { setTrackingUrl(""); return; }
@@ -135,9 +138,7 @@ export default function DriverTransferDetailPage({ initialTransfer, onBack, onTr
 
   function openNavigation(type) {
     setError(""); setMessage("");
-    const destination = type === "pickup"
-      ? getLocationDestination(transfer.pickup_location, transfer.pickup_lat, transfer.pickup_lng, transfer.pickup)
-      : getLocationDestination(transfer.dropoff_location, transfer.dropoff_lat, transfer.dropoff_lng, transfer.dropoff);
+    const destination = getRouteDestination(transfer, type);
     if (!destination) { setError("Navigasyon için konum bilgisi bulunmuyor."); return; }
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`, "_blank", "noopener,noreferrer");
   }
@@ -149,10 +150,10 @@ export default function DriverTransferDetailPage({ initialTransfer, onBack, onTr
     await updateStatus("no_show", "No Show fotoğraf kanıtı yüklenerek sürücü tarafından kaydedildi.");
   }
 
-  function handlePrimaryAction() { if (!nextAction || saving) return; updateStatus(nextAction.next); }
+  function handlePrimaryAction() { if (!nextAction || saving) return; return updateStatus(nextAction.next); }
 
   return (
-    <main className="driver-detail-page">
+    <main className={`driver-detail-page driver-detail-compact${nextAction ? " has-status-dock" : ""}`}>
       <header className="driver-detail-header">
         <button type="button" onClick={onBack} aria-label="Transfer listesine dön">←</button>
         <div><small>{transfer.booking_reference || `TRANSFER #${transfer.id}`}</small><h1>Transfer Detayı</h1></div>
@@ -177,19 +178,20 @@ export default function DriverTransferDetailPage({ initialTransfer, onBack, onTr
           <InfoRow label="Bagaj" value={`${Number(transfer.luggage_count || 0)} adet`} />
           <div className="driver-contact-actions"><button type="button" onClick={callPassenger}>☎ Yolcuyu Ara</button><button type="button" onClick={openWhatsApp}>💬 WhatsApp</button></div>
         </InfoCard>
-        <InfoCard title="Uçuş">
+        <details className="driver-info-card driver-flight-details">
+          <summary>Uçuş · {transfer.flight_number || "Belirtilmedi"} · {formatDateTime(transfer.pickup_time)}</summary>
           <InfoRow label="Uçuş" value={transfer.flight_number || "Belirtilmedi"} />
           <InfoRow label="Havayolu" value={transfer.airline || "Belirtilmedi"} />
           <InfoRow label="Terminal" value={transfer.terminal || "Belirtilmedi"} />
           <InfoRow label="Alış Zamanı" value={formatDateTime(transfer.pickup_time)} />
-        </InfoCard>
+        </details>
       </section>
 
       <DriverGpsPanel transferId={transfer.id} enabled={shouldEnableGps} />
 
       {canShareTracking && (
         <section className="driver-tracking-share-card">
-          <span>YOLCU CANLI TAKİBİ</span><h2>Takip Bağlantısı</h2><p>Yolcu uygulama yüklemeden aracınızı canlı takip edebilir.</p>
+          <h2>Takip Bağlantısı</h2>
           <div className="driver-tracking-share-actions">
             <button type="button" disabled={trackingLoading || !trackingUrl} onClick={shareTrackingWithPassenger}>💬 WhatsApp ile Gönder</button>
             <button type="button" disabled={!trackingUrl} onClick={copyTrackingLink}>🔗 Linki Kopyala</button>
@@ -197,11 +199,16 @@ export default function DriverTransferDetailPage({ initialTransfer, onBack, onTr
         </section>
       )}
 
-      {error && <div className="driver-action-message error">{error}</div>}
-      {message && <div className="driver-action-message success">{message}</div>}
+      {!nextAction && error && <div className="driver-action-message error" role="alert">{error}</div>}
+      {!nextAction && message && <div className="driver-action-message success" role="status">{message}</div>}
 
-      {nextAction && (
-        <section className="driver-primary-action"><button type="button" disabled={saving} onClick={handlePrimaryAction}>{nextAction.icon} {saving ? "Kaydediliyor..." : nextAction.label}</button></section>
+      {nextAction && !showNoShowEvidence && (
+        <section className="driver-status-dock">
+          {error && <div className="driver-action-message error" role="alert">{error}</div>}
+          {message && <div className="driver-action-message success" role="status">{message}</div>}
+          <SlideToConfirm key={`${transfer.id}-${transfer.status}`} label={nextAction.label} icon={nextAction.icon} disabled={saving} onConfirm={handlePrimaryAction} />
+          <p>Yalnızca araç güvenli şekilde dururken kullanın.</p>
+        </section>
       )}
 
       {canCreateNoShowEvidence && (
@@ -221,11 +228,8 @@ function InfoCard({ title, children }) { return <article className="driver-info-
 function InfoRow({ label, value }) { return <div className="driver-info-row"><span>{label}</span><strong>{value}</strong></div>; }
 function normalizePhone(value) { if (!value) return ""; let phone = String(value).replace(/\D/g, ""); if (phone.startsWith("00")) phone = phone.slice(2); if (phone.length === 10 && phone.startsWith("5")) phone = `90${phone}`; if (phone.length === 11 && phone.startsWith("0")) phone = `90${phone.slice(1)}`; return phone; }
 function getPassengerCount(transfer) { return Number(transfer.adult || 0) + Number(transfer.child || 0) + Number(transfer.baby || 0); }
-function getPickupLabel(transfer) { return transfer.pickup_location?.name || transfer.pickup || "Belirtilmedi"; }
-function getDropoffLabel(transfer) { return transfer.dropoff_location?.name || transfer.dropoff || "Belirtilmedi"; }
-function getLocationDestination(location, lat, lng, fallback) { const latitude = Number(location?.latitude ?? lat); const longitude = Number(location?.longitude ?? lng); if (Number.isFinite(latitude) && Number.isFinite(longitude)) return `${latitude},${longitude}`; return location?.name || fallback || ""; }
+function getPickupLabel(transfer) { return getRouteAddress(transfer, "pickup"); }
+function getDropoffLabel(transfer) { return getRouteAddress(transfer, "dropoff"); }
 function formatDateTime(value) { if (!value) return "Belirtilmedi"; const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" }); }
 function statusLabel(status) { const labels = { pending:"Bekliyor", accepted:"Kabul Edildi", on_the_way:"Yola Çıktı", arrived:"Alış Noktasında", passenger_called:"Yolcu Arandı", passenger_on_board:"Yolcu Araçta", trip_started:"Transfer Başladı", completed:"Tamamlandı", no_show:"No Show", cancelled:"İptal Edildi" }; return labels[status] || status; }
-function createWhatsAppMessage(transfer) { return [`Merhaba ${transfer.passenger_name || ""},`, "", `SkyTrip Transfer sürücünüz ${transfer.driver?.name || ""}.`, `Rezervasyon: ${transfer.booking_reference || "-"}`, "", "Size ulaşmak için bu WhatsApp görüşmesini açtım."].join("\n"); }
-function createTrackingWhatsAppMessage(transfer, trackingUrl) { return [`Merhaba ${transfer.passenger_name || ""},`, "", "Aracınız yola çıktı. Canlı konumu aşağıdaki bağlantıdan takip edebilirsiniz:", trackingUrl, "", `Rezervasyon: ${transfer.booking_reference || "-"}`].join("\n"); }
 function getContactLocation() { return new Promise((resolve) => { if (!navigator.geolocation) { resolve({}); return; } navigator.geolocation.getCurrentPosition((position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy }), () => resolve({}), { enableHighAccuracy: true, timeout: 5000, maximumAge: 15000 }); }); }

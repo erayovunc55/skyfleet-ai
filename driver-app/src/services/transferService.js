@@ -1,6 +1,14 @@
 import apiClient from "./apiClient";
 
 const transferService = {
+  async getMeetingPreference() {
+    const response = await apiClient.get("/driver/meeting-preference");
+    return response.data.data;
+  },
+  async setMeetingPreference(optedIn) {
+    const response = await apiClient.put("/driver/meeting-preference", { opted_in: optedIn });
+    return response.data.data;
+  },
   async getAssignedTransfers() {
     const response = await apiClient.get("/driver/transfers");
     return Array.isArray(response.data?.data) ? response.data.data : [];

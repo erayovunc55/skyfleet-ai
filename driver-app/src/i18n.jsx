@@ -11,74 +11,436 @@ export const LANGUAGES = [
 ];
 
 const phrases = {
-  "Sürücü Girişi": { en: "Driver Login", ar: "تسجيل دخول السائق", es: "Acceso del conductor" },
-  "Atanmış transferlerinizi yönetin ve canlı konum paylaşın.": { en: "Manage your assigned transfers and share live location.", ar: "أدر التحويلات المعيّنة لك وشارك موقعك المباشر.", es: "Gestiona tus traslados asignados y comparte tu ubicación en vivo." },
-  "Telefon veya e-posta": { en: "Phone or email", ar: "الهاتف أو البريد الإلكتروني", es: "Teléfono o correo" },
-  "Şifre": { en: "Password", ar: "كلمة المرور", es: "Contraseña" },
-  "Giriş Yap": { en: "Sign In", ar: "تسجيل الدخول", es: "Iniciar sesión" },
-  "Giriş yapılıyor...": { en: "Signing in...", ar: "جارٍ تسجيل الدخول...", es: "Iniciando sesión..." },
-  "Giriş yapılamadı.": { en: "Unable to sign in.", ar: "تعذر تسجيل الدخول.", es: "No se pudo iniciar sesión." },
-  "Merhaba": { en: "Hello", ar: "مرحباً", es: "Hola" },
-  "Bildirimler": { en: "Notifications", ar: "الإشعارات", es: "Notificaciones" },
-  "Çıkış": { en: "Logout", ar: "تسجيل الخروج", es: "Salir" },
-  "Atanmış": { en: "Assigned", ar: "المعيّنة", es: "Asignados" },
-  "Devam Eden": { en: "In Progress", ar: "قيد التنفيذ", es: "En curso" },
-  "Bekleyen": { en: "Waiting", ar: "قيد الانتظار", es: "Pendientes" },
-  "Tamamlanan": { en: "Completed", ar: "المكتملة", es: "Completados" },
-  "Bu Ay Tamamlanan": { en: "Completed This Month", ar: "المكتملة هذا الشهر", es: "Completados este mes" },
-  "Tamamlandı": { en: "Completed", ar: "مكتمل", es: "Completado" },
-  "Bekliyor": { en: "Waiting", ar: "قيد الانتظار", es: "Pendiente" },
-  "Kabul Edildi": { en: "Accepted", ar: "تم القبول", es: "Aceptado" },
-  "Yola Çıkıldı": { en: "En Route", ar: "في الطريق", es: "En camino" },
-  "Alış Noktasında": { en: "At Pickup", ar: "في نقطة الاستلام", es: "En recogida" },
-  "Yolcu Arandı": { en: "Passenger Contacted", ar: "تم التواصل مع الراكب", es: "Pasajero contactado" },
-  "Yolcu Geldi": { en: "Passenger On Board", ar: "الراكب في المركبة", es: "Pasajero a bordo" },
-  "Yolculuk Başladı": { en: "Trip Started", ar: "بدأت الرحلة", es: "Viaje iniciado" },
-  "İptal Edildi": { en: "Cancelled", ar: "ملغى", es: "Cancelado" },
-  "Yenile": { en: "Refresh", ar: "تحديث", es: "Actualizar" },
-  "Aktif Transferler": { en: "Active Transfers", ar: "التحويلات النشطة", es: "Traslados activos" },
-  "Tamamlananlar": { en: "Completed", ar: "المكتملة", es: "Completados" },
-  "Aktif transfer yok": { en: "No active transfers", ar: "لا توجد تحويلات نشطة", es: "No hay traslados activos" },
-  "Tamamlanan transfer yok": { en: "No completed transfers", ar: "لا توجد تحويلات مكتملة", es: "No hay traslados completados" },
-  "Yeni transfer atandığında burada görünecek.": { en: "Newly assigned transfers will appear here.", ar: "ستظهر التحويلات الجديدة المعيّنة هنا.", es: "Los nuevos traslados asignados aparecerán aquí." },
-  "Tamamlanan işler burada arşivlenecek.": { en: "Completed jobs will be archived here.", ar: "ستتم أرشفة المهام المكتملة هنا.", es: "Los servicios completados se archivarán aquí." },
-  "Transferler yükleniyor...": { en: "Loading transfers...", ar: "جارٍ تحميل التحويلات...", es: "Cargando traslados..." },
-  "Transferleri Aç": { en: "Open Transfers", ar: "فتح التحويلات", es: "Abrir traslados" },
-  "Transferi Aç": { en: "Open Transfer", ar: "فتح التحويل", es: "Abrir traslado" },
-  "Transfer Detayı": { en: "Transfer Details", ar: "تفاصيل التحويل", es: "Detalles del traslado" },
-  "Yolcu": { en: "Passenger", ar: "الراكب", es: "Pasajero" },
-  "Ad Soyad": { en: "Full Name", ar: "الاسم الكامل", es: "Nombre completo" },
-  "Telefon": { en: "Phone", ar: "الهاتف", es: "Teléfono" },
-  "Bagaj": { en: "Luggage", ar: "الأمتعة", es: "Equipaje" },
-  "Yolcuyu Ara": { en: "Call Passenger", ar: "اتصل بالراكب", es: "Llamar al pasajero" },
-  "Uçuş": { en: "Flight", ar: "الرحلة", es: "Vuelo" },
-  "Uçuş yok": { en: "No flight", ar: "لا توجد رحلة", es: "Sin vuelo" },
-  "Havayolu": { en: "Airline", ar: "شركة الطيران", es: "Aerolínea" },
-  "Terminal": { en: "Terminal", ar: "المبنى", es: "Terminal" },
-  "Alış Saati": { en: "Pickup Time", ar: "وقت الاستلام", es: "Hora de recogida" },
-  "Rezervasyon": { en: "Booking", ar: "الحجز", es: "Reserva" },
-  "Referans": { en: "Reference", ar: "المرجع", es: "Referencia" },
-  "Araç Tipi": { en: "Vehicle Type", ar: "نوع المركبة", es: "Tipo de vehículo" },
-  "Buluşma Noktası": { en: "Meeting Point", ar: "نقطة الالتقاء", es: "Punto de encuentro" },
-  "Notlar": { en: "Notes", ar: "ملاحظات", es: "Notas" },
-  "Sürücü Notu": { en: "Driver Note", ar: "ملاحظة السائق", es: "Nota del conductor" },
-  "Yolcu Notu": { en: "Passenger Note", ar: "ملاحظة الراكب", es: "Nota del pasajero" },
-  "Belirtilmedi": { en: "Not Provided", ar: "غير محدد", es: "No indicado" },
-  "Alış noktası": { en: "Pickup point", ar: "نقطة الاستلام", es: "Punto de recogida" },
-  "Bırakış noktası": { en: "Dropoff point", ar: "نقطة الوصول", es: "Punto de destino" },
-  "Tarih yok": { en: "No date", ar: "لا يوجد تاريخ", es: "Sin fecha" },
-  "Pickup’a Git": { en: "Navigate to Pickup", ar: "اذهب إلى نقطة الاستلام", es: "Ir a recogida" },
-  "Dropoff’a Git": { en: "Navigate to Dropoff", ar: "اذهب إلى نقطة الوصول", es: "Ir al destino" },
-  "Sonraki Operasyon Adımı": { en: "Next Operation Step", ar: "خطوة التشغيل التالية", es: "Siguiente paso operativo" },
-  "Yola Çık": { en: "Start Driving", ar: "ابدأ القيادة", es: "Iniciar trayecto" },
-  "Alış Noktasındayım": { en: "I've Arrived at Pickup", ar: "وصلت إلى نقطة الاستلام", es: "He llegado al punto de recogida" },
-  "Yolcuyu Aradım": { en: "Passenger Contacted", ar: "تم التواصل مع الراكب", es: "Pasajero contactado" },
-  "Yolculuğu Başlat": { en: "Start Trip", ar: "ابدأ الرحلة", es: "Iniciar viaje" },
-  "Transferi Tamamla": { en: "Complete Trip", ar: "إكمال الرحلة", es: "Completar viaje" },
-  "Transfer Tamamlandı": { en: "Transfer Completed", ar: "اكتمل التحويل", es: "Traslado completado" },
-  "No Show Kaydı": { en: "No Show Record", ar: "تسجيل عدم الحضور", es: "Registro de no show" },
-  "Canlı Konum": { en: "Live Location", ar: "الموقع المباشر", es: "Ubicación en vivo" },
-  "Konum paylaşımı aktif": { en: "Location sharing active", ar: "مشاركة الموقع مفعلة", es: "Ubicación en vivo activa" },
+  "Sağa kaydırarak onayla": {
+    en: `Slide right to confirm`,
+    ar: `اسحب لليمين للتأكيد`,
+    es: `Desliza a la derecha para confirmar`
+  },
+  "Onaylamak için tekrar Enter tuşuna basın.": {
+    en: `Press Enter again to confirm.`,
+    ar: `اضغط Enter مرة أخرى للتأكيد.`,
+    es: `Pulsa Enter otra vez para confirmar.`
+  },
+  "Onaylamak için sağa kaydırın veya Enter tuşuna iki kez basın.": {
+    en: `Slide right or press Enter twice to confirm.`,
+    ar: `اسحب لليمين أو اضغط Enter مرتين للتأكيد.`,
+    es: `Desliza a la derecha o pulsa Enter dos veces para confirmar.`
+  },
+  "Yalnızca araç güvenli şekilde dururken kullanın.": {
+    en: `Use only when the vehicle is safely stopped.`,
+    ar: `استخدم فقط عندما تكون المركبة متوقفة بأمان.`,
+    es: `Úsalo solo con el vehículo detenido de forma segura.`
+  },
+  "GPS Ayrıntıları": {
+    en: `GPS Details`,
+    ar: `تفاصيل GPS`,
+    es: `Detalles GPS`
+  },
+  "Şifremi Unuttum": {
+    en: `Forgot Password`,
+    ar: `نسيت كلمة المرور`,
+    es: `Olvidé mi contraseña`
+  },
+  Göster: {
+    en: `Show`,
+    ar: `إظهار`,
+    es: `Mostrar`
+  },
+  Gizle: {
+    en: `Hide`,
+    ar: `إخفاء`,
+    es: `Ocultar`
+  },
+  "Sıfırlama Bağlantısı Gönder": {
+    en: `Send Reset Link`,
+    ar: `إرسال رابط إعادة التعيين`,
+    es: `Enviar enlace`
+  },
+  "Gönderiliyor...": {
+    en: `Sending...`,
+    ar: `جارٍ الإرسال...`,
+    es: `Enviando...`
+  },
+  "Giriş ekranına dön": {
+    en: `Back to Sign In`,
+    ar: `العودة لتسجيل الدخول`,
+    es: `Volver al inicio`
+  },
+  "Bilgileriniz aktif bir sürücü hesabına bağlıysa sıfırlama bağlantısı kayıtlı e-postanıza gönderildi. Kayıtlı e-postanız yoksa tedarikçinizden veya yönetimden WhatsApp sıfırlama bağlantısı isteyin.": {
+    en: `If your details match an active driver account, a reset link was sent to your registered email. Without a registered email, ask your supplier or management for a WhatsApp reset link.`,
+    ar: `إذا كانت بياناتك مرتبطة بحساب سائق نشط، تم إرسال رابط إلى بريدك المسجل. إذا لم يكن لديك بريد مسجل، اطلب رابط واتساب من المورد أو الإدارة.`,
+    es: `Si tus datos corresponden a una cuenta activa, se envió un enlace al correo registrado. Sin correo, pide un enlace de WhatsApp al proveedor o a la administración.`
+  },
+  "Lütfen yeni bağlantı istemeden önce bir dakika bekleyin.": {
+    en: `Wait one minute before requesting another link.`,
+    ar: `انتظر دقيقة قبل طلب رابط آخر.`,
+    es: `Espera un minuto antes de solicitar otro enlace.`
+  },
+  "WhatsApp buluşma bildirimleri": {
+    en: `WhatsApp meeting notifications`,
+    ar: `إشعارات اللقاء عبر واتساب`,
+    es: `Avisos de encuentro por WhatsApp`
+  },
+  "Yolcunun onayladığı buluşma notlarını kayıtlı telefonuma WhatsApp üzerinden almayı kabul ediyorum. İznimi buradan kaldırabilirim. Meta onayı tamamlanmadan mesaj gönderilmez.": {
+    en: `I agree to receive passenger-approved meeting notes on my registered phone via WhatsApp. I can withdraw consent here. No messages are sent until Meta approval is complete.`,
+    ar: `أوافق على تلقي ملاحظات اللقاء التي وافق عليها الراكب عبر واتساب على هاتفي المسجل. يمكنني سحب موافقتي هنا. لن تُرسل رسائل قبل اكتمال موافقة ميتا.`,
+    es: `Acepto recibir las notas de encuentro aprobadas por el pasajero en mi teléfono registrado por WhatsApp. Puedo retirar mi consentimiento aquí. No se envían mensajes hasta completar la aprobación de Meta.`
+  },
+  "WhatsApp bildirimlerine izin ver": {
+    en: `Allow WhatsApp notifications`,
+    ar: `السماح بإشعارات واتساب`,
+    es: `Permitir avisos por WhatsApp`
+  },
+  "WhatsApp tercihi yüklenemedi.": {
+    en: `Could not load WhatsApp preference.`,
+    ar: `تعذر تحميل تفضيل واتساب.`,
+    es: `No se pudo cargar la preferencia de WhatsApp.`
+  },
+  "WhatsApp tercihi kaydedilemedi.": {
+    en: `Could not save WhatsApp preference.`,
+    ar: `تعذر حفظ تفضيل واتساب.`,
+    es: `No se pudo guardar la preferencia de WhatsApp.`
+  },
+  "Sürücü Girişi": {
+    en: `Driver Login`,
+    ar: `تسجيل دخول السائق`,
+    es: `Acceso del conductor`
+  },
+  "Atanmış transferlerinizi yönetin ve canlı konum paylaşın.": {
+    en: `Manage your assigned transfers and share live location.`,
+    ar: `أدر التحويلات المعيّنة لك وشارك موقعك المباشر.`,
+    es: `Gestiona tus traslados asignados y comparte tu ubicación en vivo.`
+  },
+  "Telefon veya e-posta": {
+    en: `Phone or email`,
+    ar: `الهاتف أو البريد الإلكتروني`,
+    es: `Teléfono o correo`
+  },
+  Şifre: {
+    en: `Password`,
+    ar: `كلمة المرور`,
+    es: `Contraseña`
+  },
+  "Giriş Yap": {
+    en: `Sign In`,
+    ar: `تسجيل الدخول`,
+    es: `Iniciar sesión`
+  },
+  "Giriş yapılıyor...": {
+    en: `Signing in...`,
+    ar: `جارٍ تسجيل الدخول...`,
+    es: `Iniciando sesión...`
+  },
+  "Giriş yapılamadı.": {
+    en: `Unable to sign in.`,
+    ar: `تعذر تسجيل الدخول.`,
+    es: `No se pudo iniciar sesión.`
+  },
+  Merhaba: {
+    en: `Hello`,
+    ar: `مرحباً`,
+    es: `Hola`
+  },
+  Bildirimler: {
+    en: `Notifications`,
+    ar: `الإشعارات`,
+    es: `Notificaciones`
+  },
+  Çıkış: {
+    en: `Logout`,
+    ar: `تسجيل الخروج`,
+    es: `Salir`
+  },
+  Atanmış: {
+    en: `Assigned`,
+    ar: `المعيّنة`,
+    es: `Asignados`
+  },
+  "Devam Eden": {
+    en: `In Progress`,
+    ar: `قيد التنفيذ`,
+    es: `En curso`
+  },
+  Bekleyen: {
+    en: `Waiting`,
+    ar: `قيد الانتظار`,
+    es: `Pendientes`
+  },
+  Tamamlanan: {
+    en: `Completed`,
+    ar: `المكتملة`,
+    es: `Completados`
+  },
+  Tamamlandı: {
+    en: `Completed`,
+    ar: `مكتمل`,
+    es: `Completado`
+  },
+  Bekliyor: {
+    en: `Waiting`,
+    ar: `قيد الانتظار`,
+    es: `Pendiente`
+  },
+  "Kabul Edildi": {
+    en: `Accepted`,
+    ar: `تم القبول`,
+    es: `Aceptado`
+  },
+  "Yola Çıkıldı": {
+    en: `En Route`,
+    ar: `في الطريق`,
+    es: `En camino`
+  },
+  "Alış Noktasında": {
+    en: `At Pickup`,
+    ar: `في نقطة الاستلام`,
+    es: `En recogida`
+  },
+  "Yolcu Arandı": {
+    en: `Passenger Contacted`,
+    ar: `تم التواصل مع الراكب`,
+    es: `Pasajero contactado`
+  },
+  "Yolcu Geldi": {
+    en: `Passenger On Board`,
+    ar: `الراكب في المركبة`,
+    es: `Pasajero a bordo`
+  },
+  "Yolculuk Başladı": {
+    en: `Trip Started`,
+    ar: `بدأت الرحلة`,
+    es: `Viaje iniciado`
+  },
+  "İptal Edildi": {
+    en: `Cancelled`,
+    ar: `ملغى`,
+    es: `Cancelado`
+  },
+  Yenile: {
+    en: `Refresh`,
+    ar: `تحديث`,
+    es: `Actualizar`
+  },
+  "Aktif Transferler": {
+    en: `Active Transfers`,
+    ar: `التحويلات النشطة`,
+    es: `Traslados activos`
+  },
+  Tamamlananlar: {
+    en: `Completed`,
+    ar: `المكتملة`,
+    es: `Completados`
+  },
+  "Aktif transfer yok": {
+    en: `No active transfers`,
+    ar: `لا توجد تحويلات نشطة`,
+    es: `No hay traslados activos`
+  },
+  "Tamamlanan transfer yok": {
+    en: `No completed transfers`,
+    ar: `لا توجد تحويلات مكتملة`,
+    es: `No hay traslados completados`
+  },
+  "Yeni transfer atandığında burada görünecek.": {
+    en: `Newly assigned transfers will appear here.`,
+    ar: `ستظهر التحويلات الجديدة المعيّنة هنا.`,
+    es: `Los nuevos traslados asignados aparecerán aquí.`
+  },
+  "Tamamlanan işler burada arşivlenecek.": {
+    en: `Completed jobs will be archived here.`,
+    ar: `ستتم أرشفة المهام المكتملة هنا.`,
+    es: `Los servicios completados se archivarán aquí.`
+  },
+  "Transferler yükleniyor...": {
+    en: `Loading transfers...`,
+    ar: `جارٍ تحميل التحويلات...`,
+    es: `Cargando traslados...`
+  },
+  "Transferleri Aç": {
+    en: `Open Transfers`,
+    ar: `فتح التحويلات`,
+    es: `Abrir traslados`
+  },
+  "Transferi Aç": {
+    en: `Open Transfer`,
+    ar: `فتح التحويل`,
+    es: `Abrir traslado`
+  },
+  "Transfer Detayı": {
+    en: `Transfer Details`,
+    ar: `تفاصيل التحويل`,
+    es: `Detalles del traslado`
+  },
+  Yolcu: {
+    en: `Passenger`,
+    ar: `الراكب`,
+    es: `Pasajero`
+  },
+  "Ad Soyad": {
+    en: `Full Name`,
+    ar: `الاسم الكامل`,
+    es: `Nombre completo`
+  },
+  Telefon: {
+    en: `Phone`,
+    ar: `الهاتف`,
+    es: `Teléfono`
+  },
+  Bagaj: {
+    en: `Luggage`,
+    ar: `الأمتعة`,
+    es: `Equipaje`
+  },
+  "Yolcuyu Ara": {
+    en: `Call Passenger`,
+    ar: `اتصل بالراكب`,
+    es: `Llamar al pasajero`
+  },
+  Uçuş: {
+    en: `Flight`,
+    ar: `الرحلة`,
+    es: `Vuelo`
+  },
+  "Uçuş yok": {
+    en: `No flight`,
+    ar: `لا توجد رحلة`,
+    es: `Sin vuelo`
+  },
+  Havayolu: {
+    en: `Airline`,
+    ar: `شركة الطيران`,
+    es: `Aerolínea`
+  },
+  Terminal: {
+    en: `Terminal`,
+    ar: `المبنى`,
+    es: `Terminal`
+  },
+  "Alış Saati": {
+    en: `Pickup Time`,
+    ar: `وقت الاستلام`,
+    es: `Hora de recogida`
+  },
+  Rezervasyon: {
+    en: `Booking`,
+    ar: `الحجز`,
+    es: `Reserva`
+  },
+  Referans: {
+    en: `Reference`,
+    ar: `المرجع`,
+    es: `Referencia`
+  },
+  "Araç Tipi": {
+    en: `Vehicle Type`,
+    ar: `نوع المركبة`,
+    es: `Tipo de vehículo`
+  },
+  "Buluşma Noktası": {
+    en: `Meeting Point`,
+    ar: `نقطة الالتقاء`,
+    es: `Punto de encuentro`
+  },
+  Notlar: {
+    en: `Notes`,
+    ar: `ملاحظات`,
+    es: `Notas`
+  },
+  "Sürücü Notu": {
+    en: `Driver Note`,
+    ar: `ملاحظة السائق`,
+    es: `Nota del conductor`
+  },
+  "Yolcu Notu": {
+    en: `Passenger Note`,
+    ar: `ملاحظة الراكب`,
+    es: `Nota del pasajero`
+  },
+  Belirtilmedi: {
+    en: `Not Provided`,
+    ar: `غير محدد`,
+    es: `No indicado`
+  },
+  "Alış noktası": {
+    en: `Pickup point`,
+    ar: `نقطة الاستلام`,
+    es: `Punto de recogida`
+  },
+  "Bırakış noktası": {
+    en: `Dropoff point`,
+    ar: `نقطة الوصول`,
+    es: `Punto de destino`
+  },
+  "Tarih yok": {
+    en: `No date`,
+    ar: `لا يوجد تاريخ`,
+    es: `Sin fecha`
+  },
+  "Pickup’a Git": {
+    en: `Navigate to Pickup`,
+    ar: `اذهب إلى نقطة الاستلام`,
+    es: `Ir a recogida`
+  },
+  "Dropoff’a Git": {
+    en: `Navigate to Dropoff`,
+    ar: `اذهب إلى نقطة الوصول`,
+    es: `Ir al destino`
+  },
+  "Sonraki Operasyon Adımı": {
+    en: `Next Operation Step`,
+    ar: `خطوة التشغيل التالية`,
+    es: `Siguiente paso operativo`
+  },
+  "Yola Çık": {
+    en: `Start Driving`,
+    ar: `ابدأ القيادة`,
+    es: `Iniciar trayecto`
+  },
+  "Alış Noktasındayım": {
+    en: `I've Arrived at Pickup`,
+    ar: `وصلت إلى نقطة الاستلام`,
+    es: `He llegado al punto de recogida`
+  },
+  "Yolcuyu Aradım": {
+    en: `Passenger Contacted`,
+    ar: `تم التواصل مع الراكب`,
+    es: `Pasajero contactado`
+  },
+  "Yolculuğu Başlat": {
+    en: `Start Trip`,
+    ar: `ابدأ الرحلة`,
+    es: `Iniciar viaje`
+  },
+  "Transferi Tamamla": {
+    en: `Complete Trip`,
+    ar: `إكمال الرحلة`,
+    es: `Completar viaje`
+  },
+  "Transfer Tamamlandı": {
+    en: `Transfer Completed`,
+    ar: `اكتمل التحويل`,
+    es: `Traslado completado`
+  },
+  "No Show Kaydı": {
+    en: `No Show Record`,
+    ar: `تسجيل عدم الحضور`,
+    es: `Registro de no show`
+  },
+  "Canlı Konum": {
+    en: `Live Location`,
+    ar: `الموقع المباشر`,
+    es: `Ubicación en vivo`
+  },
+  "Konum paylaşımı aktif": {
+    en: `Location sharing active`,
+    ar: `مشاركة الموقع مفعلة`,
+    es: `Ubicación en vivo activa`
+  },
+  "Bu Ay Tamamlanan": {
+    en: "Completed This Month",
+    ar: "المكتملة هذا الشهر",
+    es: "Completados este mes"
+  }
 };
 
 const LanguageContext = createContext(null);

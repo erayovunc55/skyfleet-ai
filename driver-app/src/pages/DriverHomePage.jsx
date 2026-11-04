@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import DriverTransferCard from "../components/DriverTransferCard";
+import DriverMeetingPreference from "../components/DriverMeetingPreference";
 import { useCallback } from "react";
 import DriverTransferDetailPage from "./DriverTransferDetailPage";
 import transferService from "../services/transferService";
@@ -177,6 +178,11 @@ export default function DriverHomePage({ user, onLogout }) {
       <header>
         <div><small>SKYFLEET AI</small><h1>{t("Merhaba")}, {user?.name}</h1></div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {user?.supplier_company?.application_type === "individual" && (
+            <a href="https://skytriptransfer.com/supplier/" target="_blank" rel="noreferrer">
+              {t("Tedarikçi girişi / Açık işler")}
+            </a>
+          )}
           <button type="button" onClick={() => setActiveView("notifications")} style={{ position: "relative" }}>
             🔔 {t("Bildirimler")}
             {unreadCount > 0 && <span style={{ marginLeft: "7px", padding: "2px 7px", borderRadius: "999px", background: "#dc2626", color: "#fff", fontWeight: 800 }}>{unreadCount}</span>}
@@ -184,6 +190,8 @@ export default function DriverHomePage({ user, onLogout }) {
           <button type="button" onClick={onLogout}>{t("Çıkış")}</button>
         </div>
       </header>
+
+      <DriverMeetingPreference />
 
       {activeView === "transfers" && (
         <>

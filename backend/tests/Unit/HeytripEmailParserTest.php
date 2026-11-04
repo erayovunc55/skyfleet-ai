@@ -94,6 +94,6 @@ MAIL;
 
         $this->assertSame('cancelled', $result['type']);
         $this->assertSame('HT102212159322110102025', $result['ota_booking_reference']);
-        $this->assertSame('2026-10-22 09:15:00', $result['pickup_time']->format('Y-m-d H:i:s'));
+        $this->assertArrayNotHasKey('pickup_time', $result);
     }
 }

@@ -17,7 +17,7 @@ class PublicSupplierApplicationTest extends TestCase
     {
         Storage::fake('public');
 
-        $response = $this->post('/api/public/supplier-applications', [
+        $response = $this->post('/public/supplier-applications', [
             'company_name' => 'Global Ride Partner',
             'legal_name' => 'Global Ride Partner Limited',
             'contact_name' => 'Test Partner',

@@ -8,8 +8,20 @@ Use the following production policy for GitHub:
 - `develop` is the integration branch.
 - Direct pushes to `main` are prohibited.
 - Pull requests are required before merging to `main`.
-- At least one review is required for production merges.
+- At least one review is required for production merges, except for the single-developer workflow below.
 - The release check must pass before merge.
+
+## Single-developer workflow
+
+When the project owner is the only developer and GitHub prevents self-approval,
+the owner's explicit approval may replace the independent review requirement.
+Record that approval in the pull request before merging. Pull requests, passing
+checks, deployment readiness validation, and a rollback plan remain required.
+Do not disable or bypass GitHub branch protection to use this exception.
+
+For PR #2, the project owner approved production deployment and this exception
+in the release conversation on 2026-11-04. This approval does not attest that
+host deployment or rollback readiness has already been verified.
 
 ## Required checks
 

@@ -30,6 +30,7 @@ class DriverMonthlyCompletedCountTest extends TestCase
             'role' => 'driver',
             'supplier_id' => $supplier->id,
             'is_active' => true,
+            'phone' => '+10000000073',
         ]);
 
         foreach ([

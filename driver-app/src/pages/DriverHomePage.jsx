@@ -13,7 +13,7 @@ export default function DriverHomePage({ user, onLogout }) {
   const { t } = useLanguage();
   const storageKey = `skyfleet_driver_notifications_${user?.id || "driver"}`;
   const [transfers, setTransfers] = useState([]);
-  const [dashboard, setDashboard] = useState({ assigned: 0, ongoing: 0, waiting: 0, completedToday: 0 });
+  const [dashboard, setDashboard] = useState({ assigned: 0, ongoing: 0, waiting: 0, completedToday: 0, completedThisMonth: 0 });
   const [notifications, setNotifications] = useState(() => readNotifications(storageKey));
   const [activeView, setActiveView] = useState("transfers");
   const [transferTab, setTransferTab] = useState("active");
@@ -66,6 +66,7 @@ export default function DriverHomePage({ user, onLogout }) {
         ongoing: dashboardData?.ongoing ?? 0,
         waiting: dashboardData?.waiting ?? 0,
         completedToday: dashboardData?.completedToday ?? 0,
+        completedThisMonth: dashboardData?.completedThisMonth ?? 0,
       });
       createPickupReminders(normalizedItems);
     } catch (requestError) {
@@ -191,7 +192,7 @@ export default function DriverHomePage({ user, onLogout }) {
               <Summary label="Atanmış" value={activeTransfers.length} />
               <Summary label="Devam Eden" value={dashboard.ongoing} />
               <Summary label="Bekleyen" value={dashboard.waiting} />
-              <Summary label="Tamamlanan" value={completedTransfers.length} />
+              <Summary label={t("Bu Ay Tamamlanan")} value={dashboard.completedThisMonth} />
             </div>
             <button type="button" disabled={loading} onClick={() => loadData(true)}>Yenile</button>
           </section>

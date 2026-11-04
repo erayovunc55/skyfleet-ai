@@ -23,13 +23,13 @@ class AdminTransferRequestTest extends TestCase
 
         $transferRequest = $this->createTransferRequest();
 
-        $this->getJson('/api/admin/transfer-requests')
+        $this->getJson('/admin/transfer-requests')
             ->assertOk()
             ->assertJsonPath('data.0.request_reference', 'STR-20260826-ADMIN1')
             ->assertJsonPath('counts.new', 1);
 
         $this->patchJson(
-            "/api/admin/transfer-requests/{$transferRequest->id}/status",
+            "/admin/transfer-requests/{$transferRequest->id}/status",
             ['status' => 'quoted']
         )
             ->assertOk()
@@ -51,7 +51,7 @@ class AdminTransferRequestTest extends TestCase
         ]);
         Sanctum::actingAs($driver);
 
-        $this->getJson('/api/admin/transfer-requests')->assertForbidden();
+        $this->getJson('/admin/transfer-requests')->assertForbidden();
     }
 
     private function createTransferRequest(): TransferRequest

@@ -51,6 +51,10 @@ class StripeCheckoutSmokeTest extends TestCase
 
     public function test_store_creates_a_real_stripe_checkout_session_when_configured(): void
     {
+        if (getenv('SKYFLEET_STRIPE_SMOKE_TEST') !== '1') {
+            $this->markTestSkipped('Set SKYFLEET_STRIPE_SMOKE_TEST=1 to opt into the external Stripe smoke test.');
+        }
+
         if (!config('services.stripe.secret')) {
             $this->markTestSkipped('STRIPE_SECRET_KEY is not configured in this environment.');
         }

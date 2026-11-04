@@ -87,7 +87,7 @@ class DispatcherTransfersApiTest extends TestCase
             'status' => 'assigned',
         ]);
 
-        $response = $this->getJson('/api/dispatcher/transfers');
+        $response = $this->getJson('/dispatcher/transfers');
 
         $response->assertOk();
         $response->assertJsonStructure([

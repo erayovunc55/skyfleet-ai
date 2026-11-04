@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const root = process.cwd();
 const backendDir = path.join(root, 'backend');
-const url = process.env.HEALTH_URL || 'http://127.0.0.1:8000/api/health';
+const url = process.env.HEALTH_URL || 'http://127.0.0.1:8000/health';
 const timeoutMs = Number(process.env.HEALTH_TIMEOUT_MS || 30000);
 
 const waitForAlive = async () => {

@@ -2,6 +2,10 @@
 
 Web and Android driver application for live transfer operations.
 
+The home-screen completed count is calculated for the current calendar month in
+the supplier's timezone. It rolls over automatically at the start of each month;
+completed transfers remain available in the history.
+
 ## Development
 
 ```bash

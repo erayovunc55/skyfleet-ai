@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Transfer;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -341,11 +342,22 @@ public function update(
             ->where('status', 'pending')
             ->count();
 
+        $timezone = $user->supplierCompany->timezone ?? config('app.timezone', 'UTC');
+        $monthStart = CarbonImmutable::now($timezone)->startOfMonth();
+        $storageTimezone = config('app.timezone', 'UTC');
+        $completedThisMonth = Transfer::query()
+            ->where('driver_id', $user->id)
+            ->where('status', 'completed')
+            ->where('pickup_time', '>=', $monthStart->setTimezone($storageTimezone))
+            ->where('pickup_time', '<', $monthStart->addMonth()->setTimezone($storageTimezone))
+            ->count();
+
         return response()->json([
             'data' => [
                 'assigned' => $assigned,
                 'ongoing' => $ongoing,
                 'waiting' => $waiting,
+                'completedThisMonth' => $completedThisMonth,
                 'completedToday' => Transfer::query()
     ->where('driver_id', $user->id)
     ->where('status', 'completed')

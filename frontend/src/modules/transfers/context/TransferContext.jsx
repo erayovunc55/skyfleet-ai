@@ -6,6 +6,8 @@
   useState,
 } from "react";
 
+/* eslint-disable react-refresh/only-export-components -- context module intentionally exports its hook */
+
 const TransferContext = createContext(null);
 
 export function TransferProvider({

@@ -9,17 +9,17 @@
     sans-serif;
 
   color: #f5f8ff;
-  background: #050d1b;
+  background: #15181d;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 
-  --background: #050d1b;
-  --surface: #0b172b;
-  --surface-soft: #0e1d34;
-  --surface-light: #12243d;
-  --border: #203a59;
-  --border-soft: #162c47;
+  --background: #15181d;
+  --surface: #1c2027;
+  --surface-soft: #21262e;
+  --surface-light: #272d36;
+  --border: #323945;
+  --border-soft: #2a303a;
   --text: #f5f8ff;
   --text-soft: #91a9cb;
   --text-muted: #60799e;
@@ -47,7 +47,7 @@ body {
   background:
     radial-gradient(
       circle at top right,
-      rgba(19, 116, 237, 0.12),
+      rgba(255, 255, 255, 0.03),
       transparent 30%
     ),
     var(--background);

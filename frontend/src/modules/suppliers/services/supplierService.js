@@ -52,6 +52,40 @@ const supplierService = {
     return response.data;
   },
 
+  async approveSupplier(supplierId, payload = {}) {
+    const response = await apiClient.patch(`/suppliers/${supplierId}/approve`,
+      payload
+    );
+    return response.data?.data || response.data;
+  },
+
+  async requestRevision(supplierId, payload = {}) {
+    const response = await apiClient.patch(`/suppliers/${supplierId}/request-revision`,
+      payload
+    );
+    return response.data?.data || response.data;
+  },
+
+  async rejectSupplier(supplierId, payload = {}) {
+    const response = await apiClient.patch(`/suppliers/${supplierId}/reject`,
+      payload
+    );
+    return response.data?.data || response.data;
+  },
+
+  async suspendSupplier(supplierId, payload = {}) {
+    const response = await apiClient.patch(`/suppliers/${supplierId}/suspend`,
+      payload
+    );
+    return response.data?.data || response.data;
+  },
+
+  async reactivateSupplier(supplierId, payload = {}) {
+    const response = await apiClient.patch(`/suppliers/${supplierId}/reactivate`,
+      payload
+    );
+    return response.data?.data || response.data;
+  },
   async getActivity(supplierId, params = {}) {
     const response = await apiClient.get(`/suppliers/${supplierId}/activity`, { params });
     return response.data;

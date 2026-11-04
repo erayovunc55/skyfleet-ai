@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import "./supplier-professional.css";
 import SupplierAvailableJobsPage from "./pages/SupplierAvailableJobsPage";
 import SupplierDashboardPage from "./pages/SupplierDashboardPage";
+import SupplierCoveragePage from "./pages/SupplierCoveragePage";
 import SupplierDriversPage from "./pages/SupplierDriversPage";
 import SupplierFinancePage from "./pages/SupplierFinancePage";
 import SupplierHistoryPage from "./pages/SupplierHistoryPage";
@@ -13,13 +15,14 @@ import { LanguageSwitcher } from "./i18n.jsx";
 import { clearStoredAuth, getStoredUser, logout } from "./services/authService";
 
 const NAVIGATION_ITEMS = [
-  { id: "available-jobs", label: "Açık İşler", icon: "⚡" },
-  { id: "transfers", label: "Transferlerim", icon: "📋" },
-  { id: "history", label: "Geçmiş", icon: "🗂️" },
-  { id: "drivers", label: "Sürücüler", icon: "👤" },
-  { id: "vehicles", label: "Araçlar", icon: "🚐" },
-  { id: "finance", label: "Hakedişlerim", icon: "💶" },
-  { id: "invoices", label: "Faturalar", icon: "📄" },
+  { id: "available-jobs", label: "Açık İşler" },
+  { id: "transfers", label: "Transferlerim" },
+  { id: "history", label: "Geçmiş" },
+  { id: "drivers", label: "Sürücüler" },
+  { id: "vehicles", label: "Araçlar" },
+  { id: "coverage", label: "Kapsama Alanları" },
+  { id: "finance", label: "Hakedişlerim" },
+  { id: "invoices", label: "Faturalar" },
 ];
 
 export default function App() {
@@ -92,33 +95,41 @@ export default function App() {
           <div><strong>SKYFLEET<span> AI</span></strong><small>Supplier Network</small></div>
         </div>
 
-        <nav className="supplier-header-navigation">
+        <nav className="supplier-header-navigation" aria-label="Supplier navigation">
           {NAVIGATION_ITEMS.map((item) => (
             <button
               key={item.id}
               type="button"
               className={currentPage === item.id ? "active" : ""}
+              aria-current={currentPage === item.id ? "page" : undefined}
               onClick={() => setCurrentPage(item.id)}
             >
-              <span>{item.icon}</span>{item.label}
+              {item.label}
             </button>
           ))}
         </nav>
 
         <div className="supplier-header-user">
           <LanguageSwitcher />
-          <div><strong>{company?.company_name || user?.name}</strong><small>Tedarikçi</small></div>
-          <button type="button" onClick={handleLogout}>Çıkış</button>
+          <div className="supplier-user-avatar" aria-hidden="true">
+            {(company?.company_name || user?.name || "S").trim().charAt(0).toUpperCase()}
+          </div>
+          <div className="supplier-user-identity">
+            <strong>{company?.company_name || user?.name}</strong>
+            <small>Tedarikçi hesabı</small>
+          </div>
+          <button className="supplier-logout-button" type="button" onClick={handleLogout}>Çıkış</button>
         </div>
       </header>
 
       {currentPage === "available-jobs" && (
         <SupplierAvailableJobsPage onOpenMyTransfers={() => setCurrentPage("transfers")} />
       )}
-      {currentPage === "transfers" && <SupplierDashboardPage user={user} onLogout={handleLogout} />}
+      {currentPage === "transfers" && <SupplierDashboardPage user={user} />}
       {currentPage === "history" && <SupplierHistoryPage />}
       {currentPage === "drivers" && <SupplierDriversPage />}
       {currentPage === "vehicles" && <SupplierVehiclesPage />}
+      {currentPage === "coverage" && <SupplierCoveragePage />}
       {currentPage === "finance" && <SupplierFinancePage />}
       {currentPage === "invoices" && <SupplierInvoicesPage />}
     </div>

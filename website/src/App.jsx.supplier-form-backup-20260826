@@ -1,0 +1,362 @@
+import { useMemo, useState } from "react";
+import axios from "axios";
+import "./App.css";
+import "./mobile-menu.css";
+import "./form-status.css";
+
+const SUPPLIER_PORTAL_URL = "/supplier/";
+
+const content = {
+  en: {
+    nav: { home: "Home", transfer: "Book a Transfer", suppliers: "Become a Supplier", login: "Supplier Login" },
+    heroEyebrow: "GLOBAL GROUND TRANSPORTATION NETWORK",
+    heroTitle: "Airport transfers, operated with confidence.",
+    heroText: "Book reliable airport transportation or join our growing supplier network. SkyTripTransfer connects passengers, professional drivers and local operators through one operational platform.",
+    book: "Book a Transfer",
+    join: "Start Earning With Us",
+    trust: ["Live vehicle tracking", "Verified local suppliers", "24/7 operational support"],
+    numbers: [["24/7", "Operations"], ["Global", "Supplier network"], ["Live", "Trip visibility"]],
+    passengerTitle: "A smoother journey from pickup to drop-off",
+    passengerText: "Every trip is supported by live operational visibility, clear passenger communication and professional local teams.",
+    passengerCards: [
+      ["01", "Easy booking", "Send your route and travel details in minutes."],
+      ["02", "Verified operation", "Your transfer is matched with an approved local supplier."],
+      ["03", "Live tracking", "Follow the assigned vehicle through a secure link—no app required."],
+    ],
+    supplierTitle: "Turn local capacity into global opportunity.",
+    supplierText: "Join SkyTripTransfer, receive suitable transfer opportunities, manage drivers and vehicles, and track your earnings from one supplier portal.",
+    supplierPoints: ["Access transfer opportunities", "Manage drivers and vehicles", "Transparent earnings and invoices", "Dedicated operational support"],
+    ctaTitle: "Ready to move with SkyTripTransfer?",
+    ctaText: "Choose your path and get started today.",
+  },
+  tr: {
+    nav: { home: "Ana Sayfa", transfer: "Transfer Rezervasyonu", suppliers: "Tedarikçi Ol", login: "Tedarikçi Girişi" },
+    heroEyebrow: "GLOBAL KARAYOLU ULAŞIM AĞI",
+    heroTitle: "Havalimanı transferlerinde güvenilir operasyon.",
+    heroText: "Güvenilir bir transfer rezervasyonu yapın veya büyüyen tedarikçi ağımıza katılın. SkyTripTransfer; yolcuları, profesyonel sürücüleri ve yerel operasyon şirketlerini tek platformda buluşturur.",
+    book: "Transfer Rezervasyonu Yap",
+    join: "Bizimle Kazanmaya Başla",
+    trust: ["Canlı araç takibi", "Doğrulanmış yerel tedarikçiler", "7/24 operasyon desteği"],
+    numbers: [["7/24", "Operasyon"], ["Global", "Tedarikçi ağı"], ["Canlı", "Transfer görünürlüğü"]],
+    passengerTitle: "Alış noktasından varışa kadar daha rahat bir yolculuk",
+    passengerText: "Her transfer; canlı operasyon görünürlüğü, açık yolcu iletişimi ve profesyonel yerel ekiplerle desteklenir.",
+    passengerCards: [
+      ["01", "Kolay rezervasyon", "Rota ve seyahat bilgilerinizi dakikalar içinde gönderin."],
+      ["02", "Doğrulanmış operasyon", "Transferiniz onaylı bir yerel tedarikçiyle eşleştirilir."],
+      ["03", "Canlı takip", "Uygulama yüklemeden güvenli bağlantı üzerinden aracınızı takip edin."],
+    ],
+    supplierTitle: "Yerel kapasitenizi global fırsata dönüştürün.",
+    supplierText: "SkyTripTransfer'a katılın; uygun transfer fırsatlarını alın, sürücü ve araçlarınızı yönetin, kazançlarınızı tek panelden takip edin.",
+    supplierPoints: ["Transfer fırsatlarına erişim", "Sürücü ve araç yönetimi", "Şeffaf hakediş ve faturalar", "Özel operasyon desteği"],
+    ctaTitle: "SkyTripTransfer ile yola çıkmaya hazır mısınız?",
+    ctaText: "Size uygun yolu seçin ve bugün başlayın.",
+  },
+};
+
+export default function App() {
+  const [language, setLanguage] = useState(() => {
+    const storedLanguage = window.localStorage.getItem("skytriptransfer-language");
+    return storedLanguage === "tr" ? "tr" : "en";
+  });
+  const page = useMemo(() => getPage(window.location.pathname), []);
+  const t = content[language];
+
+  function changeLanguage(nextLanguage) {
+    window.localStorage.setItem("skytriptransfer-language", nextLanguage);
+    setLanguage(nextLanguage);
+  }
+
+  return (
+    <div className="site-shell">
+      <Header language={language} setLanguage={changeLanguage} t={t} page={page} />
+      {page === "transfer" ? <TransferPage language={language} /> : page === "supplier" ? <SupplierJoinPage language={language} /> : <HomePage t={t} />}
+      <Footer language={language} />
+    </div>
+  );
+}
+
+function Header({ language, setLanguage, t, page }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <header className="site-header">
+      <a className="brand" href="/" aria-label="SkyTripTransfer home">
+        <span className="brand-mark"><i />ST</span>
+        <span><strong>SKYTRIP</strong><em>TRANSFER</em><small>Global Mobility Network</small></span>
+      </a>
+      <nav className={menuOpen ? "open" : ""} aria-label="Main navigation">
+        <a className={page === "home" ? "active" : ""} href="/">{t.nav.home}</a>
+        <a className={page === "transfer" ? "active" : ""} href="/transfer">{t.nav.transfer}</a>
+        <a className={page === "supplier" ? "active" : ""} href="/supplier/join">{t.nav.suppliers}</a>
+      </nav>
+      <div className="header-actions">
+        <button className="language" type="button" onClick={() => setLanguage(language === "en" ? "tr" : "en")}>{language === "en" ? "TR" : "EN"}</button>
+        <a className="portal-link" href={SUPPLIER_PORTAL_URL}>{t.nav.login}</a>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-label={language === "tr" ? "Menüyü aç" : "Open menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((current) => !current)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function HomePage({ t }) {
+  return <main>
+    <section className="hero section-pad">
+      <div className="hero-copy">
+        <span className="eyebrow">{t.heroEyebrow}</span>
+        <h1>{t.heroTitle}</h1>
+        <p>{t.heroText}</p>
+        <div className="hero-actions"><a className="button primary" href="/transfer">{t.book}<span>↗</span></a><a className="button ghost" href="/supplier/join">{t.join}<span>→</span></a></div>
+        <div className="trust-row">{t.trust.map((item) => <span key={item}><b>✓</b>{item}</span>)}</div>
+      </div>
+      <RouteVisual />
+    </section>
+    <section className="number-strip section-pad">{t.numbers.map(([value,label]) => <div key={label}><strong>{value}</strong><span>{label}</span></div>)}</section>
+    <section className="passenger section-pad">
+      <div className="section-heading"><span className="eyebrow">PASSENGER EXPERIENCE</span><h2>{t.passengerTitle}</h2><p>{t.passengerText}</p></div>
+      <div className="feature-grid">{t.passengerCards.map(([n,title,text]) => <article key={n}><span>{n}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
+    </section>
+    <section className="supplier-section section-pad">
+      <div className="supplier-panel">
+        <div><span className="eyebrow">SUPPLIER NETWORK</span><h2>{t.supplierTitle}</h2><p>{t.supplierText}</p><a className="button light" href="/supplier/join">{t.join}<span>↗</span></a></div>
+        <ul>{t.supplierPoints.map((point) => <li key={point}><b>✓</b>{point}</li>)}</ul>
+      </div>
+    </section>
+    <section className="final-cta section-pad"><h2>{t.ctaTitle}</h2><p>{t.ctaText}</p><div><a className="button primary" href="/transfer">{t.book}</a><a className="button ghost" href="/supplier/join">{t.join}</a></div></section>
+  </main>;
+}
+
+function RouteVisual() {
+  return <div className="route-card" aria-label="Live transfer illustration">
+    <div className="route-top"><span>LIVE TRANSFER</span><b>● ON ROUTE</b></div>
+    <div className="mini-map"><div className="road one"/><div className="road two"/><div className="route-line"/><span className="pin airport">✈</span><span className="pin vehicle">◆</span><span className="pin hotel">●</span></div>
+    <div className="route-details"><div><small>PICKUP</small><strong>International Airport</strong></div><span>→</span><div><small>DROP-OFF</small><strong>City Destination</strong></div></div>
+    <div className="driver-card"><span className="avatar">ST</span><div><small>PROFESSIONAL DRIVER</small><strong>Vehicle assigned</strong></div><b>TRACKING ACTIVE</b></div>
+  </div>;
+}
+
+function TransferPage({ language }) {
+  const tr = language === "tr";
+  const [submission, setSubmission] = useState({ status: "idle", message: "" });
+  const earliestDate = new Date().toISOString().slice(0, 10);
+
+  async function submit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    const payload = {
+      pickup: formData.get("pickup"),
+      dropoff: formData.get("dropoff"),
+      pickup_date: formData.get("pickup_date"),
+      pickup_time: formData.get("pickup_time"),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+      flight_number: formData.get("flight_number") || null,
+      passengers: Number(formData.get("passengers")),
+      luggage_count: Number(formData.get("luggage_count") || 0),
+      vehicle_type: formData.get("vehicle_type") || null,
+      passenger_name: formData.get("passenger_name"),
+      passenger_phone: formData.get("passenger_phone"),
+      passenger_email: formData.get("passenger_email"),
+      note: formData.get("note") || null,
+      locale: language,
+      terms_accepted: formData.get("terms_accepted") === "1",
+    };
+
+    setSubmission({
+      status: "submitting",
+      message: tr ? "Transfer talebiniz güvenli şekilde gönderiliyor..." : "Submitting your transfer request securely...",
+    });
+
+    try {
+      const response = await axios.post("/api/public/transfer-requests", payload);
+      const reference = response.data?.data?.request_reference;
+
+      setSubmission({
+        status: "success",
+        message: tr
+          ? `Talebiniz alındı. Talep numaranız: ${reference}`
+          : `Your request has been received. Request reference: ${reference}`,
+      });
+      form.reset();
+    } catch (error) {
+      const validationErrors = error.response?.data?.errors;
+      const firstValidationMessage = validationErrors
+        ? Object.values(validationErrors).flat()[0]
+        : null;
+
+      setSubmission({
+        status: "error",
+        message: firstValidationMessage
+          || error.response?.data?.message
+          || (tr
+            ? "Talebiniz gönderilemedi. Bilgileri kontrol edip tekrar deneyin."
+            : "Your request could not be submitted. Check the details and try again."),
+      });
+    }
+  }
+
+  return <main className="inner-page section-pad">
+    <div className="page-intro"><span className="eyebrow">{tr ? "TRANSFER REZERVASYONU" : "BOOK A TRANSFER"}</span><h1>{tr ? "Yolculuğunuzu planlayın." : "Plan your journey."}</h1><p>{tr ? "Transfer detaylarınızı gönderin. Operasyon ekibimiz müsaitlik ve fiyat bilgisiyle size ulaşsın." : "Send your transfer details and our operations team will contact you with availability and pricing."}</p></div>
+    <form className="public-form" onSubmit={submit}>
+      <FormSection number="01" title={tr ? "Yolculuk" : "Journey"}>
+        <Field label={tr ? "Alış noktası" : "Pickup location"} name="pickup" required />
+        <Field label={tr ? "Bırakış noktası" : "Drop-off location"} name="dropoff" required />
+        <Field label={tr ? "Tarih" : "Date"} name="pickup_date" type="date" min={earliestDate} required />
+        <Field label={tr ? "Saat" : "Time"} name="pickup_time" type="time" required />
+        <Field label={tr ? "Uçuş numarası" : "Flight number"} name="flight_number" />
+        <Field label={tr ? "Yolcu sayısı" : "Passengers"} name="passengers" type="number" min="1" required />
+        <Field label={tr ? "Bagaj sayısı" : "Luggage count"} name="luggage_count" type="number" min="0" defaultValue="0" />
+        <Field label={tr ? "Araç tercihi" : "Vehicle preference"} name="vehicle_type" placeholder={tr ? "Sedan, Minivan, Minibüs" : "Sedan, Minivan, Minibus"} />
+      </FormSection>
+      <FormSection number="02" title={tr ? "İletişim" : "Contact"}>
+        <Field label={tr ? "Ad soyad" : "Full name"} name="passenger_name" autoComplete="name" required />
+        <Field label={tr ? "Telefon / WhatsApp" : "Phone / WhatsApp"} name="passenger_phone" type="tel" autoComplete="tel" required />
+        <Field label={tr ? "E-posta" : "Email"} name="passenger_email" type="email" autoComplete="email" required />
+        <label className="field wide"><span>{tr ? "Not" : "Note"}</span><textarea name="note" rows="4" /></label>
+      </FormSection>
+      <label className="consent"><input type="checkbox" name="terms_accepted" value="1" required /><span>{tr ? "Bilgilerin doğru olduğunu ve operasyon ekibinin talep hakkında benimle iletişime geçebileceğini kabul ediyorum." : "I confirm the details are accurate and the operations team may contact me about this request."}</span></label>
+      <div className="form-submit">
+        <button className="button primary" type="submit" disabled={submission.status === "submitting"}>
+          {submission.status === "submitting"
+            ? (tr ? "Gönderiliyor..." : "Submitting...")
+            : (tr ? "Transfer Talebi Gönder" : "Send Transfer Request")}
+          <span>→</span>
+        </button>
+        {submission.status !== "idle" && (
+          <p className={`form-notice ${submission.status}`} role="status">
+            {submission.message}
+          </p>
+        )}
+      </div>
+    </form>
+  </main>;
+}
+
+function SupplierJoinPage({ language }) {
+  const tr = language === "tr";
+  const [submission, setSubmission] = useState({ status: "idle", message: "" });
+
+  async function submit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    formData.set(
+      "timezone",
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    );
+
+    setSubmission({
+      status: "submitting",
+      message: tr ? "Başvurunuz güvenli şekilde gönderiliyor..." : "Submitting your application securely...",
+    });
+
+    try {
+      const response = await axios.post(
+        "/api/public/supplier-applications",
+        formData,
+      );
+
+      const applicationId = response.data?.data?.application_id;
+
+      setSubmission({
+        status: "success",
+        message: tr
+          ? `Başvurunuz alındı. Başvuru numaranız: ${applicationId}`
+          : `Your application has been received. Application ID: ${applicationId}`,
+      });
+
+      form.reset();
+    } catch (error) {
+      const validationErrors = error.response?.data?.errors;
+      const firstValidationMessage = validationErrors
+        ? Object.values(validationErrors).flat()[0]
+        : null;
+
+      setSubmission({
+        status: "error",
+        message: firstValidationMessage
+          || error.response?.data?.message
+          || (tr
+            ? "Başvuru gönderilemedi. Bilgilerinizi kontrol edip tekrar deneyin."
+            : "The application could not be submitted. Check your information and try again."),
+      });
+    }
+  }
+  return <main className="inner-page supplier-join section-pad">
+    <div className="page-intro"><span className="eyebrow">SUPPLIER NETWORK</span><h1>{tr ? "Bizimle kazanmaya başlayın." : "Start earning with us."}</h1><p>{tr ? "Şirketinizi kaydedin, hizmet bölgelerinizi tanımlayın ve belgelerinizi yükleyin. Ekibimiz başvurunuzu inceleyerek sizinle iletişime geçsin." : "Register your company, define your service regions and upload your documents. Our team will review your application and contact you."}</p></div>
+    <div className="join-layout">
+      <aside><h3>{tr ? "Başvuru süreci" : "Application process"}</h3>{[tr ? "Şirket bilgileri" : "Company details",tr ? "Hizmet bölgeleri" : "Service regions",tr ? "Portal hesabı" : "Portal account",tr ? "Belgeler" : "Documents",tr ? "İnceleme ve onay" : "Review and approval"].map((x,i)=><div key={x}><span>{i+1}</span><p>{x}</p></div>)}<small>{tr ? "Onaylanmadan hiçbir hesap operasyona erişemez." : "No account can access operations before approval."}</small></aside>
+      <form className="public-form compact" onSubmit={submit}>
+        <FormSection number="01" title={tr ? "Şirket bilgileri" : "Company details"}>
+          <Field label={tr ? "Ticari unvan" : "Company name"} name="company_name" required />
+          <Field label={tr ? "Yetkili kişi" : "Contact person"} name="contact_name" required />
+          <Field label={tr ? "Şirket e-postası" : "Company email"} name="company_email" type="email" autoComplete="email" required />
+          <Field label={tr ? "Telefon / WhatsApp" : "Phone / WhatsApp"} name="company_phone" autoComplete="tel" required />
+          <Field label={tr ? "Ülke" : "Country"} name="country_name" required />
+          <Field label={tr ? "Ülke kodu (TR, ES, EG)" : "Country code (TR, ES, EG)"} name="country_code" minLength="2" maxLength="2" required />
+          <Field label={tr ? "Şehir" : "City"} name="city" required />
+          <Field label={tr ? "Vergi numarası" : "Tax number"} name="tax_number" />
+          <Field label={tr ? "Şirket kayıt numarası" : "Registration number"} name="registration_number" />
+        </FormSection>
+        <FormSection number="02" title={tr ? "Operasyon kapasitesi" : "Operational capacity"}>
+          <Field label={tr ? "Hizmet verilen bölgeler" : "Service regions"} name="service_regions" required />
+          <Field label={tr ? "Araç sayısı" : "Fleet size"} name="fleet_size" type="number" min="1" required />
+          <Field label={tr ? "Araç türleri" : "Vehicle types"} name="vehicle_types" placeholder="Sedan, Minivan, Minibus" required />
+          <Field label={tr ? "Web sitesi" : "Website"} name="website" type="url" />
+          <Field label={tr ? "Hakediş para birimi" : "Payout currency"} name="default_currency" defaultValue="EUR" minLength="3" maxLength="3" required />
+        </FormSection>
+        <FormSection number="03" title={tr ? "Portal hesabı" : "Portal account"}>
+          <Field label={tr ? "Şifre" : "Password"} name="portal_password" type="password" autoComplete="new-password" minLength="8" required />
+          <Field label={tr ? "Şifre tekrarı" : "Confirm password"} name="portal_password_confirmation" type="password" autoComplete="new-password" minLength="8" required />
+        </FormSection>
+        <FormSection number="04" title={tr ? "Belgeler" : "Documents"}>
+          <FileField label={tr ? "Şirket kayıt belgesi" : "Company registration"} name="company_registration_file" required />
+          <FileField label={tr ? "Vergi belgesi" : "Tax document"} name="tax_document_file" required />
+          <FileField label={tr ? "Sigorta belgesi" : "Insurance certificate"} name="insurance_file" required />
+          <FileField label={tr ? "Taşıma/turizm lisansı (varsa)" : "Transport/tourism licence (if applicable)"} name="transport_license_file" />
+        </FormSection>
+        <label className="consent"><input type="checkbox" name="terms_accepted" value="1" required /><span>{tr ? "Bilgilerin doğru olduğunu ve başvurunun operasyon ekibi tarafından inceleneceğini kabul ediyorum." : "I confirm that the information is accurate and may be reviewed by the operations team."}</span></label>
+        <div className="form-submit">
+          <button className="button primary" type="submit" disabled={submission.status === "submitting"}>
+            {submission.status === "submitting"
+              ? (tr ? "Gönderiliyor..." : "Submitting...")
+              : (tr ? "Başvuruyu Gönder" : "Submit Application")}
+            <span>→</span>
+          </button>
+          {submission.status !== "idle" && (
+            <p className={`form-notice ${submission.status}`} role="status">
+              {submission.message}
+            </p>
+          )}
+        </div>
+      </form>
+    </div>
+  </main>;
+}
+
+function FormSection({ number, title, children }) { return <fieldset><legend><span>{number}</span>{title}</legend><div className="form-grid">{children}</div></fieldset>; }
+function Field({ label, ...props }) { return <label className="field"><span>{label}</span><input {...props} /></label>; }
+function FileField({ label, ...props }) { return <label className="field file-field"><span>{label}</span><input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" {...props} /></label>; }
+
+function Footer({ language }) {
+  const tr = language === "tr";
+  return <footer className="site-footer section-pad"><a className="brand footer-brand" href="/"><span className="brand-mark"><i />ST</span><span><strong>SKYTRIP</strong><em>TRANSFER</em><small>Global Mobility Network</small></span></a><p>{tr ? "Global havalimanı transfer operasyonları ve tedarikçi ağı." : "Global airport transfer operations and supplier network."}</p><div><a href="/transfer">{tr ? "Transfer" : "Book a transfer"}</a><a href="/supplier/join">{tr ? "Tedarikçi ol" : "Become a supplier"}</a><a href="/supplier/">{tr ? "Giriş" : "Login"}</a></div><small>© 2026 SkyTripTransfer. All rights reserved.</small></footer>;
+}
+
+function getPage(pathname) {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  if (normalized === "/transfer") return "transfer";
+  if (normalized === "/supplier/join") return "supplier";
+  return "home";
+}

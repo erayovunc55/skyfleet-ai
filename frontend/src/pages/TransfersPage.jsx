@@ -264,9 +264,7 @@ export default function TransfersPage() {
 
   const selectableTransferIds = useMemo(
     () => paginatedTransfers
-      .filter((transfer) =>
-        !transfer.supplier_id && ["pending", "accepted"].includes(transfer.status),
-      )
+      .filter(isPoolSelectable)
       .map((transfer) => Number(transfer.id)),
     [paginatedTransfers],
   );
@@ -274,6 +272,18 @@ export default function TransfersPage() {
   const allVisibleSelected =
     selectableTransferIds.length > 0 &&
     selectableTransferIds.every((id) => selectedTransferIds.includes(id));
+
+  useEffect(() => {
+    const eligibleIds = new Set(
+      transfers
+        .filter(isPoolSelectable)
+        .map((transfer) => Number(transfer.id)),
+    );
+
+    setSelectedTransferIds((current) =>
+      current.filter((id) => eligibleIds.has(Number(id))),
+    );
+  }, [transfers]);
 
   useEffect(() => {
     if (
@@ -674,7 +684,7 @@ function StatisticCard({ label, value }) {
 }
 
 function TransferTableRow({ transfer, active, selected, onToggleSelection, onSelect }) {
-  const selectable = !transfer.supplier_id && ["pending", "accepted"].includes(transfer.status);
+  const selectable = isPoolSelectable(transfer);
   const transferDirection = getTransferDirection(transfer);
   const assignmentState = getAssignmentState(transfer);
   const rowClassName = [
@@ -708,6 +718,12 @@ function TransferTableRow({ transfer, active, selected, onToggleSelection, onSel
       <td><span className={`transfers-status transfers-status-${transfer.status}`}>{getStatusLabel(transfer.status)}</span></td>
     </tr>
   );
+}
+
+function isPoolSelectable(transfer) {
+  return transfer?.status === "pending"
+    && !transfer?.supplier_id
+    && !transfer?.job_pool_published_at;
 }
 
 function matchesColumnFilters(transfer, filters) {

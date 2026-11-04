@@ -49,6 +49,21 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        'resend-http' => [
+            'transport' => 'resend-http',
+            'key' => env('RESEND_API_KEY'),
+        ],
+
+        'agency' => [
+            'transport' => 'resend-http',
+            'key' => env('RESEND_API_KEY'),
+        ],
+
+        'supplier' => [
+            'transport' => 'resend-http',
+            'key' => env('RESEND_API_KEY'),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

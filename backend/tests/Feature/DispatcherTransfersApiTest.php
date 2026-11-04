@@ -16,6 +16,8 @@ class DispatcherTransfersApiTest extends TestCase
     {
         $user = User::factory()->create([
             'phone' => '+10000000000',
+            'role' => 'dispatcher',
+            'is_active' => true,
         ]);
         Sanctum::actingAs($user);
 
@@ -85,7 +87,7 @@ class DispatcherTransfersApiTest extends TestCase
             'status' => 'assigned',
         ]);
 
-        $response = $this->getJson('/api/dispatcher/transfers');
+        $response = $this->getJson('/dispatcher/transfers');
 
         $response->assertOk();
         $response->assertJsonStructure([

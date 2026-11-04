@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendPassengerTrackingNotification;
 use App\Models\Transfer;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -424,6 +425,15 @@ class TransferController extends Controller
                 $response,
                 $result['status_code']
             );
+        }
+
+        if (
+            $result['transfer']->status ===
+            'on_the_way'
+        ) {
+            SendPassengerTrackingNotification::dispatch(
+                (int) $result['transfer']->id
+            )->afterCommit();
         }
 
         $result['transfer']->makeHidden([

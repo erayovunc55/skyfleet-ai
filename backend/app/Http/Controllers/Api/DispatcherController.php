@@ -37,35 +37,25 @@ class DispatcherController extends Controller
             ->orderBy('pickup_time')
             ->get();
 
+        // One aggregate query instead of two COUNT queries per transfer.
+        $driverCounts = Transfer::query()
+            ->select('driver_id')
+            ->selectRaw('COUNT(*) as total_count')
+            ->selectRaw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count")
+            ->whereNotNull('driver_id')
+            ->whereBetween('pickup_time', [$todayStart, $todayEnd])
+            ->groupBy('driver_id')
+            ->get()
+            ->keyBy('driver_id');
+
         $data = $transfers->map(function (
             Transfer $transfer
-        ) use (
-            $todayStart,
-            $todayEnd
-        ): array {
+        ) use ($driverCounts): array {
             $driver = $transfer->driver;
 
-            $todayTransferCount = 0;
-            $todayCompletedCount = 0;
-
-            if ($driver) {
-                $todayTransferCount = Transfer::query()
-                    ->where('driver_id', $driver->id)
-                    ->whereBetween(
-                        'pickup_time',
-                        [$todayStart, $todayEnd]
-                    )
-                    ->count();
-
-                $todayCompletedCount = Transfer::query()
-                    ->where('driver_id', $driver->id)
-                    ->where('status', 'completed')
-                    ->whereBetween(
-                        'pickup_time',
-                        [$todayStart, $todayEnd]
-                    )
-                    ->count();
-            }
+            $driverStats = $driver ? $driverCounts->get($driver->id) : null;
+            $todayTransferCount = (int) ($driverStats?->total_count ?? 0);
+            $todayCompletedCount = (int) ($driverStats?->completed_count ?? 0);
 
             return $this->formatTransfer(
                 $transfer,

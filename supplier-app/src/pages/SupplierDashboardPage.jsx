@@ -5,8 +5,11 @@ import {
   useState,
 } from "react";
 
-import SupplierTransferAssignment from "../components/SupplierTransferAssignment";
+import writeExcelFile from "write-excel-file/browser";
 
+import SupplierTransferAssignment from "../components/SupplierTransferAssignment";
+import SupplierTransferTable from "../components/SupplierTransferTable";
+import { useLanguage } from "../i18n";
 import {
   getSupplierProfile,
   getSupplierTransfer,
@@ -14,22 +17,484 @@ import {
 } from "../services/supplierService";
 
 const STATUS_LABELS = {
-  pending: "Bekliyor",
-  accepted: "Kabul Edildi",
-  on_the_way: "Yola Çıktı",
-  arrived: "Alış Noktasında",
-  passenger_called: "Yolcu Arandı",
-  passenger_on_board: "Yolcu Araçta",
-  trip_started: "Transfer Başladı",
-  completed: "Tamamlandı",
-  no_show: "No Show",
-  cancelled: "İptal Edildi",
+  tr: {
+    pending: "Bekliyor",
+    accepted: "Kabul Edildi",
+    on_the_way: "Yola Çıktı",
+    arrived: "Alış Noktasında",
+    passenger_called: "Yolcu Arandı",
+    passenger_on_board: "Yolcu Araçta",
+    trip_started: "Transfer Başladı",
+    completed: "Tamamlandı",
+    no_show: "No Show",
+    cancelled: "İptal Edildi",
+  },
+
+  en: {
+    pending: "Waiting",
+    accepted: "Accepted",
+    on_the_way: "On the Way",
+    arrived: "At Pickup Point",
+    passenger_called: "Passenger Called",
+    passenger_on_board: "Passenger On Board",
+    trip_started: "Transfer Started",
+    completed: "Completed",
+    no_show: "No Show",
+    cancelled: "Cancelled",
+  },
+
+  es: {
+    pending: "Pendiente",
+    accepted: "Aceptado",
+    on_the_way: "En camino",
+    arrived: "En el punto de recogida",
+    passenger_called: "Pasajero contactado",
+    passenger_on_board: "Pasajero a bordo",
+    trip_started: "Traslado iniciado",
+    completed: "Completado",
+    no_show: "No presentado",
+    cancelled: "Cancelado",
+  },
+
+  ar: {
+    pending: "قيد الانتظار",
+    accepted: "تم القبول",
+    on_the_way: "في الطريق",
+    arrived: "في نقطة الاستلام",
+    passenger_called: "تم الاتصال بالمسافر",
+    passenger_on_board: "المسافر داخل المركبة",
+    trip_started: "بدأت الرحلة",
+    completed: "مكتمل",
+    no_show: "عدم حضور",
+    cancelled: "ملغي",
+  },
+};
+const TEXT = {
+  tr: {
+    supplier: "Tedarikçi",
+    logout: "Çıkış",
+    operation: "OPERASYON",
+    dashboardTitle: "Tedarikçi Paneli",
+    dashboardDescription:
+      "Atanan transferlerinizi, görevli sürücülerinizi ve net hakedişlerinizi yönetin.",
+
+    exportExcel: "Excel’e Aktar",
+    preparingExcel: "Excel hazırlanıyor...",
+    refresh: "Yenile",
+
+    totalTransfers: "Toplam Transfer",
+    waiting: "Bekleyen",
+    activeOperations: "Aktif Operasyon",
+    completed: "Tamamlanan",
+    netEarnings: "Net Hakediş",
+
+    searchTransfers: "Transfer ara",
+    searchPlaceholder:
+      "SF numarası, yolcu, telefon veya uçuş...",
+    status: "Durum",
+    allStatuses: "Tüm durumlar",
+    day: "Transfer günü",
+    clear: "Temizle",
+
+    assignedTransfers: "Atanan Transferler",
+    records: "kayıt",
+    loadingTransfers: "Transferler yükleniyor...",
+    noTransfers: "Atanmış transfer bulunmuyor.",
+    passengerNotSpecified: "Yolcu belirtilmedi",
+
+    transferDetail: "Transfer Detayı",
+    selectTransfer:
+      "Detayları görmek için bir transfer seçin.",
+    loadingDetail: "Detay yükleniyor...",
+
+    pickupTime: "Alış zamanı",
+    vehicleType: "Araç tipi",
+    flight: "Uçuş",
+    noFlight: "Uçuş yok",
+    passenger: "Yolcu",
+    fullName: "Ad Soyad",
+    phone: "Telefon",
+    luggage: "Bagaj",
+
+    route: "Güzergâh",
+    pickup: "Alış",
+    dropoff: "Bırakış",
+    meetingPoint: "Buluşma noktası",
+
+    assigned: "Görevli",
+    driver: "Sürücü",
+    driverPhone: "Sürücü telefonu",
+    vehicle: "Araç",
+
+    notSpecified: "Belirtilmedi",
+    notAssignedYet: "Henüz atanmadı",
+    vehicleNotAssigned: "Araç atanmadı",
+    dateNotSpecified: "Tarih belirtilmedi",
+
+    adults: "yetişkin",
+    children: "çocuk",
+    babies: "bebek",
+
+    cancelledTitle: "Transfer iptal edildi",
+    cancellationReasonMissing:
+      "İptal nedeni belirtilmedi.",
+
+    readiness: "OPERASYONA HAZIRLIK",
+    readinessTitle: "Tedarikçi Kurulum Durumu",
+    readinessDescription:
+      "Operasyon öncesi temel hazırlık adımlarınızı tamamlayın.",
+    ready: "hazır",
+        companyApproval: "Şirket Onayı",
+    companyApprovalDescription:
+      "Tedarikçi başvurunuz Skyfleet tarafından onaylandı.",
+
+    documents: "Belgeler",
+    documentsDescription:
+      "Zorunlu şirket, vergi ve sigorta belgeleri tamamlandı.",
+
+    coverageArea: "Kapsama Alanı",
+    coverageAreaDescription:
+      "Hizmet verdiğiniz bölge ve havalimanlarını tanımlayın.",
+
+    vehicles: "Araçlar",
+    vehiclesDescription:
+      "Operasyonda kullanacağınız en az bir araç ekleyin.",
+
+    drivers: "Sürücüler",
+    driversDescription:
+      "Operasyonda görev alacak en az bir sürücü ekleyin.",
+
+    loadError: "Tedarikçi bilgileri yüklenemedi.",
+    detailError: "Transfer detayı yüklenemedi.",
+    excelError: "Excel dosyası oluşturulamadı.",
+  },
+
+  en: {
+    supplier: "Supplier",
+    logout: "Logout",
+    operation: "OPERATIONS",
+    dashboardTitle: "Supplier Dashboard",
+    dashboardDescription:
+      "Manage your assigned transfers, drivers and net earnings.",
+
+    exportExcel: "Export to Excel",
+    preparingExcel: "Preparing Excel...",
+    refresh: "Refresh",
+
+    totalTransfers: "Total Transfers",
+    waiting: "Waiting",
+    activeOperations: "Active Operations",
+    completed: "Completed",
+    netEarnings: "Net Earnings",
+
+    searchTransfers: "Search transfers",
+    searchPlaceholder:
+      "SF reference, passenger, phone or flight...",
+    status: "Status",
+    allStatuses: "All statuses",
+    day: "Transfer day",
+    clear: "Clear",
+
+    assignedTransfers: "Assigned Transfers",
+    records: "records",
+    loadingTransfers: "Loading transfers...",
+    noTransfers: "No assigned transfers found.",
+    passengerNotSpecified: "Passenger not specified",
+
+    transferDetail: "Transfer Details",
+    selectTransfer:
+      "Select a transfer to view its details.",
+    loadingDetail: "Loading details...",
+
+    pickupTime: "Pickup time",
+    vehicleType: "Vehicle type",
+    flight: "Flight",
+    noFlight: "No flight",
+    passenger: "Passenger",
+    fullName: "Full name",
+    phone: "Phone",
+    luggage: "Luggage",
+
+    route: "Route",
+    pickup: "Pickup",
+    dropoff: "Drop-off",
+    meetingPoint: "Meeting point",
+
+    assigned: "Assignment",
+    driver: "Driver",
+    driverPhone: "Driver phone",
+    vehicle: "Vehicle",
+
+    notSpecified: "Not specified",
+    notAssignedYet: "Not assigned yet",
+    vehicleNotAssigned: "Vehicle not assigned",
+    dateNotSpecified: "Date not specified",
+
+    adults: "adults",
+    children: "children",
+    babies: "infants",
+
+    cancelledTitle: "Transfer cancelled",
+    cancellationReasonMissing:
+      "No cancellation reason provided.",
+
+    readiness: "OPERATIONAL READINESS",
+    readinessTitle: "Supplier Setup Status",
+    readinessDescription:
+      "Complete the essential steps before starting operations.",
+    ready: "ready",
+
+    loadError: "Supplier information could not be loaded.",
+    detailError: "Transfer details could not be loaded.",
+    excelError: "Excel file could not be created.",
+    companyApproval: "Company Approval",
+companyApprovalDescription:
+  "Your supplier application has been approved by Skyfleet.",
+
+documents: "Documents",
+documentsDescription:
+  "Required company, tax and insurance documents are complete.",
+
+coverageArea: "Coverage Area",
+coverageAreaDescription:
+  "Define the regions and airports you serve.",
+
+vehicles: "Vehicles",
+vehiclesDescription:
+  "Add at least one vehicle for your operations.",
+
+drivers: "Drivers",
+driversDescription:
+  "Add at least one driver for your operations.",
+  },
+
+  es: {
+    supplier: "Proveedor",
+    logout: "Cerrar sesión",
+    operation: "OPERACIONES",
+    dashboardTitle: "Panel del Proveedor",
+    dashboardDescription:
+      "Gestiona tus traslados asignados, conductores y ganancias netas.",
+
+    exportExcel: "Exportar a Excel",
+    preparingExcel: "Preparando Excel...",
+    refresh: "Actualizar",
+
+    totalTransfers: "Traslados Totales",
+    waiting: "Pendientes",
+    activeOperations: "Operaciones Activas",
+    completed: "Completados",
+    netEarnings: "Ganancias Netas",
+
+    searchTransfers: "Buscar traslados",
+    searchPlaceholder:
+      "Referencia SF, pasajero, teléfono o vuelo...",
+    status: "Estado",
+    allStatuses: "Todos los estados",
+    day: "Día del traslado",
+    clear: "Limpiar",
+
+    assignedTransfers: "Traslados Asignados",
+    records: "registros",
+    loadingTransfers: "Cargando traslados...",
+    noTransfers: "No se encontraron traslados asignados.",
+    passengerNotSpecified: "Pasajero no especificado",
+
+    transferDetail: "Detalles del Traslado",
+    selectTransfer:
+      "Selecciona un traslado para ver los detalles.",
+    loadingDetail: "Cargando detalles...",
+
+    pickupTime: "Hora de recogida",
+    vehicleType: "Tipo de vehículo",
+    flight: "Vuelo",
+    noFlight: "Sin vuelo",
+    passenger: "Pasajero",
+    fullName: "Nombre completo",
+    phone: "Teléfono",
+    luggage: "Equipaje",
+
+    route: "Ruta",
+    pickup: "Recogida",
+    dropoff: "Destino",
+    meetingPoint: "Punto de encuentro",
+
+    assigned: "Asignación",
+    driver: "Conductor",
+    driverPhone: "Teléfono del conductor",
+    vehicle: "Vehículo",
+
+    notSpecified: "No especificado",
+    notAssignedYet: "Aún no asignado",
+    vehicleNotAssigned: "Vehículo no asignado",
+    dateNotSpecified: "Fecha no especificada",
+
+    adults: "adultos",
+    children: "niños",
+    babies: "bebés",
+
+    cancelledTitle: "Traslado cancelado",
+    cancellationReasonMissing:
+      "No se indicó el motivo de cancelación.",
+
+    readiness: "PREPARACIÓN OPERATIVA",
+    readinessTitle: "Estado de Configuración",
+    readinessDescription:
+      "Completa los pasos esenciales antes de iniciar las operaciones.",
+    ready: "listo",
+
+    loadError: "No se pudo cargar la información del proveedor.",
+    detailError: "No se pudieron cargar los detalles del traslado.",
+    excelError: "No se pudo crear el archivo Excel.",
+    companyApproval: "Aprobación de la Empresa",
+companyApprovalDescription:
+  "Su solicitud como proveedor ha sido aprobada por Skyfleet.",
+
+documents: "Documentos",
+documentsDescription:
+  "Los documentos obligatorios de empresa, impuestos y seguros están completos.",
+
+coverageArea: "Área de Cobertura",
+coverageAreaDescription:
+  "Defina las regiones y aeropuertos donde presta servicio.",
+
+vehicles: "Vehículos",
+vehiclesDescription:
+  "Añada al menos un vehículo para sus operaciones.",
+
+drivers: "Conductores",
+driversDescription:
+  "Añada al menos un conductor para sus operaciones.",
+  },
+
+  ar: {
+    supplier: "المورد",
+    logout: "تسجيل الخروج",
+    operation: "العمليات",
+    dashboardTitle: "لوحة المورد",
+    dashboardDescription:
+      "إدارة الرحلات المخصصة والسائقين وصافي المستحقات.",
+
+    exportExcel: "تصدير إلى Excel",
+    preparingExcel: "جارٍ إعداد Excel...",
+    refresh: "تحديث",
+
+    totalTransfers: "إجمالي الرحلات",
+    waiting: "قيد الانتظار",
+    activeOperations: "العمليات النشطة",
+    completed: "المكتملة",
+    netEarnings: "صافي المستحقات",
+
+    searchTransfers: "البحث في الرحلات",
+    searchPlaceholder:
+      "مرجع SF أو المسافر أو الهاتف أو الرحلة...",
+    status: "الحالة",
+    allStatuses: "جميع الحالات",
+    day: "يوم الرحلة",
+    clear: "مسح",
+
+    assignedTransfers: "الرحلات المخصصة",
+    records: "سجلات",
+    loadingTransfers: "جارٍ تحميل الرحلات...",
+    noTransfers: "لا توجد رحلات مخصصة.",
+    passengerNotSpecified: "لم يتم تحديد المسافر",
+
+    transferDetail: "تفاصيل الرحلة",
+    selectTransfer:
+      "اختر رحلة لعرض التفاصيل.",
+    loadingDetail: "جارٍ تحميل التفاصيل...",
+
+    pickupTime: "وقت الاستلام",
+    vehicleType: "نوع المركبة",
+    flight: "الرحلة",
+    noFlight: "لا توجد رحلة",
+    passenger: "المسافر",
+    fullName: "الاسم الكامل",
+    phone: "الهاتف",
+    luggage: "الأمتعة",
+
+    route: "المسار",
+    pickup: "الاستلام",
+    dropoff: "الوجهة",
+    meetingPoint: "نقطة اللقاء",
+
+    assigned: "التعيين",
+    driver: "السائق",
+    driverPhone: "هاتف السائق",
+    vehicle: "المركبة",
+
+    notSpecified: "غير محدد",
+    notAssignedYet: "لم يتم التعيين بعد",
+    vehicleNotAssigned: "لم يتم تعيين مركبة",
+    dateNotSpecified: "لم يتم تحديد التاريخ",
+
+    adults: "بالغ",
+    children: "طفل",
+    babies: "رضيع",
+
+    cancelledTitle: "تم إلغاء الرحلة",
+    cancellationReasonMissing:
+      "لم يتم تحديد سبب الإلغاء.",
+
+    readiness: "الجاهزية التشغيلية",
+    readinessTitle: "حالة إعداد المورد",
+    readinessDescription:
+      "أكمل الخطوات الأساسية قبل بدء العمليات.",
+    ready: "جاهز",
+
+    loadError: "تعذر تحميل معلومات المورد.",
+    detailError: "تعذر تحميل تفاصيل الرحلة.",
+    excelError: "تعذر إنشاء ملف Excel.",
+    companyApproval: "اعتماد الشركة",
+companyApprovalDescription:
+  "تمت الموافقة على طلب المورد الخاص بك من قبل Skyfleet.",
+
+documents: "المستندات",
+documentsDescription:
+  "تم استكمال مستندات الشركة والضرائب والتأمين المطلوبة.",
+
+coverageArea: "منطقة التغطية",
+coverageAreaDescription:
+  "حدد المناطق والمطارات التي تقدم فيها خدماتك.",
+
+vehicles: "المركبات",
+vehiclesDescription:
+  "أضف مركبة واحدة على الأقل لعملياتك.",
+
+drivers: "السائقون",
+driversDescription:
+  "أضف سائقاً واحداً على الأقل لعملياتك.",
+  },
 };
 
-export default function SupplierDashboardPage({
-  user,
-  onLogout,
-}) {
+function getTodayTransferFilters() {
+  const today = new Date();
+  const date = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  return {
+    dateFrom: date,
+    dateTo: date,
+  };
+}
+
+export default function SupplierDashboardPage({ user }) {
+    const { language } = useLanguage();
+  const t = TEXT[language] || TEXT.en;
+  const statusLabels =
+    STATUS_LABELS[language] ||
+    STATUS_LABELS.en;
+
+  const locale =
+    {
+      tr: "tr-TR",
+      en: "en-GB",
+      es: "es-ES",
+      ar: "ar-SA",
+    }[language] || "en-GB";
   const [profile, setProfile] =
     useState(null);
 
@@ -42,15 +507,13 @@ export default function SupplierDashboardPage({
   ] = useState(null);
 
   const [filters, setFilters] =
-    useState({
-      search: "",
-      status: "",
-      dateFrom: "",
-      dateTo: "",
-    });
+    useState(getTodayTransferFilters);
 
-  const [loading, setLoading] =
+    const [loading, setLoading] =
     useState(true);
+
+  const [exporting, setExporting] =
+    useState(false);
 
   const [
     detailLoading,
@@ -248,9 +711,113 @@ export default function SupplierDashboardPage({
     setFilters({
       search: "",
       status: "",
-      dateFrom: "",
-      dateTo: "",
+      ...getTodayTransferFilters(),
     });
+  }
+
+  function updateTransferDay(value) {
+    setFilters((current) => ({
+      ...current,
+      dateFrom: value,
+      dateTo: value,
+    }));
+  }
+
+    async function handleExportToExcel() {
+    if (transfers.length === 0 || exporting) {
+      return;
+    }
+
+    setExporting(true);
+    setError("");
+
+    try {
+      const headerStyle = {
+        fontWeight: "bold",
+        textColor: "#FFFFFF",
+        backgroundColor: "#0F4C81",
+        align: "center",
+        wrap: true,
+      };
+
+      const headers = [
+        "SF Referansı",
+        "Alış Tarihi",
+        "Yolcu",
+        "Telefon",
+        "Alış Adresi",
+        "Bırakış Adresi",
+        "Uçuş",
+        "Araç Tipi",
+        "Yetişkin",
+        "Çocuk",
+        "Bebek",
+        "Bagaj",
+        "Sürücü",
+        "Sürücü Telefonu",
+        "Araç / Plaka",
+        "Durum",
+        "Net Hakediş",
+        "Para Birimi",
+        "Tamamlanma Tarihi",
+      ].map((value) => ({
+        value,
+        ...headerStyle,
+      }));
+
+      const rows = transfers.map((transfer) => [
+        transfer.booking_reference || `#${transfer.id}`,
+        makeExcelDateCell(transfer.pickup_time),
+        transfer.passenger_name || "",
+        String(transfer.passenger_phone || ""),
+        transfer.pickup || "",
+        transfer.dropoff || "",
+        transfer.flight_number || "",
+        transfer.vehicle_type || "",
+        Number(transfer.adult || 0),
+        Number(transfer.child || 0),
+        Number(transfer.baby || 0),
+        Number(transfer.luggage_count || 0),
+        transfer.driver?.name || "",
+        String(transfer.driver?.phone || ""),
+        getAssignedVehicleLabel(transfer),
+        statusLabels[transfer.status] || transfer.status || "",
+        {
+          value: Number(transfer.supplier_amount || 0),
+          type: Number,
+          format: "#,##0.00",
+        },
+        transfer.currency || "EUR",
+        makeExcelDateCell(
+          transfer.completed_at ||
+          transfer.completion_time,
+        ),
+      ]);
+
+      const companyName =
+        company?.company_name ||
+        user?.name ||
+        "supplier";
+
+      const dateLabel = [
+        filters.dateFrom,
+        filters.dateTo,
+      ].filter(Boolean).join("_") ||
+        new Date().toISOString().slice(0, 10);
+
+      const fileName = `${sanitizeFileName(companyName)}_transferler_${dateLabel}.xlsx`;
+
+      await writeExcelFile(
+        [headers, ...rows],
+      ).toFile(fileName);
+    } catch (exportError) {
+      setError(
+        exportError?.message ||
+        "Excel dosyası oluşturulamadı.",
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   const company =
@@ -258,75 +825,47 @@ export default function SupplierDashboardPage({
     user?.supplier_company;
 
   return (
-    <div className="supplier-app-shell">
-      <header className="supplier-header">
-        <div className="supplier-header-brand">
-          <div className="supplier-brand-logo">
-            SF
-          </div>
-
-          <div>
-            <strong>
-              SKYFLEET
-              <span> AI</span>
-            </strong>
-
-            <small>
-              Supplier Network
-            </small>
-          </div>
-        </div>
-
-        <div className="supplier-header-user">
-          <div>
-            <strong>
-              {company
-                ?.company_name ||
-                user?.name}
-            </strong>
-
-            <small>
-              Tedarikçi
-            </small>
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              onLogout
-            }
-          >
-            Çıkış
-          </button>
-        </div>
-      </header>
-
-      <main className="supplier-dashboard">
+    <main className="supplier-dashboard">
         <section className="supplier-page-heading">
           <div>
             <span className="supplier-eyebrow">
-              OPERASYON
+              {t.operation}
             </span>
 
             <h1>
-              Tedarikçi Paneli
+              {t.dashboardTitle}
             </h1>
 
             <p>
-              Atanan transferlerinizi,
-              görevli sürücülerinizi ve net
-              hakedişlerinizi yönetin.
+              {t.dashboardDescription}
             </p>
           </div>
 
-          <button
-            className="supplier-secondary-button"
-            type="button"
-            disabled={loading}
-            onClick={loadData}
+                    <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
           >
-            Yenile
-          </button>
+            <button
+              className="supplier-secondary-button"
+              type="button"
+              disabled={loading || exporting || transfers.length === 0}
+              onClick={handleExportToExcel}
+            >
+              {exporting ? t.preparingExcel : t.exportExcel}
+            </button>
+
+            <button
+              className="supplier-secondary-button"
+              type="button"
+              disabled={loading}
+              onClick={loadData}
+            >
+              {t.refresh}
+            </button>
+          </div>
         </section>
 
         {error && (
@@ -334,38 +873,45 @@ export default function SupplierDashboardPage({
             {error}
           </div>
         )}
+        {company?.onboarding && (
+  <SupplierReadinessCard
+    onboarding={company.onboarding}
+    t={t}
+  />
+)}
 
         <section className="supplier-summary-grid">
           <SummaryCard
-            label="Toplam Transfer"
+            label={t.totalTransfers}
             value={summary.total}
           />
 
           <SummaryCard
-            label="Bekleyen"
+            label={t.waiting}
             value={summary.waiting}
           />
 
           <SummaryCard
-            label="Aktif Operasyon"
+            label={t.activeOperations}
             value={summary.active}
           />
 
           <SummaryCard
-            label="Tamamlanan"
+            label={t.completed}
             value={summary.completed}
           />
 
           <SummaryCard
-            label="Net Hakediş"
-            value={formatMoney(
-              summary.totalAmount,
-              transfers[0]
-                ?.currency ||
-                company
-                  ?.default_currency ||
-                "EUR",
-            )}
+            label={t.netEarnings}
+           value={formatMoney(
+  summary.totalAmount,
+  transfers[0]
+    ?.currency ||
+    company
+      ?.default_currency ||
+    "EUR",
+  locale,
+)}
             accent
           />
         </section>
@@ -373,7 +919,7 @@ export default function SupplierDashboardPage({
         <section className="supplier-filter-card">
           <label>
             <span>
-              Transfer ara
+              {t.searchTransfers}
             </span>
 
             <input
@@ -381,7 +927,7 @@ export default function SupplierDashboardPage({
               value={
                 filters.search
               }
-              placeholder="SF numarası, yolcu, telefon veya uçuş..."
+              placeholder={t.searchPlaceholder}
               onChange={(event) =>
                 updateFilter(
                   "search",
@@ -392,7 +938,7 @@ export default function SupplierDashboardPage({
           </label>
 
           <label>
-            <span>Durum</span>
+            <span>{t.status}</span>
 
             <select
               value={
@@ -406,11 +952,11 @@ export default function SupplierDashboardPage({
               }
             >
               <option value="">
-                Tüm durumlar
+                {t.allStatuses}
               </option>
 
               {Object.entries(
-                STATUS_LABELS,
+                statusLabels,
               ).map(
                 ([
                   value,
@@ -428,7 +974,7 @@ export default function SupplierDashboardPage({
           </label>
 
           <label>
-            <span>Başlangıç</span>
+            <span>{t.day}</span>
 
             <input
               type="date"
@@ -436,27 +982,7 @@ export default function SupplierDashboardPage({
                 filters.dateFrom
               }
               onChange={(event) =>
-                updateFilter(
-                  "dateFrom",
-                  event.target.value,
-                )
-              }
-            />
-          </label>
-
-          <label>
-            <span>Bitiş</span>
-
-            <input
-              type="date"
-              value={
-                filters.dateTo
-              }
-              onChange={(event) =>
-                updateFilter(
-                  "dateTo",
-                  event.target.value,
-                )
+                updateTransferDay(event.target.value)
               }
             />
           </label>
@@ -467,7 +993,7 @@ export default function SupplierDashboardPage({
               clearFilters
             }
           >
-            Temizle
+            {t.clear}
           </button>
         </section>
 
@@ -476,99 +1002,35 @@ export default function SupplierDashboardPage({
             <div className="supplier-section-heading">
               <div>
                 <h2>
-                  Atanan Transferler
+                  {t.assignedTransfers}
                 </h2>
 
                 <p>
                   {transfers.length}
-                  {" kayıt"}
+{" "}
+{t.records}
                 </p>
               </div>
             </div>
 
             {loading ? (
               <div className="supplier-empty-state">
-                Transferler yükleniyor...
+            {t.loadingTransfers}
               </div>
             ) : transfers.length ===
               0 ? (
               <div className="supplier-empty-state">
-                Atanmış transfer bulunmuyor.
+                {t.noTransfers}
               </div>
             ) : (
-              <div className="supplier-transfer-list">
-                {transfers.map(
-                  (transfer) => (
-                    <button
-                      key={transfer.id}
-                      type="button"
-                      className={
-                        Number(
-                          selectedTransfer
-                            ?.id,
-                        ) ===
-                        Number(
-                          transfer.id,
-                        )
-                          ? "supplier-transfer-row active"
-                          : "supplier-transfer-row"
-                      }
-                      onClick={() =>
-                        selectTransfer(
-                          transfer,
-                        )
-                      }
-                    >
-                      <div>
-                        <strong>
-                          {
-                            transfer
-                              .booking_reference
-                          }
-                        </strong>
-
-                        <span>
-                          {formatDateTime(
-                            transfer
-                              .pickup_time,
-                          )}
-                        </span>
-                      </div>
-
-                      <div>
-                        <strong>
-                          {transfer
-                            .passenger_name ||
-                            "Yolcu belirtilmedi"}
-                        </strong>
-
-                        <span>
-                          {transfer.pickup}
-                          {" → "}
-                          {transfer.dropoff}
-                        </span>
-                      </div>
-
-                      <div>
-                        <strong className="supplier-amount">
-                          {formatMoney(
-                            transfer
-                              .supplier_amount,
-                            transfer
-                              .currency,
-                          )}
-                        </strong>
-
-                        <StatusBadge
-                          status={
-                            transfer.status
-                          }
-                        />
-                      </div>
-                    </button>
-                  ),
-                )}
-              </div>
+              <SupplierTransferTable
+                transfers={transfers}
+                selectedId={selectedTransfer?.id}
+                onSelect={selectTransfer}
+                onAssigned={handleTransferAssigned}
+                statusLabels={statusLabels}
+                locale={locale}
+              />
             )}
           </div>
 
@@ -582,6 +1044,12 @@ export default function SupplierDashboardPage({
             onAssigned={
               handleTransferAssigned
             }
+            
+              statusLabels={
+    statusLabels
+  }
+  t={t}
+locale={locale}
             onClose={() =>
               setSelectedTransfer(
                 null,
@@ -589,11 +1057,136 @@ export default function SupplierDashboardPage({
             }
           />
         </section>
-      </main>
-    </div>
+    </main>
   );
 }
 
+function SupplierReadinessCard({
+  onboarding,
+  t,
+}) {
+  const percentage = Number(
+    onboarding?.readiness_percentage || 0,
+  );
+
+  const steps = [
+  {
+    label: t.companyApproval,
+    description:
+      t.companyApprovalDescription,
+    complete:
+      Boolean(
+        onboarding?.company_approved,
+      ),
+  },
+  {
+    label: t.documents,
+    description:
+      t.documentsDescription,
+    complete:
+      Boolean(
+        onboarding
+          ?.required_documents_complete,
+      ),
+  },
+  {
+    label: t.coverageArea,
+    description:
+      t.coverageAreaDescription,
+    complete:
+      Number(
+        onboarding?.coverages_count || 0,
+      ) > 0,
+  },
+  {
+    label: t.vehicles,
+    description:
+      t.vehiclesDescription,
+    complete:
+      Number(
+        onboarding?.vehicles_count || 0,
+      ) > 0,
+  },
+  {
+    label: t.drivers,
+    description:
+      t.driversDescription,
+    complete:
+      Number(
+        onboarding?.drivers_count || 0,
+      ) > 0,
+  },
+];
+
+  return (
+    <section className="supplier-readiness-card">
+      <div className="supplier-readiness-heading">
+        <div>
+          <span className="supplier-eyebrow">
+            {t.readiness}
+          </span>
+
+          <h2>
+            {t.readinessTitle}
+          </h2>
+
+          <p>
+            {t.readinessDescription}
+            
+          </p>
+        </div>
+
+        <div className="supplier-readiness-score">
+          <strong>
+            %{percentage}
+          </strong>
+
+          <span>
+            {t.ready}
+          </span>
+        </div>
+      </div>
+
+      <div className="supplier-readiness-progress">
+        <div
+          style={{
+            width: `${Math.min(
+              100,
+              Math.max(0, percentage),
+            )}%`,
+          }}
+        />
+      </div>
+
+      <div className="supplier-readiness-steps">
+        {steps.map((step) => (
+          <article
+            key={step.label}
+            className={
+              step.complete
+                ? "supplier-readiness-step complete"
+                : "supplier-readiness-step"
+            }
+          >
+            <span>
+              {step.complete ? "✓" : "○"}
+            </span>
+
+            <div>
+              <strong>
+                {step.label}
+              </strong>
+
+              <p>
+                {step.description}
+              </p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
 function SummaryCard({
   label,
   value,
@@ -620,14 +1213,13 @@ function SummaryCard({
 
 function StatusBadge({
   status,
+  statusLabels,
 }) {
   return (
     <span
       className={`supplier-status supplier-status-${status}`}
     >
-      {STATUS_LABELS[
-        status
-      ] || status}
+      {statusLabels?.[status] || status}
     </span>
   );
 }
@@ -637,18 +1229,21 @@ function TransferDetailPanel({
   loading,
   onAssigned,
   onClose,
+  statusLabels,
+  t,
+  locale,
 }) {
   if (!transfer) {
     return (
       <aside className="supplier-detail-card empty">
         <div>
           <h2>
-            Transfer Detayı
+            {t.transferDetail}
           </h2>
 
           <p>
-            Detayları görmek için bir
-            transfer seçin.
+            {t.selectTransfer}
+            
           </p>
         </div>
       </aside>
@@ -660,7 +1255,7 @@ function TransferDetailPanel({
       <div className="supplier-detail-header">
         <div>
           <span className="supplier-eyebrow">
-            TRANSFER DETAYI
+            {t.transferDetail.toUpperCase()}
           </span>
 
           <h2>
@@ -683,21 +1278,22 @@ function TransferDetailPanel({
 
       {loading ? (
         <div className="supplier-empty-state">
-          Detay yükleniyor...
+          {t.loadingDetail}
         </div>
       ) : (
         <>
           <div className="supplier-payment-box">
             <span>
-              Net Hakediş
+              {t.netEarnings}
             </span>
 
             <strong>
               {formatMoney(
-                transfer
-                  .supplier_amount,
-                transfer.currency,
-              )}
+  transfer
+    .supplier_amount,
+  transfer.currency,
+  locale,
+)}
             </strong>
           </div>
 
@@ -708,144 +1304,154 @@ function TransferDetailPanel({
             }
           />
 
-          <DetailSection title="Operasyon">
+          <DetailSection title={t.operation}>
             <DetailRow
-              label="Durum"
+              label={t.status}
               value={
-                STATUS_LABELS[
-                  transfer.status
-                ] ||
-                transfer.status
+                statusLabels?.[
+  transfer.status
+] ||
+transfer.status
               }
             />
 
             <DetailRow
-              label="Alış zamanı"
+              label={t.pickupTime}
               value={formatDateTime(
-                transfer.pickup_time,
-              )}
+  transfer.pickup_time,
+  locale,
+  t.dateNotSpecified,
+)}
             />
 
             <DetailRow
-              label="Araç tipi"
+              label={t.vehicleType}
               value={
-                transfer
-                  .vehicle_type ||
-                "Belirtilmedi"
+                transfer.vehicle_type ||
+t.notSpecified
               }
+              fallback={t.notSpecified}
             />
 
             <DetailRow
-              label="Uçuş"
+              label={t.flight}
               value={
                 transfer
                   .flight_number ||
-                "Uçuş yok"
+                t.noFlight
               }
             />
           </DetailSection>
 
-          <DetailSection title="Yolcu">
+          <DetailSection title={t.passenger}>
             <DetailRow
-              label="Ad Soyad"
+              label={t.fullName}
               value={
                 transfer
                   .passenger_name ||
-                "Belirtilmedi"
+                t.notSpecified
               }
+              fallback={t.notSpecified}
             />
 
             <DetailRow
-              label="Telefon"
-              value={
-                transfer
-                  .passenger_phone ||
-                "Belirtilmedi"
-              }
+  label={t.phone}
+  value={
+    transfer
+      .passenger_phone
+  }
+  fallback={t.notSpecified}
+/>
+
+            <DetailRow
+              label={t.passenger}
+value={`${transfer.adult || 0} ${t.adults}, ${transfer.child || 0} ${t.children}, ${transfer.baby || 0} ${t.babies}`}
+              
             />
 
             <DetailRow
-              label="Yolcu"
-              value={`${transfer.adult || 0} yetişkin, ${transfer.child || 0} çocuk, ${transfer.baby || 0} bebek`}
-            />
-
-            <DetailRow
-              label="Bagaj"
+              label={t.luggage}
               value={
                 transfer
                   .luggage_count ??
                 0
               }
+              fallback={t.notSpecified}
             />
           </DetailSection>
 
-          <DetailSection title="Güzergâh">
+          <DetailSection title={t.route}>
             <DetailRow
-              label="Alış"
+              label={t.pickup}
               value={
                 transfer.pickup ||
-                "Belirtilmedi"
+                t.notSpecified
               }
+              fallback={t.notSpecified}
             />
 
             <DetailRow
-              label="Bırakış"
+              label={t.dropoff}
               value={
                 transfer.dropoff ||
-                "Belirtilmedi"
+                t.notSpecified
               }
+              fallback={t.notSpecified}
             />
 
             <DetailRow
-              label="Buluşma noktası"
+              label={t.meetingPoint}
               value={
                 transfer
                   .meet_point ||
-                "Belirtilmedi"
+                t.notSpecified
               }
+              fallback={t.notSpecified}
             />
           </DetailSection>
 
-          <DetailSection title="Görevli">
+          <DetailSection title={t.assigned}>
             <DetailRow
-              label="Sürücü"
+              label={t.driver}
               value={
                 transfer.driver
                   ?.name ||
-                "Henüz atanmadı"
+                t.notAssignedYet
               }
+              fallback={t.notSpecified}
             />
 
             <DetailRow
-              label="Sürücü telefonu"
+              label={t.driverPhone}
               value={
                 transfer.driver
                   ?.phone ||
-                "Belirtilmedi"
+                t.notSpecified
               }
+              fallback={t.notSpecified}
             />
 
             <DetailRow
-              label="Araç"
-              value={
-                getAssignedVehicleLabel(
-                  transfer,
-                )
-              }
-            />
+  label={t.vehicle}
+  value={getAssignedVehicleLabel(
+    transfer,
+    t.vehicleNotAssigned,
+  )}
+  fallback={t.notSpecified}
+/>
           </DetailSection>
 
           {transfer.status ===
             "cancelled" && (
             <div className="supplier-cancellation-box">
               <strong>
-                Transfer iptal edildi
+                {t.cancelledTitle}
               </strong>
 
               <p>
                 {transfer
                   .cancellation_reason ||
-                  "İptal nedeni belirtilmedi."}
+                  t.cancellationReasonMissing}
               </p>
             </div>
           )}
@@ -875,6 +1481,7 @@ function DetailSection({
 function DetailRow({
   label,
   value,
+  fallback = "Not specified",
 }) {
   return (
     <div className="supplier-detail-row">
@@ -883,8 +1490,8 @@ function DetailRow({
       </span>
 
       <strong>
-        {value ??
-          "Belirtilmedi"}
+        {value ?? fallback}
+        
       </strong>
     </div>
   );
@@ -892,6 +1499,7 @@ function DetailRow({
 
 function getAssignedVehicleLabel(
   transfer,
+  fallback = "Vehicle not assigned",
 ) {
   const vehicle =
     transfer
@@ -900,7 +1508,7 @@ function getAssignedVehicleLabel(
       ?.driver?.vehicle;
 
   if (!vehicle) {
-    return "Araç atanmadı";
+    return fallback;
   }
 
   const details = [
@@ -918,6 +1526,7 @@ function getAssignedVehicleLabel(
 function formatMoney(
   value,
   currency = "EUR",
+  locale = "en-GB",
 ) {
   const amount = Number(
     value || 0,
@@ -925,47 +1534,65 @@ function formatMoney(
 
   try {
     return new Intl.NumberFormat(
-      "tr-TR",
+      locale,
       {
         style: "currency",
-        currency:
-          currency || "EUR",
+        currency,
+        maximumFractionDigits: 2,
       },
     ).format(amount);
   } catch {
-    return `${amount.toFixed(
-      2,
-    )} ${
-      currency || ""
-    }`.trim();
+    return `${amount.toFixed(2)} ${currency}`;
   }
 }
 
 function formatDateTime(
   value,
+  locale = "en-GB",
+  emptyLabel = "Date not specified",
 ) {
   if (!value) {
-    return "Tarih belirtilmedi";
+    return emptyLabel;
   }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return value;
   }
 
   return date.toLocaleString(
-    "tr-TR",
+    locale,
     {
       dateStyle: "medium",
       timeStyle: "short",
     },
   );
+}
+
+function makeExcelDateCell(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return {
+    value: date,
+    type: Date,
+    format: "dd/mm/yyyy hh:mm",
+  };
+}
+
+function sanitizeFileName(value) {
+  return String(value || "supplier")
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, "-")
+    .replace(/\s+/g, "_");
 }
 
 function getErrorMessage(

@@ -1,3 +1,4 @@
+/* eslint-disable react/only-export-components -- provider module intentionally exports helpers and its hook */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "skyfleet_language";
@@ -24,6 +25,7 @@ const phrases = {
   "Devam Eden": { en: "In Progress", ar: "قيد التنفيذ", es: "En curso" },
   "Bekleyen": { en: "Waiting", ar: "قيد الانتظار", es: "Pendientes" },
   "Tamamlanan": { en: "Completed", ar: "المكتملة", es: "Completados" },
+  "Bu Ay Tamamlanan": { en: "Completed This Month", ar: "المكتملة هذا الشهر", es: "Completados este mes" },
   "Tamamlandı": { en: "Completed", ar: "مكتمل", es: "Completado" },
   "Bekliyor": { en: "Waiting", ar: "قيد الانتظار", es: "Pendiente" },
   "Kabul Edildi": { en: "Accepted", ar: "تم القبول", es: "Aceptado" },

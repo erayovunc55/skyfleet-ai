@@ -17,6 +17,7 @@ export default function AdminLayout({
   return (
     <div className="admin-layout">
       <Sidebar
+        user={user}
         activePage={activePage}
         onNavigate={onNavigate}
         isOpen={sidebarOpen}

@@ -11,7 +11,7 @@
   padding: 22px;
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(48, 48, 51, 0.55);
 }
 
 .transfer-workspace-map {
@@ -21,7 +21,7 @@
 
 .transfer-workspace p {
   margin: 0 0 7px;
-  color: #38bdf8;
+  color: #e0b85a;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.14em;

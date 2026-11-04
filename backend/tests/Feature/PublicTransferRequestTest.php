@@ -11,7 +11,7 @@ class PublicTransferRequestTest extends TestCase
 
     public function test_public_transfer_request_is_stored_separately(): void
     {
-        $response = $this->postJson('/api/public/transfer-requests', [
+        $response = $this->postJson('/public/transfer-requests', [
             'pickup' => 'Istanbul Airport',
             'pickup_place_id' => 'geoapify-pickup-id',
             'pickup_lat' => 41.275278,
@@ -66,7 +66,7 @@ class PublicTransferRequestTest extends TestCase
 
     public function test_address_coordinates_must_be_submitted_as_pairs(): void
     {
-        $response = $this->postJson('/api/public/transfer-requests', [
+        $response = $this->postJson('/public/transfer-requests', [
             'pickup' => 'Istanbul Airport',
             'pickup_lat' => 41.275278,
             'dropoff' => 'Sultanahmet Hotel',

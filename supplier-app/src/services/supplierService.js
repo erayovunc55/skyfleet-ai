@@ -47,7 +47,25 @@ export async function getSupplierProfile() {
   const response = await apiClient.get("/supplier-portal/profile");
   return response.data?.data || response.data;
 }
+export async function getSupplierDocuments() {
+  const response = await apiClient.get(
+    "/supplier-portal/documents",
+  );
 
+  return {
+    data: Array.isArray(response.data?.data)
+      ? response.data.data
+      : [],
+    summary:
+      response.data?.summary || {
+        total: 0,
+        expired: 0,
+        expiring: 0,
+        valid: 0,
+        no_expiry: 0,
+      },
+  };
+}
 export async function getSupplierTransfers(filters = {}) {
   return fetchSupplierTransfers(filters, "active");
 }
@@ -119,6 +137,82 @@ export async function downloadSupplierInvoice(invoiceId, fileName = "fatura") {
   URL.revokeObjectURL(url);
 }
 
+export async function searchAirports(
+  query,
+  limit = 12,
+) {
+  const q = String(query || "").trim();
+
+  if (q.length < 2) {
+    return [];
+  }
+
+  const response = await apiClient.get(
+    "/supplier-portal/airports/search",
+    {
+      params: {
+        q,
+        limit,
+      },
+    },
+  );
+
+  return Array.isArray(response.data?.data)
+    ? response.data.data
+    : [];
+}
+export async function getSupplierCoverages() {
+  const response = await apiClient.get(
+    "/supplier-portal/coverages",
+  );
+
+  return Array.isArray(response.data?.data)
+    ? response.data.data
+    : [];
+}
+
+export async function createSupplierCoverage(payload) {
+  const response = await apiClient.post(
+    "/supplier-portal/coverages",
+    payload,
+  );
+
+  return response.data?.data || response.data;
+}
+
+export async function updateSupplierCoverage(
+  coverageId,
+  payload,
+) {
+  if (!coverageId) {
+    throw new Error(
+      "Kapsama alanı kimliği bulunamadı.",
+    );
+  }
+
+  const response = await apiClient.patch(
+    `/supplier-portal/coverages/${coverageId}`,
+    payload,
+  );
+
+  return response.data?.data || response.data;
+}
+
+export async function deleteSupplierCoverage(
+  coverageId,
+) {
+  if (!coverageId) {
+    throw new Error(
+      "Kapsama alanı kimliği bulunamadı.",
+    );
+  }
+
+  const response = await apiClient.delete(
+    `/supplier-portal/coverages/${coverageId}`,
+  );
+
+  return response.data;
+}
 export async function getSupplierVehicles() {
   const response = await apiClient.get("/supplier-portal/vehicles");
   return Array.isArray(response.data?.data) ? response.data.data : [];

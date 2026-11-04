@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -12,7 +13,12 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
-import { getPublicTracking } from "./api";
+import {
+  getPassengerSupportMessages,
+  getPublicTracking,
+  sendPassengerSupportMessage,
+} from "./api";
+import { useLanguage } from "./i18n";
 
 const STATUS_LABELS = {
   accepted: "Sürücü Hazırlanıyor",
@@ -38,6 +44,100 @@ const ROAD_ROUTING_ENDPOINTS = [
   "https://router.project-osrm.org/route/v1/driving",
   "https://routing.openstreetmap.de/routed-car/route/v1/driving",
 ];
+
+const SUPPORT_QUICK_ACTIONS = {
+  tr: [
+    {
+      category: "driver_not_found",
+      label: "Sürücümü bulamıyorum",
+      message: "Sürücümü bulamıyorum. Lütfen yardımcı olur musunuz?",
+    },
+    {
+      category: "vehicle_not_arrived",
+      label: "Araç gelmedi",
+      message: "Aracım henüz gelmedi. Lütfen kontrol eder misiniz?",
+    },
+    {
+      category: "help",
+      label: "Yardıma ihtiyacım var",
+      message: "Yardıma ihtiyacım var. Lütfen benimle iletişime geçin.",
+    },
+    {
+      category: "emergency",
+      label: "Acil durum",
+      message: "Acil desteğe ihtiyacım var. Lütfen hemen benimle iletişime geçin.",
+    },
+  ],
+
+  en: [
+    {
+      category: "driver_not_found",
+      label: "I can't find my driver",
+      message: "I can't find my driver. Could you please help me?",
+    },
+    {
+      category: "vehicle_not_arrived",
+      label: "My vehicle hasn't arrived",
+      message: "My vehicle has not arrived yet. Could you please check?",
+    },
+    {
+      category: "help",
+      label: "I need help",
+      message: "I need help. Please contact me.",
+    },
+    {
+      category: "emergency",
+      label: "Emergency",
+      message: "I need urgent assistance. Please contact me immediately.",
+    },
+  ],
+
+  es: [
+    {
+      category: "driver_not_found",
+      label: "No encuentro a mi conductor",
+      message: "No encuentro a mi conductor. ¿Podrían ayudarme, por favor?",
+    },
+    {
+      category: "vehicle_not_arrived",
+      label: "Mi vehículo no ha llegado",
+      message: "Mi vehículo aún no ha llegado. ¿Podrían comprobarlo, por favor?",
+    },
+    {
+      category: "help",
+      label: "Necesito ayuda",
+      message: "Necesito ayuda. Por favor, contacten conmigo.",
+    },
+    {
+      category: "emergency",
+      label: "Emergencia",
+      message: "Necesito asistencia urgente. Por favor, contacten conmigo inmediatamente.",
+    },
+  ],
+
+  ar: [
+    {
+      category: "driver_not_found",
+      label: "لا أستطيع العثور على سائقي",
+      message: "لا أستطيع العثور على سائقي. هل يمكنكم مساعدتي من فضلكم؟",
+    },
+    {
+      category: "vehicle_not_arrived",
+      label: "لم تصل مركبتي",
+      message: "لم تصل مركبتي بعد. هل يمكنكم التحقق من فضلكم؟",
+    },
+    {
+      category: "help",
+      label: "أحتاج إلى مساعدة",
+      message: "أحتاج إلى مساعدة. يرجى التواصل معي.",
+    },
+    {
+      category: "emergency",
+      label: "حالة طارئة",
+      message: "أحتاج إلى مساعدة عاجلة. يرجى التواصل معي فورًا.",
+    },
+  ],
+};
 
 const carIcon = L.divIcon({
   className: "tracking-map-marker-wrap",
@@ -148,9 +248,7 @@ export default function App() {
         <div>
           <span className="eyebrow">TRANSFER DURUMU</span>
           <h1>{getStatusLabel(tracking?.status)}</h1>
-          <p>
-            Rezervasyonunuz güvenli şekilde takip ediliyor.
-          </p>
+          <p>Rezervasyonunuz güvenli şekilde takip ediliyor.</p>
         </div>
 
         <div className="tracking-reference">
@@ -166,9 +264,7 @@ export default function App() {
           <div className="tracking-map-footer">
             <div>
               <span className="tracking-signal" />
-              <span>
-                {getLocationState(tracking?.location)}
-              </span>
+              <span>{getLocationState(tracking?.location)}</span>
             </div>
 
             <button
@@ -205,19 +301,15 @@ export default function App() {
       </section>
 
       <section className="tracking-summary-grid">
-        <SummaryItem
-          label="Alış Zamanı"
-          value={formatPickupTime(tracking?.pickup_time)}
-        />
-        <SummaryItem
-          label="Uçuş Numarası"
-          value={tracking?.flight_number || "Belirtilmedi"}
-        />
-        <SummaryItem
-          label="Son Konum"
-          value={formatLastSeen(tracking?.location?.recorded_at)}
-        />
+        <SummaryItem label="Alış Zamanı" value={formatPickupTime(tracking?.pickup_time)} />
+        <SummaryItem label="Uçuş Numarası" value={tracking?.flight_number || "Belirtilmedi"} />
+        <SummaryItem label="Son Konum" value={formatLastSeen(tracking?.location?.recorded_at)} />
       </section>
+
+      <PassengerSupportHub
+        token={token}
+        bookingReference={tracking?.booking_reference}
+      />
 
       {error && (
         <div className="tracking-inline-warning">
@@ -235,9 +327,323 @@ export default function App() {
   );
 }
 
+function PassengerSupportHub({ token, bookingReference }) {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState("");
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [supportError, setSupportError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const messagesEndRef = useRef(null);
+const supportCardRef = useRef(null);
+function openSupport() {
+  setOpen(true);
+
+  window.setTimeout(() => {
+    supportCardRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 100);
+}
+  const { language: passengerLanguage } = useLanguage();
+
+  const loadMessages = useCallback(
+    async (silent = false) => {
+      if (!token) return;
+
+      if (!silent) {
+        setLoadingMessages(true);
+      }
+
+      try {
+        const data = await getPassengerSupportMessages(token);
+        setMessages(Array.isArray(data) ? data : []);
+        setSupportError("");
+      } catch (requestError) {
+        setSupportError(
+          requestError?.response?.data?.message ||
+            requestError?.message ||
+            "Destek mesajları alınamadı.",
+        );
+      } finally {
+        if (!silent) {
+          setLoadingMessages(false);
+        }
+      }
+    },
+    [token],
+  );
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    loadMessages();
+
+    const timer = window.setInterval(
+      () => loadMessages(true),
+      5000,
+    );
+
+    return () => window.clearInterval(timer);
+  }, [loadMessages, open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }, [messages, open]);
+
+  const sendMessage = useCallback(
+    async ({ message, category = "general" }) => {
+      const normalizedMessage = message?.trim();
+
+      if (!normalizedMessage || sending) return;
+
+      setSending(true);
+      setSupportError("");
+      setSuccessMessage("");
+
+      try {
+        await sendPassengerSupportMessage(token, {
+          message: normalizedMessage,
+          category,
+          language: passengerLanguage,
+        });
+
+        setDraft("");
+        setSuccessMessage(
+          category === "emergency"
+            ? "Acil destek talebiniz operasyon ekibine iletildi."
+            : "Mesajınız operasyon ekibine iletildi.",
+        );
+
+        await loadMessages(true);
+      } catch (requestError) {
+        setSupportError(
+          requestError?.response?.data?.message ||
+            requestError?.message ||
+            "Mesaj gönderilemedi. Lütfen tekrar deneyin.",
+        );
+      } finally {
+        setSending(false);
+      }
+    },
+    [loadMessages, passengerLanguage, sending, token],
+  );
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    sendMessage({
+      message: draft,
+      category: "general",
+    });
+  }
+
+  return (
+  <>
+    {!open && (
+      <button
+        type="button"
+        className="tracking-support-fab"
+        onClick={openSupport}
+        aria-label="Canlı desteği aç"
+      >
+        <span className="tracking-support-fab-icon">
+          💬
+        </span>
+
+        <span>Canlı Destek</span>
+
+        <span className="tracking-support-fab-dot" />
+      </button>
+    )}
+
+    <section
+      ref={supportCardRef}
+      className={`tracking-support-card ${
+        open ? "open" : ""
+      }`}
+    >
+      <div className="tracking-support-header">
+        <div>
+          <span className="eyebrow">YOLCU DESTEĞİ</span>
+          <h2>Canlı Destek</h2>
+          <p>
+            Sürücünüzü bulamıyor, aracınızı bekliyor veya yardıma ihtiyaç
+            duyuyorsanız operasyon ekibimize buradan ulaşabilirsiniz.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="tracking-support-toggle"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+        >
+          <span className="tracking-support-toggle-icon">
+            {open ? "×" : "💬"}
+          </span>
+          <span>{open ? "Sohbeti Kapat" : "Canlı Desteği Aç"}</span>
+        </button>
+      </div>
+
+      {!open && (
+        <div className="tracking-support-preview">
+          <span className="tracking-support-online-dot" />
+          <strong>Operasyon ekibiyle bağlantı kur</strong>
+          <span>Rezervasyon: {bookingReference || "—"}</span>
+        </div>
+      )}
+
+      {open && (
+        <div className="tracking-support-body">
+          <div className="tracking-support-quick-actions">
+            {(SUPPORT_QUICK_ACTIONS[passengerLanguage] ||
+  SUPPORT_QUICK_ACTIONS.en
+).map((action) => (
+              <button
+                key={action.category}
+                type="button"
+                disabled={sending}
+                className={action.category === "emergency" ? "emergency" : ""}
+                onClick={() =>
+                  sendMessage({
+                    message: action.message,
+                    category: action.category,
+                  })
+                }
+              >
+                {getSupportActionIcon(action.category)}
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="tracking-support-emergency-note">
+  <strong>Acil güvenlik uyarısı:</strong>{" "}
+  Yakın ve ciddi bir tehlike varsa bulunduğunuz ülkedeki yerel acil
+  yardım numarasını da arayın. Bu sohbet operasyon ekibimize ulaşır;
+  acil servislerin yerine geçmez.
+</div>
+
+<div className="tracking-support-chat">
+  <div className="tracking-support-chat-top">
+    <div>
+      <span className="tracking-support-online-dot" />
+      <strong>Skyfleet Operasyon</strong>
+    </div>
+    <small>Mesajlar otomatik yenilenir</small>
+  </div>
+
+  <div className="tracking-support-messages">
+    {loadingMessages && (
+      <div className="tracking-support-empty">
+        Mesajlar yükleniyor...
+      </div>
+    )}
+
+    {!loadingMessages && messages.length === 0 && (
+      <div className="tracking-support-empty">
+        <strong>Size nasıl yardımcı olabiliriz?</strong>
+        <span>
+          Yukarıdaki hızlı yardım seçeneklerinden birini seçin veya
+          mesajınızı yazın.
+        </span>
+      </div>
+    )}
+
+    {messages.map((message) => (
+      <SupportMessage key={message.id} message={message} />
+    ))}
+
+    <div ref={messagesEndRef} />
+  </div>
+
+  {supportError && (
+    <div className="tracking-support-error">{supportError}</div>
+  )}
+
+  {successMessage && (
+    <div className="tracking-support-success">{successMessage}</div>
+  )}
+
+  <form className="tracking-support-form" onSubmit={handleSubmit}>
+    <textarea
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      maxLength={2000}
+      rows={3}
+      placeholder="Mesajınızı yazın..."
+      disabled={sending}
+    />
+
+    <div className="tracking-support-form-footer">
+      <small>
+  {passengerLanguage === "tr" && "Dil"}
+  {passengerLanguage === "en" && "Language"}
+  {passengerLanguage === "es" && "Idioma"}
+  {passengerLanguage === "ar" && "اللغة"}:{" "}
+  {passengerLanguage?.toUpperCase() || "AUTO"}
+</small>
+
+      <button
+        type="submit"
+        disabled={sending || !draft.trim()}
+      >
+        {sending ? "Gönderiliyor..." : "Mesaj Gönder"}
+      </button>
+    </div>
+  </form>
+</div>
+        </div>
+      )}
+          </section>
+    </>
+  );
+}
+
+function SupportMessage({ message }) {
+  const isPassenger = message?.sender_type === "passenger";
+
+  return (
+    <div
+      className={`tracking-support-message ${
+        isPassenger ? "passenger" : "operation"
+      }`}
+    >
+      <div>
+        <span className="tracking-support-message-sender">
+          {isPassenger ? "Siz" : "Skyfleet Operasyon"}
+        </span>
+
+        {message?.priority === "critical" && (
+          <span className="tracking-support-priority critical">ACİL</span>
+        )}
+
+        {message?.priority === "urgent" && (
+          <span className="tracking-support-priority urgent">ÖNCELİKLİ</span>
+        )}
+
+        {message?.priority === "high" && (
+          <span className="tracking-support-priority high">YÜKSEK</span>
+        )}
+      </div>
+
+      <p>{getPassengerVisibleMessage(message)}</p>
+
+      <small>{formatSupportTime(message?.created_at)}</small>
+    </div>
+  );
+}
+
 function TrackingMap({ tracking }) {
-  const [roadRoute, setRoadRoute] =
-    useState([]);
+  const [roadRoute, setRoadRoute] = useState([]);
 
   const points = useMemo(() => {
     const candidates = [
@@ -276,19 +682,21 @@ function TrackingMap({ tracking }) {
 
     setRoadRoute([]);
 
-    loadRoadRoute(
-      routeEndpoints,
-      controller.signal,
-    )
+    loadRoadRoute(routeEndpoints, controller.signal)
       .then((route) => {
         if (!controller.signal.aborted) {
           setRoadRoute(route);
         }
       })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setRoadRoute([]);
+      .catch((error) => {
+        if (
+          error?.name === "AbortError" ||
+          controller.signal.aborted
+        ) {
+          return;
         }
+
+        setRoadRoute([]);
       });
 
     return () => controller.abort();
@@ -352,10 +760,7 @@ function TrackingMap({ tracking }) {
   );
 }
 
-async function loadRoadRoute(
-  endpoints,
-  signal,
-) {
+async function loadRoadRoute(endpoints, signal) {
   const coordinates = endpoints
     .map(
       ([latitude, longitude]) =>
@@ -387,16 +792,13 @@ async function loadRoadRoute(
 
       const payload = await response.json();
       const coordinatesList =
-        payload?.routes?.[0]?.geometry
-          ?.coordinates;
+        payload?.routes?.[0]?.geometry?.coordinates;
 
       if (
         !Array.isArray(coordinatesList) ||
         coordinatesList.length < 2
       ) {
-        throw new Error(
-          "Rota geometrisi bulunamadı.",
-        );
+        throw new Error("Rota geometrisi bulunamadı.");
       }
 
       return coordinatesList.map(
@@ -414,15 +816,20 @@ async function loadRoadRoute(
     }
   }
 
-  throw lastError || new Error(
-    "Yol güzergâhı alınamadı.",
-  );
+  throw lastError || new Error("Yol güzergâhı alınamadı.");
 }
 
 function FitMap({ points }) {
   const map = useMap();
+  const pointKey = points
+    .map((point) => point.join(","))
+    .join(";");
 
   useEffect(() => {
+    const resizeTimer = window.setTimeout(() => {
+      map.invalidateSize({ pan: false });
+    }, 80);
+
     if (points.length === 1) {
       map.setView(points[0], 14, { animate: true });
     } else if (points.length > 1) {
@@ -432,7 +839,8 @@ function FitMap({ points }) {
         animate: true,
       });
     }
-  }, [map, points]);
+    return () => window.clearTimeout(resizeTimer);
+  }, [map, pointKey]);
 
   return null;
 }
@@ -645,6 +1053,56 @@ function formatClock(value) {
     minute: "2-digit",
     second: "2-digit",
   });
+}
+
+function formatSupportTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getBrowserLanguage() {
+  const language =
+    navigator.language ||
+    navigator.languages?.[0] ||
+    "";
+
+  if (!language) return null;
+
+  return language
+    .split("-")[0]
+    .toLowerCase()
+    .slice(0, 10);
+}
+
+function getPassengerVisibleMessage(message) {
+  if (
+    message?.sender_type === "operation" &&
+    message?.translated_message
+  ) {
+    return message.translated_message;
+  }
+
+  return message?.message || "";
+}
+
+function getSupportActionIcon(category) {
+  switch (category) {
+    case "driver_not_found":
+      return "📍";
+    case "vehicle_not_arrived":
+      return "🚘";
+    case "help":
+      return "🛟";
+    case "emergency":
+      return "!";
+    default:
+      return "💬";
+  }
 }
 
 function getInitials(name) {

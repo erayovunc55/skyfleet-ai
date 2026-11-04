@@ -3,21 +3,21 @@
   top: 48px;
   z-index: 7;
   padding: 7px 8px;
-  background: #0c192c;
+  background: #313134;
   border-bottom: 1px solid #27415f;
 }
 
 .transfers-column-filter-row th:first-child {
   left: 0;
   z-index: 10;
-  background: #0c192c;
+  background: #313134;
 }
 
 .transfers-column-filter-row th:nth-child(2) {
   left: 38px;
   z-index: 10;
-  background: #0c192c;
-  box-shadow: 1px 0 0 #233a58;
+  background: #313134;
+  box-shadow: 1px 0 0 #545457;
 }
 
 .transfers-column-filter-cell input,
@@ -30,7 +30,7 @@
   border: 1px solid #294564;
   border-radius: 7px;
   outline: none;
-  background: #081426;
+  background: #2c2c2f;
   color: #dce8f8;
   font-size: 10px;
   font-weight: 700;

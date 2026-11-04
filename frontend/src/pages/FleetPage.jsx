@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useLanguage } from "../i18n";
 import { assignVehicleToDriver, getDrivers } from "../services/driverService";
@@ -129,10 +129,7 @@ export default function FleetPage({ onBack }) {
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => { loadInitialData(); }, []);
-  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
-
-  async function loadInitialData() {
+  const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -144,7 +141,10 @@ export default function FleetPage({ onBack }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [text.loadError]);
+
+  useEffect(() => { loadInitialData(); }, [loadInitialData]);
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
 
   async function loadVehicles() {
     const data = await getVehicles();

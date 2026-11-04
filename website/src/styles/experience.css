@@ -1,0 +1,183 @@
+/* SKYFLEET — editorial chauffeur experience */
+:root { --sky-black:#111411; --sky-cream:#f6f5f0; --sky-gold:#d6b77a; --sky-muted:#70746c; }
+.site-header,.site-header.home-header { position:sticky; top:0; height:80px; padding:0 max(calc((100vw - 1280px)/2),32px); background:#111411; border-bottom:1px solid #ffffff18; color:#fff; z-index:80; }
+.site-header .brand { color:#fff; gap:12px; }
+.site-header .brand-mark { background:transparent; border:1px solid #d6b77a7a; border-radius:50%; color:var(--sky-gold); width:42px; height:42px; }
+.site-header .brand-mark i { background:var(--sky-gold); }
+.site-header .brand strong { font-size:17px; letter-spacing:.14em; }
+.site-header .brand small { color:#b1b7ae; font-size:8px; letter-spacing:.21em; }
+.site-header nav { gap:22px; }
+.site-header nav a { color:#d7dcd5; font-size:12px; font-weight:500; padding:28px 0; }
+.site-header nav a:hover,.site-header nav a.active { color:var(--sky-gold); border-color:var(--sky-gold); }
+.site-header .language { background:transparent; color:#fff; border:1px solid #ffffff30; border-radius:6px; font-size:12px; }
+.site-header .portal-link { background:var(--sky-gold); border:0; color:#111411; border-radius:6px; font-size:12px; font-weight:650; }
+.site-header .menu-toggle { background:transparent; border-color:#ffffff40; }
+.site-header .menu-toggle span { background:white; }
+.site-header .partner-login-menu { z-index:100; }
+.sky-experience { color:var(--sky-black); background:#fff; }
+.sky-container { max-width:1280px; width:calc(100% - 96px); margin-inline:auto; }
+.sky-section { padding-block:96px; }
+.sky-eyebrow { display:inline-flex; align-items:center; gap:10px; color:#7c6a45; font-size:10px; letter-spacing:.19em; font-weight:700; line-height:1.8; text-transform:uppercase; }
+.sky-eyebrow i { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--sky-gold); }
+.sky-experience h1,.sky-experience h2,.sky-experience h3 { margin:0; font-weight:500; letter-spacing:-.04em; }
+.sky-experience h2 { font-size:clamp(30px,3vw,44px); line-height:1.2; margin-top:15px; }
+.sky-experience p { line-height:1.8; }
+.sky-hero { position:relative; background:#111411; color:#fff; overflow:clip; }
+.sky-hero-photo { position:absolute; inset:0; background-image:linear-gradient(90deg,#111411 0%,#111411ed 24%,#11141180 49%,#11141108 78%),linear-gradient(0deg,#111411a3,transparent 30%),url('../assets/premium/hero-experience-v1.png'); background-size:cover; background-position:center,center,62% center; }
+.sky-hero-layout { display:grid; grid-template-columns:minmax(0,530px) 1fr; position:relative; gap:80px; padding-block:65px 45px; min-height:850px; }
+.sky-hero-content h1 { font-size:clamp(42px,4.3vw,64px); line-height:1.05; margin:18px 0 20px; }
+.sky-hero-content>.sky-eyebrow { color:var(--sky-gold); }
+.sky-hero-content>p { max-width:455px; font-size:14px; color:#d6d8d1; margin-bottom:26px; }
+.sky-hero-caption { align-self:end; justify-self:end; max-width:240px; padding-bottom:18px; text-align:right; }
+.sky-hero-caption>span { font-size:8px; letter-spacing:.2em; color:#e6e7e0; }
+.sky-hero-caption p { font-family:Georgia,serif; font-style:italic; font-size:22px; line-height:1.5; }
+.sky-booking-wrap { scroll-margin-top:100px; max-width:480px; }
+.sky-booking-heading { display:flex; justify-content:space-between; color:#b4baa9; font-size:9px; letter-spacing:.13em; margin-bottom:12px; }
+.sky-experience .home-booking-card { background:transparent; color:#fff; padding:0; border-radius:0; box-shadow:none; max-height:none; overflow:visible; max-width:none; }
+.sky-experience .home-booking-tabs { display:flex; gap:4px; border:0; margin:0 0 16px; padding:4px; background:#ffffff15; border-radius:7px; }
+.sky-experience .home-booking-tabs button { font-size:11px; flex:1; padding:11px 6px; color:#bfc4bb; border:0; border-radius:4px; background:transparent; }
+.sky-experience .home-booking-tabs button.active { background:#f7f5ee; color:#111411; }
+.sky-experience .home-booking-card label>span { color:#d6d9d0; font-size:10px; font-weight:500; margin-bottom:7px; }
+.sky-experience .home-booking-card input,.sky-experience .home-booking-card select { border:1px solid #ffffff22; border-radius:6px; background:#252b25ed; color:#fff; height:50px; font-size:13px; color-scheme:dark; }
+.sky-experience .home-booking-card input::placeholder { color:#92998e; }
+.sky-experience .home-booking-card input:focus,.sky-experience .home-booking-card select:focus { border-color:var(--sky-gold); box-shadow:0 0 0 2px #d6b77a24; }
+.sky-experience .home-search-button { background:var(--sky-gold); border-radius:6px; color:#111411; font-size:13px; font-weight:700; padding:16px; margin-top:3px; }
+.sky-experience .home-search-button:hover { background:#e2c793; }
+.sky-booking-note { display:flex; align-items:center; gap:7px; color:#9ba392; font-size:10px; margin:12px 0 0; }
+.sky-experience .home-contact-step input { font-size:12px; }
+.sky-experience .home-confirm-button { background:var(--sky-gold); color:#111411; }
+.sky-experience .home-confirm-button span { color:#111411; }
+.sky-experience .home-booking-consent span { color:#b9c0b1!important; }
+.sky-experience .home-pricing-results { border-color:#ffffff25; }
+.sky-experience .home-booking-status { font-size:12px; padding:12px; }
+.sky-experience .home-address-dropdown { z-index:60; }
+.sky-assurance { border-bottom:1px solid #e7e9e1; background:var(--sky-cream); }
+.sky-assurance .sky-container { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; padding-block:28px; }
+.sky-assurance span { display:flex; align-items:center; justify-content:center; gap:10px; font-size:12px; }
+.sky-assurance i { color:#91794d; font-size:15px; font-style:normal; }
+.sky-intro { display:grid; grid-template-columns:1fr 1fr; gap:100px; border-bottom:1px solid #e6e9e1; }
+.sky-intro-copy { padding-top:27px; }
+.sky-intro-copy p { color:var(--sky-muted); font-size:15px; margin:0 0 24px; }
+.sky-text-link { display:inline-flex; align-items:center; gap:20px; font-size:12px; color:#222b20; text-decoration:none; border-bottom:1px solid #c5cbbc; padding-bottom:7px; }
+.sky-text-link span { color:#a18552; font-size:18px; }
+.sky-text-link:hover { color:#937642; }
+.sky-section-heading { display:flex; justify-content:space-between; gap:30px; align-items:end; margin-bottom:36px; }
+.sky-service-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:25px; }
+.sky-service { color:inherit; text-decoration:none; }
+.sky-service-image { aspect-ratio:1.6; overflow:hidden; position:relative; background:#e9e9e3; border-radius:3px; }
+.sky-service-image img { width:100%; height:100%; object-fit:cover; transition:transform .4s ease; }
+.sky-service:hover img { transform:scale(1.045); }
+.sky-service-image>span { position:absolute; top:16px; left:16px; color:#fff; font-size:10px; border:1px solid #ffffff70; padding:6px 8px; backdrop-filter:blur(10px); }
+.sky-service-copy h3 { display:flex; justify-content:space-between; gap:12px; font-size:22px; margin-top:22px; }
+.sky-service-copy h3 span { color:#9a8150; }
+.sky-service-copy p { font-size:13px; color:var(--sky-muted); margin-bottom:0; }
+.sky-fleet-section { background:var(--sky-cream); }
+.sky-fleet-tabs { display:flex; border:1px solid #d9ddd1; border-radius:6px; padding:4px; gap:3px; }
+.sky-fleet-tabs button { border:0; background:transparent; color:#636b5d; font-size:12px; padding:12px 19px; border-radius:4px; cursor:pointer; }
+.sky-fleet-tabs button[aria-selected=true] { background:#20271e; color:#fff; }
+.sky-fleet-panel { display:grid; grid-template-columns:1.2fr 1fr; background:#fff; border:1px solid #e6e9e0; }
+.sky-fleet-image { min-height:370px; position:relative; overflow:hidden; }
+.sky-fleet-image img { width:100%; height:100%; object-fit:cover; position:absolute; }
+.sky-fleet-image>span { position:absolute; bottom:24px; left:25px; color:#fff; font-size:9px; letter-spacing:.15em; border:1px solid #ffffff60; padding:9px 12px; background:#11141170; }
+.sky-fleet-copy { padding:45px; }
+.sky-fleet-copy h3 { font-size:32px; line-height:1.2; margin-top:12px; }
+.sky-fleet-copy p { color:var(--sky-muted); font-size:13px; margin-block:20px; }
+.sky-fleet-specs { display:flex; gap:30px; border-top:1px solid #e7e9e1; padding-top:20px; font-size:12px; color:#737b6b; }
+.sky-fleet-specs b { color:#222b20; font-size:16px; font-weight:500; margin-right:4px; }
+.sky-fleet-copy small { display:block; font-size:9px; color:#8d9585; margin-top:13px; }
+.sky-primary-link { display:inline-flex; align-items:center; justify-content:space-between; gap:35px; background:#20271e; color:#fff; padding:15px 23px; border-radius:4px; text-decoration:none; font-size:12px; margin-top:26px; }
+.sky-primary-link:hover { background:#394433; }
+.sky-primary-link span { color:var(--sky-gold); font-size:18px; }
+.sky-steps-section { display:grid; grid-template-columns:.8fr 1.4fr; gap:90px; }
+.sky-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; }
+.sky-steps article>span { font-family:Georgia,serif; font-style:italic; color:#a18552; font-size:32px; }
+.sky-steps h3 { font-size:17px; margin-top:20px; }
+.sky-steps p { font-size:12px; color:var(--sky-muted); }
+.sky-partners { background:#20271e; color:#fff; }
+.sky-partners-layout { display:grid; grid-template-columns:1fr 1fr; gap:100px; padding-block:75px; }
+.sky-partners .sky-eyebrow { color:var(--sky-gold); }
+.sky-partners h2 { font-size:42px; }
+.sky-partners p { font-size:13px; color:#b4bdac; max-width:440px; }
+.sky-partner-links { align-self:center; }
+.sky-partner-links a { display:flex; justify-content:space-between; align-items:center; color:#fff; text-decoration:none; border-bottom:1px solid #ffffff25; padding:24px 0; }
+.sky-partner-links a>span:last-child { color:var(--sky-gold); font-size:24px; }
+.sky-partner-links small { display:block; font-size:8px; color:#a7b19f; letter-spacing:.16em; margin-bottom:9px; }
+.sky-partner-links strong { font-size:18px; font-weight:500; }
+.sky-faq { display:grid; grid-template-columns:1fr 1.2fr; gap:100px; }
+.sky-faq>div>p { color:var(--sky-muted); font-size:13px; }
+.sky-faq-list details { border-bottom:1px solid #e3e6dc; }
+.sky-faq-list summary { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:23px 0; font-size:14px; font-weight:500; cursor:pointer; list-style:none; }
+.sky-faq-list summary::-webkit-details-marker { display:none; }
+.sky-faq-list summary span { color:#967c4c; font-size:22px; font-weight:300; }
+.sky-faq-list details[open] summary span { transform:rotate(45deg); }
+.sky-faq-list details p { margin-top:0; font-size:13px; color:var(--sky-muted); padding-right:25px; }
+.sky-final { border-top:1px solid #e6e9e0; padding:65px 0 80px; text-align:center; }
+.sky-final h2 { max-width:670px; margin:16px auto 0; }
+.site-footer { background:#111411; padding-block:55px 28px; grid-template-columns:1fr 1fr 1.3fr; padding-inline:max(calc((100vw - 1280px)/2),48px); }
+.site-footer>div { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; }
+.site-footer>div a { color:#b7bfb0; font-size:12px; }
+.site-footer>small { border-color:#ffffff15; color:#89917f; }
+.site-footer .brand { color:white; }
+.site-footer .brand-mark { background:transparent; border:1px solid #d6b77a7a; color:var(--sky-gold); border-radius:50%; }
+.site-footer .brand-mark i { background:var(--sky-gold); }
+@media(min-width:1800px) { .sky-hero-layout { min-height:930px; padding-top:85px; } }
+@media(max-width:1180px) {
+  .site-header nav { gap:14px; }
+  .site-header nav a { font-size:11px; }
+  .sky-container { width:calc(100% - 64px); }
+  .sky-hero-layout { grid-template-columns:minmax(0,480px) 1fr; gap:35px; }
+  .sky-intro,.sky-faq,.sky-partners-layout,.sky-steps-section { gap:50px; }
+}
+@media(max-width:980px) {
+  .site-header nav { display:none; background:#20271e; border-color:#ffffff25; }
+  .site-header nav.open { display:flex; }
+  .site-header nav a { padding:14px; font-size:14px; }
+  .site-header nav a:hover { background:#ffffff0a; }
+  .sky-hero-caption { display:none; }
+  .sky-hero-photo { background-position:center,center,60% center; }
+  .sky-hero-layout { grid-template-columns:minmax(0,500px) 1fr; }
+  .sky-assurance .sky-container { grid-template-columns:repeat(2,1fr); gap:16px; }
+  .sky-fleet-copy { padding:30px; }
+  .sky-fleet-copy h3 { font-size:26px; }
+  .sky-steps-section { grid-template-columns:1fr; gap:35px; }
+  .site-footer { grid-template-columns:1fr 1fr; }
+  .site-footer>div { grid-column:1/-1; }
+}
+@media(max-width:700px) {
+  .site-header,.site-header.home-header { padding-inline:20px; height:70px; }
+  .site-header .brand strong { font-size:14px; }
+  .site-header .brand small { font-size:7px; }
+  .site-header .brand-mark { width:35px; height:35px; }
+  .site-header .header-actions { gap:8px; }
+  .site-header .portal-link { display:none; }
+  .sky-container { width:calc(100% - 40px); }
+  .sky-section { padding-block:58px; }
+  .sky-hero-photo { background-image:linear-gradient(0deg,#111411 20%,#111411dc 55%,#11141145),url('../assets/premium/hero-experience-v1.png'); background-position:center,68% top; background-size:cover,auto 500px; background-repeat:no-repeat; }
+  .sky-hero-layout { grid-template-columns:1fr; min-height:auto; padding-block:60px 35px; }
+  .sky-hero-content h1 { font-size:44px; }
+  .sky-hero-content>p { font-size:13px; max-width:390px; }
+  .sky-booking-wrap { max-width:none; }
+  .sky-experience .home-booking-row { grid-template-columns:1fr 1fr; }
+  .sky-experience .home-booking-row label:last-child { grid-column:1/-1; }
+  .sky-assurance .sky-container { padding-block:22px; }
+  .sky-assurance span { font-size:10px; justify-content:start; gap:7px; }
+  .sky-intro,.sky-faq,.sky-partners-layout { grid-template-columns:1fr; gap:25px; }
+  .sky-intro-copy { padding-top:0; }
+  .sky-section-heading { flex-direction:column; align-items:start; gap:20px; }
+  .sky-service-grid { grid-template-columns:1fr; gap:30px; }
+  .sky-service-image { aspect-ratio:1.9; }
+  .sky-fleet-panel { grid-template-columns:1fr; }
+  .sky-fleet-image { min-height:240px; }
+  .sky-fleet-tabs { width:100%; }
+  .sky-fleet-tabs button { flex:1; }
+  .sky-steps { grid-template-columns:1fr; gap:22px; }
+  .sky-steps article { position:relative; padding-left:55px; }
+  .sky-steps article>span { position:absolute; left:0; top:10px; }
+  .sky-steps h3 { margin-top:10px; }
+  .sky-partners-layout { padding-block:50px; }
+  .sky-partners h2 { font-size:34px; }
+  .sky-final { padding-block:45px 55px; }
+  .site-footer { grid-template-columns:1fr; padding-inline:20px; }
+  .site-footer>div { grid-template-columns:1fr 1fr; }
+}
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .sky-service-image img { transition:none; } }

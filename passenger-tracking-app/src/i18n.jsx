@@ -73,6 +73,200 @@ const phrases = {
   "Şimdi": { en: "Now", ar: "الآن", es: "Ahora" },
   "Buluşma": { en: "Meeting point", ar: "نقطة الالتقاء", es: "Punto de encuentro" },
   "Son güncelleme": { en: "Last update", ar: "آخر تحديث", es: "Última actualización" },
+  "YOLCU DESTEĞİ": {
+  en: "PASSENGER SUPPORT",
+  ar: "دعم الركاب",
+  es: "ASISTENCIA AL PASAJERO",
+},
+"Sürücünüzü bulamıyor, aracınızı bekliyor veya yardıma ihtiyaç duyuyorsanız operasyon ekibimize buradan ulaşabilirsiniz.": {
+  en: "If you can't find your driver, are waiting for your vehicle, or need assistance, you can contact our operations team here.",
+  ar: "إذا لم تتمكن من العثور على سائقك، أو كنت تنتظر مركبتك، أو تحتاج إلى مساعدة، يمكنك التواصل مع فريق العمليات لدينا من هنا.",
+  es: "Si no encuentras a tu conductor, estás esperando tu vehículo o necesitas ayuda, puedes contactar con nuestro equipo de operaciones aquí.",
+},
+
+"Canlı Destek": {
+  en: "Live Support",
+  ar: "الدعم المباشر",
+  es: "Soporte en vivo",
+},
+
+"Sürücümü bulamıyorum": {
+  en: "I can't find my driver",
+  ar: "لا أستطيع العثور على سائقي",
+  es: "No encuentro a mi conductor",
+},
+
+"Araç gelmedi": {
+  en: "My vehicle hasn't arrived",
+  ar: "لم تصل مركبتي",
+  es: "Mi vehículo no ha llegado",
+},
+
+"Yardıma ihtiyacım var": {
+  en: "I need help",
+  ar: "أحتاج إلى مساعدة",
+  es: "Necesito ayuda",
+},
+
+"Acil durum": {
+  en: "Emergency",
+  ar: "حالة طارئة",
+  es: "Emergencia",
+},
+
+"Acil güvenlik uyarısı: Bu sohbet acil servislerin yerine geçmez. Hayati tehlike varsa bulunduğunuz ülkedeki acil servisleri arayın.": {
+  en: "Emergency safety notice: This chat does not replace emergency services. If there is immediate danger, contact the emergency services in your country.",
+  ar: "تنبيه أمني طارئ: هذه المحادثة لا تحل محل خدمات الطوارئ. إذا كان هناك خطر فوري، فاتصل بخدمات الطوارئ في بلدك.",
+  es: "Aviso de seguridad: Este chat no sustituye a los servicios de emergencia. Si existe un peligro inmediato, contacta con los servicios de emergencia de tu país.",
+},
+
+"Sohbeti Kapat": {
+  en: "Close Chat",
+  ar: "إغلاق المحادثة",
+  es: "Cerrar chat",
+},
+
+"Sohbeti Aç": {
+  en: "Open Chat",
+  ar: "فتح المحادثة",
+  es: "Abrir chat",
+},
+
+"Mesajınızı yazın...": {
+  en: "Write your message...",
+  ar: "اكتب رسالتك...",
+  es: "Escribe tu mensaje...",
+},
+
+"Gönder": {
+  en: "Send",
+  ar: "إرسال",
+  es: "Enviar",
+},
+
+"Gönderiliyor...": {
+  en: "Sending...",
+  ar: "جارٍ الإرسال...",
+  es: "Enviando...",
+},
+
+"Operasyon": {
+  en: "Operations",
+  ar: "فريق العمليات",
+  es: "Operaciones",
+},
+
+"Siz": {
+  en: "You",
+  ar: "أنت",
+  es: "Tú",
+},
+
+"NORMAL": {
+  en: "NORMAL",
+  ar: "عادي",
+  es: "NORMAL",
+},
+
+"YÜKSEK": {
+  en: "HIGH",
+  ar: "مرتفع",
+  es: "ALTA",
+},
+
+"ACİL": {
+  en: "URGENT",
+  ar: "عاجل",
+  es: "URGENTE",
+},
+
+"KRİTİK": {
+  en: "CRITICAL",
+  ar: "حرج",
+  es: "CRÍTICA",
+},
+
+"Dil": {
+  en: "Language",
+  ar: "اللغة",
+  es: "Idioma",
+},
+
+"Mesajınız operasyon ekibine iletildi.": {
+  en: "Your message has been sent to our operations team.",
+  ar: "تم إرسال رسالتك إلى فريق العمليات.",
+  es: "Tu mensaje ha sido enviado a nuestro equipo de operaciones.",
+},
+"Acil güvenlik uyarısı:": {
+  en: "Emergency safety notice:",
+  ar: "تنبيه أمني طارئ:",
+  es: "Aviso de seguridad:",
+},
+
+"Yakın ve ciddi bir tehlike varsa bulunduğunuz ülkedeki yerel acil yardım numarasını da arayın. Bu sohbet operasyon ekibimize ulaşır; acil servislerin yerine geçmez.": {
+  en: "If there is an immediate or serious danger, also call the local emergency number in your country. This chat reaches our operations team and does not replace emergency services.",
+  ar: "إذا كان هناك خطر فوري أو خطير، فاتصل أيضًا برقم الطوارئ المحلي في بلدك. تصل هذه المحادثة إلى فريق العمليات لدينا ولا تحل محل خدمات الطوارئ.",
+  es: "Si existe un peligro inmediato o grave, llama también al número local de emergencias de tu país. Este chat llega a nuestro equipo de operaciones y no sustituye a los servicios de emergencia.",
+},
+
+"Skyfleet Operasyon": {
+  en: "Skyfleet Operations",
+  ar: "عمليات Skyfleet",
+  es: "Operaciones Skyfleet",
+},
+
+"Mesajlar otomatik yenilenir": {
+  en: "Messages refresh automatically",
+  ar: "يتم تحديث الرسائل تلقائيًا",
+  es: "Los mensajes se actualizan automáticamente",
+},
+
+"Mesajlar yükleniyor...": {
+  en: "Loading messages...",
+  ar: "جارٍ تحميل الرسائل...",
+  es: "Cargando mensajes...",
+},
+
+"Size nasıl yardımcı olabiliriz?": {
+  en: "How can we help you?",
+  ar: "كيف يمكننا مساعدتك؟",
+  es: "¿Cómo podemos ayudarte?",
+},
+
+"Yukarıdaki hızlı yardım seçeneklerinden birini seçin veya mesajınızı yazın.": {
+  en: "Choose one of the quick help options above or write your message.",
+  ar: "اختر أحد خيارات المساعدة السريعة أعلاه أو اكتب رسالتك.",
+  es: "Elige una de las opciones de ayuda rápida de arriba o escribe tu mensaje.",
+},
+
+"Mesaj Gönder": {
+  en: "Send Message",
+  ar: "إرسال الرسالة",
+  es: "Enviar mensaje",
+  "Dil: EN": {
+  en: "Language: EN",
+  ar: "اللغة: EN",
+  es: "Idioma: EN",
+},
+
+"Dil: TR": {
+  en: "Language: TR",
+  ar: "اللغة: TR",
+  es: "Idioma: TR",
+},
+
+"Dil: ES": {
+  en: "Language: ES",
+  ar: "اللغة: ES",
+  es: "Idioma: ES",
+},
+
+"Dil: AR": {
+  en: "Language: AR",
+  ar: "اللغة: AR",
+  es: "Idioma: AR",
+},
+},
 };
 
 const monthMap = {

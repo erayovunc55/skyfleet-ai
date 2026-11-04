@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import { useLanguage } from "../i18n";
+
 import {
   changeSupplierVehicleStatus,
   createSupplierVehicle,
@@ -27,14 +29,313 @@ const EMPTY_FORM = {
   note: "",
 };
 
+const TEXT = {
+  tr: {
+    loadError: "Araçlar yüklenemedi.",
+    updated: "Araç bilgileri güncellendi.",
+    created: "Araç başarıyla oluşturuldu.",
+    saveError: "Araç kaydedilemedi.",
+    statusUpdated: "Araç durumu güncellendi.",
+    statusUpdateError: "Araç durumu güncellenemedi.",
+
+    eyebrow: "FİLO YÖNETİMİ",
+    title: "Araçlar",
+    description:
+      "Operasyonlarda kullanacağınız araçları ekleyin ve yönetin.",
+    refresh: "Yenile",
+    newVehicle: "+ Yeni Araç",
+
+    totalVehicles: "Toplam Araç",
+    activeVehicles: "Aktif Araç",
+    inService: "Serviste",
+    unavailable: "Kullanılamaz",
+
+    vehicleFleet: "Araç Filosu",
+    records: "kayıt",
+    loadingVehicles: "Araçlar yükleniyor...",
+    noVehiclesTitle: "Henüz araç eklenmedi",
+    noVehiclesDescription:
+      "İlk aracınızı ekleyerek filonuzu oluşturmaya başlayın.",
+
+    vehicleType: "Araç tipi",
+    capacity: "Kapasite",
+    passengerUnit: "yolcu",
+    luggageUnit: "bagaj",
+    driver: "Sürücü",
+    notAssigned: "Atanmadı",
+    status: "Durum",
+    edit: "Düzenle",
+
+    modalEditAria: "Araç düzenle",
+    modalCreateAria: "Yeni araç ekle",
+    fleetRecord: "FİLO KAYDI",
+    editVehicle: "Aracı Düzenle",
+    addVehicle: "Yeni Araç Ekle",
+
+    plate: "Plaka",
+    brand: "Marka",
+    model: "Model",
+    modelYear: "Model yılı",
+    color: "Renk",
+    colorPlaceholder: "Siyah",
+    passengerCapacity: "Yolcu kapasitesi",
+    luggageCapacity: "Bagaj kapasitesi",
+    insuranceExpiry: "Sigorta bitiş tarihi",
+    inspectionExpiry: "Muayene bitiş tarihi",
+    operationalStatus: "Operasyon durumu",
+    note: "Not",
+    notePlaceholder: "Araç hakkında operasyon notu...",
+
+    sedan: "Sedan",
+    minivan: "Minivan",
+    minibus: "Minibüs",
+    bus: "Otobüs",
+    vip: "VIP",
+
+    cancel: "Vazgeç",
+    saving: "Kaydediliyor...",
+    saveChanges: "Değişiklikleri Kaydet",
+    saveVehicle: "Aracı Kaydet",
+  },
+
+  en: {
+    loadError: "Vehicles could not be loaded.",
+    updated: "Vehicle information has been updated.",
+    created: "Vehicle created successfully.",
+    saveError: "The vehicle could not be saved.",
+    statusUpdated: "Vehicle status has been updated.",
+    statusUpdateError: "Vehicle status could not be updated.",
+
+    eyebrow: "FLEET MANAGEMENT",
+    title: "Vehicles",
+    description:
+      "Add and manage the vehicles you use in your operations.",
+    refresh: "Refresh",
+    newVehicle: "+ New Vehicle",
+
+    totalVehicles: "Total Vehicles",
+    activeVehicles: "Active Vehicles",
+    inService: "In Service",
+    unavailable: "Unavailable",
+
+    vehicleFleet: "Vehicle Fleet",
+    records: "records",
+    loadingVehicles: "Loading vehicles...",
+    noVehiclesTitle: "No vehicles added yet",
+    noVehiclesDescription:
+      "Add your first vehicle to start building your fleet.",
+
+    vehicleType: "Vehicle Type",
+    capacity: "Capacity",
+    passengerUnit: "passengers",
+    luggageUnit: "bags",
+    driver: "Driver",
+    notAssigned: "Unassigned",
+    status: "Status",
+    edit: "Edit",
+
+    modalEditAria: "Edit vehicle",
+    modalCreateAria: "Add new vehicle",
+    fleetRecord: "FLEET RECORD",
+    editVehicle: "Edit Vehicle",
+    addVehicle: "Add New Vehicle",
+
+    plate: "Plate",
+    brand: "Brand",
+    model: "Model",
+    modelYear: "Model Year",
+    color: "Color",
+    colorPlaceholder: "Black",
+    passengerCapacity: "Passenger Capacity",
+    luggageCapacity: "Luggage Capacity",
+    insuranceExpiry: "Insurance Expiry Date",
+    inspectionExpiry: "Inspection Expiry Date",
+    operationalStatus: "Operational Status",
+    note: "Note",
+    notePlaceholder: "Operational note about the vehicle...",
+
+    sedan: "Sedan",
+    minivan: "Minivan",
+    minibus: "Minibus",
+    bus: "Bus",
+    vip: "VIP",
+
+    cancel: "Cancel",
+    saving: "Saving...",
+    saveChanges: "Save Changes",
+    saveVehicle: "Save Vehicle",
+  },
+
+  es: {
+    loadError: "No se pudieron cargar los vehículos.",
+    updated: "La información del vehículo ha sido actualizada.",
+    created: "Vehículo creado correctamente.",
+    saveError: "No se pudo guardar el vehículo.",
+    statusUpdated: "El estado del vehículo ha sido actualizado.",
+    statusUpdateError: "No se pudo actualizar el estado del vehículo.",
+
+    eyebrow: "GESTIÓN DE FLOTA",
+    title: "Vehículos",
+    description:
+      "Añada y gestione los vehículos que utiliza en sus operaciones.",
+    refresh: "Actualizar",
+    newVehicle: "+ Nuevo Vehículo",
+
+    totalVehicles: "Total de Vehículos",
+    activeVehicles: "Vehículos Activos",
+    inService: "En Servicio",
+    unavailable: "No Disponibles",
+
+    vehicleFleet: "Flota de Vehículos",
+    records: "registros",
+    loadingVehicles: "Cargando vehículos...",
+    noVehiclesTitle: "Aún no se han añadido vehículos",
+    noVehiclesDescription:
+      "Añada su primer vehículo para empezar a crear su flota.",
+
+    vehicleType: "Tipo de Vehículo",
+    capacity: "Capacidad",
+    passengerUnit: "pasajeros",
+    luggageUnit: "maletas",
+    driver: "Conductor",
+    notAssigned: "Sin asignar",
+    status: "Estado",
+    edit: "Editar",
+
+    modalEditAria: "Editar vehículo",
+    modalCreateAria: "Añadir nuevo vehículo",
+    fleetRecord: "REGISTRO DE FLOTA",
+    editVehicle: "Editar Vehículo",
+    addVehicle: "Añadir Nuevo Vehículo",
+
+    plate: "Matrícula",
+    brand: "Marca",
+    model: "Modelo",
+    modelYear: "Año del Modelo",
+    color: "Color",
+    colorPlaceholder: "Negro",
+    passengerCapacity: "Capacidad de Pasajeros",
+    luggageCapacity: "Capacidad de Equipaje",
+    insuranceExpiry: "Vencimiento del Seguro",
+    inspectionExpiry: "Vencimiento de la Inspección",
+    operationalStatus: "Estado Operativo",
+    note: "Nota",
+    notePlaceholder: "Nota operativa sobre el vehículo...",
+
+    sedan: "Sedán",
+    minivan: "Minivan",
+    minibus: "Minibús",
+    bus: "Autobús",
+    vip: "VIP",
+
+    cancel: "Cancelar",
+    saving: "Guardando...",
+    saveChanges: "Guardar Cambios",
+    saveVehicle: "Guardar Vehículo",
+  },
+
+  ar: {
+    loadError: "تعذر تحميل المركبات.",
+    updated: "تم تحديث معلومات المركبة.",
+    created: "تم إنشاء المركبة بنجاح.",
+    saveError: "تعذر حفظ المركبة.",
+    statusUpdated: "تم تحديث حالة المركبة.",
+    statusUpdateError: "تعذر تحديث حالة المركبة.",
+
+    eyebrow: "إدارة الأسطول",
+    title: "المركبات",
+    description:
+      "أضف المركبات المستخدمة في العمليات وقم بإدارتها.",
+    refresh: "تحديث",
+    newVehicle: "+ مركبة جديدة",
+
+    totalVehicles: "إجمالي المركبات",
+    activeVehicles: "المركبات النشطة",
+    inService: "في الصيانة",
+    unavailable: "غير متاحة",
+
+    vehicleFleet: "أسطول المركبات",
+    records: "سجلات",
+    loadingVehicles: "جارٍ تحميل المركبات...",
+    noVehiclesTitle: "لم تتم إضافة مركبات بعد",
+    noVehiclesDescription:
+      "أضف أول مركبة للبدء في إنشاء أسطولك.",
+
+    vehicleType: "نوع المركبة",
+    capacity: "السعة",
+    passengerUnit: "ركاب",
+    luggageUnit: "حقائب",
+    driver: "السائق",
+    notAssigned: "غير معين",
+    status: "الحالة",
+    edit: "تعديل",
+
+    modalEditAria: "تعديل المركبة",
+    modalCreateAria: "إضافة مركبة جديدة",
+    fleetRecord: "سجل الأسطول",
+    editVehicle: "تعديل المركبة",
+    addVehicle: "إضافة مركبة جديدة",
+
+    plate: "رقم اللوحة",
+    brand: "العلامة التجارية",
+    model: "الطراز",
+    modelYear: "سنة الموديل",
+    color: "اللون",
+    colorPlaceholder: "أسود",
+    passengerCapacity: "سعة الركاب",
+    luggageCapacity: "سعة الأمتعة",
+    insuranceExpiry: "تاريخ انتهاء التأمين",
+    inspectionExpiry: "تاريخ انتهاء الفحص",
+    operationalStatus: "الحالة التشغيلية",
+    note: "ملاحظة",
+    notePlaceholder: "ملاحظة تشغيلية عن المركبة...",
+
+    sedan: "سيدان",
+    minivan: "ميني فان",
+    minibus: "ميني باص",
+    bus: "حافلة",
+    vip: "VIP",
+
+    cancel: "إلغاء",
+    saving: "جارٍ الحفظ...",
+    saveChanges: "حفظ التغييرات",
+    saveVehicle: "حفظ المركبة",
+  },
+};
+
 const STATUS_LABELS = {
-  active: "Aktif",
-  service: "Serviste",
-  faulty: "Arızalı",
-  inactive: "Pasif",
+  tr: {
+    active: "Aktif",
+    service: "Serviste",
+    faulty: "Arızalı",
+    inactive: "Pasif",
+  },
+  en: {
+    active: "Active",
+    service: "In Service",
+    faulty: "Faulty",
+    inactive: "Inactive",
+  },
+  es: {
+    active: "Activo",
+    service: "En Servicio",
+    faulty: "Averiado",
+    inactive: "Inactivo",
+  },
+  ar: {
+    active: "نشط",
+    service: "في الصيانة",
+    faulty: "معطل",
+    inactive: "غير نشط",
+  },
 };
 
 export default function SupplierVehiclesPage() {
+  const { language } = useLanguage();
+  const t = TEXT[language] || TEXT.en;
+  const statusLabels =
+    STATUS_LABELS[language] || STATUS_LABELS.en;
+
   const [vehicles, setVehicles] =
     useState([]);
 
@@ -75,14 +376,14 @@ export default function SupplierVehiclesPage() {
         setError(
           getErrorMessage(
             requestError,
-            "Araçlar yüklenemedi.",
+            t.loadError,
           ),
         );
       } finally {
         setLoading(false);
       }
     },
-    [],
+    [t.loadError],
   );
 
   useEffect(() => {
@@ -276,17 +577,13 @@ export default function SupplierVehiclesPage() {
           payload,
         );
 
-        setMessage(
-          "Araç bilgileri güncellendi.",
-        );
+        setMessage(t.updated);
       } else {
         await createSupplierVehicle(
           payload,
         );
 
-        setMessage(
-          "Araç başarıyla oluşturuldu.",
-        );
+        setMessage(t.created);
       }
 
       closeForm();
@@ -295,7 +592,7 @@ export default function SupplierVehiclesPage() {
       setError(
         getErrorMessage(
           requestError,
-          "Araç kaydedilemedi.",
+          t.saveError,
         ),
       );
     } finally {
@@ -317,7 +614,7 @@ export default function SupplierVehiclesPage() {
       );
 
       setMessage(
-        "Araç durumu güncellendi.",
+        t.statusUpdated,
       );
 
       await loadVehicles();
@@ -325,7 +622,7 @@ export default function SupplierVehiclesPage() {
       setError(
         getErrorMessage(
           requestError,
-          "Araç durumu güncellenemedi.",
+          t.statusUpdateError,
         ),
       );
     }
@@ -336,15 +633,12 @@ export default function SupplierVehiclesPage() {
       <section className="supplier-page-heading">
         <div>
           <span className="supplier-eyebrow">
-            FİLO YÖNETİMİ
+            {t.eyebrow}
           </span>
 
-          <h1>Araçlar</h1>
+          <h1>{t.title}</h1>
 
-          <p>
-            Operasyonlarda kullanacağınız
-            araçları ekleyin ve yönetin.
-          </p>
+          <p>{t.description}</p>
         </div>
 
         <div className="supplier-heading-actions">
@@ -354,7 +648,7 @@ export default function SupplierVehiclesPage() {
             disabled={loading}
             onClick={loadVehicles}
           >
-            Yenile
+            {t.refresh}
           </button>
 
           <button
@@ -362,7 +656,7 @@ export default function SupplierVehiclesPage() {
             type="button"
             onClick={openCreateForm}
           >
-            + Yeni Araç
+            {t.newVehicle}
           </button>
         </div>
       </section>
@@ -381,22 +675,22 @@ export default function SupplierVehiclesPage() {
 
       <section className="supplier-summary-grid supplier-management-summary">
         <SummaryCard
-          label="Toplam Araç"
+          label={t.totalVehicles}
           value={summary.total}
         />
 
         <SummaryCard
-          label="Aktif Araç"
+          label={t.activeVehicles}
           value={summary.active}
         />
 
         <SummaryCard
-          label="Serviste"
+          label={t.inService}
           value={summary.service}
         />
 
         <SummaryCard
-          label="Kullanılamaz"
+          label={t.unavailable}
           value={summary.unavailable}
         />
       </section>
@@ -404,28 +698,30 @@ export default function SupplierVehiclesPage() {
       <section className="supplier-management-card">
         <div className="supplier-section-heading">
           <div>
-            <h2>Araç Filosu</h2>
+            <h2>
+              {t.vehicleFleet}
+            </h2>
 
             <p>
-              {vehicles.length} kayıt
+              {vehicles.length}
+              {" "}
+              {t.records}
             </p>
           </div>
         </div>
 
         {loading ? (
           <div className="supplier-empty-state">
-            Araçlar yükleniyor...
+            {t.loadingVehicles}
           </div>
         ) : vehicles.length === 0 ? (
           <div className="supplier-empty-state">
             <strong>
-              Henüz araç eklenmedi
+              {t.noVehiclesTitle}
             </strong>
 
             <p>
-              İlk aracınızı ekleyerek
-              filonuzu oluşturmaya
-              başlayın.
+              {t.noVehiclesDescription}
             </p>
           </div>
         ) : (
@@ -456,7 +752,7 @@ export default function SupplierVehiclesPage() {
 
                   <div>
                     <span className="supplier-field-label">
-                      Araç tipi
+                      {t.vehicleType}
                     </span>
 
                     <strong>
@@ -466,31 +762,34 @@ export default function SupplierVehiclesPage() {
 
                   <div>
                     <span className="supplier-field-label">
-                      Kapasite
+                      {t.capacity}
                     </span>
 
                     <strong>
                       {vehicle.passenger_capacity}
-                      {" yolcu / "}
+                      {" "}
+                      {t.passengerUnit}
+                      {" / "}
                       {vehicle.luggage_capacity}
-                      {" bagaj"}
+                      {" "}
+                      {t.luggageUnit}
                     </strong>
                   </div>
 
                   <div>
                     <span className="supplier-field-label">
-                      Sürücü
+                      {t.driver}
                     </span>
 
                     <strong>
                       {vehicle.driver?.name ||
-                        "Atanmadı"}
+                        t.notAssigned}
                     </strong>
                   </div>
 
                   <label className="supplier-status-select">
                     <span className="supplier-field-label">
-                      Durum
+                      {t.status}
                     </span>
 
                     <select
@@ -505,7 +804,7 @@ export default function SupplierVehiclesPage() {
                       }
                     >
                       {Object.entries(
-                        STATUS_LABELS,
+                        statusLabels,
                       ).map(
                         ([
                           value,
@@ -529,7 +828,7 @@ export default function SupplierVehiclesPage() {
                       openEditForm(vehicle)
                     }
                   >
-                    Düzenle
+                    {t.edit}
                   </button>
                 </article>
               ),
@@ -557,26 +856,26 @@ export default function SupplierVehiclesPage() {
             aria-modal="true"
             aria-label={
               editingVehicle
-                ? "Araç düzenle"
-                : "Yeni araç ekle"
+                ? t.modalEditAria
+                : t.modalCreateAria
             }
           >
             <div className="supplier-modal-header">
               <div>
                 <span className="supplier-eyebrow">
-                  FİLO KAYDI
+                  {t.fleetRecord}
                 </span>
 
                 <h2>
                   {editingVehicle
-                    ? "Aracı Düzenle"
-                    : "Yeni Araç Ekle"}
+                    ? t.editVehicle
+                    : t.addVehicle}
                 </h2>
               </div>
 
               <button
                 type="button"
-                onClickClick={closeForm}
+                onClick={closeForm}
               >
                 ×
               </button>
@@ -587,7 +886,7 @@ export default function SupplierVehiclesPage() {
               onSubmit={handleSubmit}
             >
               <div className="supplier-form-grid">
-                <FormField label="Plaka">
+                <FormField label={t.plate}>
                   <input
                     required
                     value={form.plate}
@@ -601,7 +900,7 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Marka">
+                <FormField label={t.brand}>
                   <input
                     required
                     value={form.brand}
@@ -615,7 +914,7 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Model">
+                <FormField label={t.model}>
                   <input
                     required
                     value={form.model}
@@ -629,7 +928,7 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Model yılı">
+                <FormField label={t.modelYear}>
                   <input
                     type="number"
                     min="1950"
@@ -645,7 +944,7 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Araç tipi">
+                <FormField label={t.vehicleType}>
                   <select
                     value={
                       form.vehicle_type
@@ -658,31 +957,33 @@ export default function SupplierVehiclesPage() {
                     }
                   >
                     <option value="Sedan">
-                      Sedan
+                      {t.sedan}
                     </option>
 
                     <option value="Minivan">
-                      Minivan
+                      {t.minivan}
                     </option>
 
                     <option value="Minibus">
-                      Minibüs
+                      {t.minibus}
                     </option>
 
                     <option value="Bus">
-                      Otobüs
+                      {t.bus}
                     </option>
 
                     <option value="VIP">
-                      VIP
+                      {t.vip}
                     </option>
                   </select>
                 </FormField>
 
-                <FormField label="Renk">
+                <FormField label={t.color}>
                   <input
                     value={form.color}
-                    placeholder="Siyah"
+                    placeholder={
+                      t.colorPlaceholder
+                    }
                     onChange={(event) =>
                       updateField(
                         "color",
@@ -692,7 +993,11 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Yolcu kapasitesi">
+                <FormField
+                  label={
+                    t.passengerCapacity
+                  }
+                >
                   <input
                     required
                     type="number"
@@ -710,7 +1015,11 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Bagaj kapasitesi">
+                <FormField
+                  label={
+                    t.luggageCapacity
+                  }
+                >
                   <input
                     type="number"
                     min="0"
@@ -727,7 +1036,11 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Sigorta bitiş tarihi">
+                <FormField
+                  label={
+                    t.insuranceExpiry
+                  }
+                >
                   <input
                     type="date"
                     value={
@@ -742,7 +1055,11 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Muayene bitiş tarihi">
+                <FormField
+                  label={
+                    t.inspectionExpiry
+                  }
+                >
                   <input
                     type="date"
                     value={
@@ -757,7 +1074,11 @@ export default function SupplierVehiclesPage() {
                   />
                 </FormField>
 
-                <FormField label="Operasyon durumu">
+                <FormField
+                  label={
+                    t.operationalStatus
+                  }
+                >
                   <select
                     value={
                       form.operational_status
@@ -770,7 +1091,7 @@ export default function SupplierVehiclesPage() {
                     }
                   >
                     {Object.entries(
-                      STATUS_LABELS,
+                      statusLabels,
                     ).map(
                       ([
                         value,
@@ -788,11 +1109,13 @@ export default function SupplierVehiclesPage() {
                 </FormField>
               </div>
 
-              <FormField label="Not">
+              <FormField label={t.note}>
                 <textarea
                   rows="3"
                   value={form.note}
-                  placeholder="Araç hakkında operasyon notu..."
+                  placeholder={
+                    t.notePlaceholder
+                  }
                   onChange={(event) =>
                     updateField(
                       "note",
@@ -809,7 +1132,7 @@ export default function SupplierVehiclesPage() {
                   disabled={saving}
                   onClick={closeForm}
                 >
-                  Vazgeç
+                  {t.cancel}
                 </button>
 
                 <button
@@ -818,10 +1141,10 @@ export default function SupplierVehiclesPage() {
                   disabled={saving}
                 >
                   {saving
-                    ? "Kaydediliyor..."
+                    ? t.saving
                     : editingVehicle
-                      ? "Değişiklikleri Kaydet"
-                      : "Aracı Kaydet"}
+                      ? t.saveChanges
+                      : t.saveVehicle}
                 </button>
               </div>
             </form>

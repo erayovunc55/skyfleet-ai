@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- provider module intentionally exports its hook */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "skyfleet_language";
@@ -117,6 +118,27 @@ const phrases = {
   "Transfer İptal Edildi": { en: "Transfer Cancelled", ar: "تم إلغاء التحويل", es: "Traslado cancelado" },
   "Operasyon Kaydı": { en: "Operation Record", ar: "سجل العملية", es: "Registro de operación" },
   "Zaman bilgisi yok": { en: "No time information", ar: "لا توجد معلومات زمنية", es: "Sin información de hora" },
+  "Son güncelleme": { en: "Last update", ar: "آخر تحديث", es: "Última actualización" },
+  "Aktif Transfer": { en: "Active Transfers", ar: "التحويلات النشطة", es: "Traslados activos" },
+  "Devam eden operasyonlar": { en: "Ongoing operations", ar: "العمليات الجارية", es: "Operaciones en curso" },
+  "Henüz başlamayan işler": { en: "Jobs not started yet", ar: "عمليات لم تبدأ بعد", es: "Servicios aún no iniciados" },
+  "Bugün tamamlanan işler": { en: "Jobs completed today", ar: "العمليات المكتملة اليوم", es: "Servicios completados hoy" },
+  "OPERASYONLAR": { en: "OPERATIONS", ar: "العمليات", es: "OPERACIONES" },
+  "Transfer Listesi": { en: "Transfer List", ar: "قائمة التحويلات", es: "Lista de traslados" },
+  "Araç atanmamış": { en: "Vehicle unassigned", ar: "لم يتم تعيين مركبة", es: "Vehículo sin asignar" },
+  "Rezervasyon": { en: "Booking", ar: "الحجز", es: "Reserva" },
+  "Bugünkü Transfer": { en: "Today's Transfers", ar: "تحويلات اليوم", es: "Traslados de hoy" },
+  "Detayı Gör": { en: "View Details", ar: "عرض التفاصيل", es: "Ver detalles" },
+  "Sürücüyü Ara": { en: "Call Driver", ar: "اتصل بالسائق", es: "Llamar al conductor" },
+  "Sürücüden henüz canlı GPS verisi gelmedi.": { en: "No live GPS data received from the driver yet.", ar: "لم يتم استلام بيانات GPS مباشرة من السائق بعد.", es: "Aún no se han recibido datos GPS en vivo del conductor." },
+  "Alış Noktası": { en: "Pickup Point", ar: "نقطة الاستلام", es: "Punto de recogida" },
+  "Bırakış Noktası": { en: "Drop-off Point", ar: "نقطة الوصول", es: "Punto de destino" },
+  "Adres belirtilmedi": { en: "Address not specified", ar: "العنوان غير محدد", es: "Dirección no especificada" },
+  "Kalan Mesafe": { en: "Remaining Distance", ar: "المسافة المتبقية", es: "Distancia restante" },
+  "Tahmini Varış": { en: "Estimated Arrival", ar: "الوصول المتوقع", es: "Llegada estimada" },
+  "Anlık Hız": { en: "Current Speed", ar: "السرعة الحالية", es: "Velocidad actual" },
+  "GPS Hassasiyeti": { en: "GPS Accuracy", ar: "دقة GPS", es: "Precisión GPS" },
+  "Son Konum": { en: "Last Location", ar: "آخر موقع", es: "Última ubicación" },
 };
 
 const LanguageContext = createContext(null);
@@ -197,6 +219,7 @@ export function LanguageProvider({ children }) {
     if (!LANGUAGES.some((item) => item.code === nextLanguage)) return;
     localStorage.setItem(STORAGE_KEY, nextLanguage);
     setLanguageState(nextLanguage);
+    window.dispatchEvent(new CustomEvent("skyfleet-language-change"));
   };
 
   useEffect(() => {

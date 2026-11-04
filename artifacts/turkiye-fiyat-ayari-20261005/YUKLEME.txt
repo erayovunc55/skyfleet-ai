@@ -1,0 +1,44 @@
+TURKIYE FIYAT AYARI - 05.10.2026
+
+TESPIT
+Canli IST ve SAW havalimani/konum kayitlari aktif ve public. Tedarikci kapsamalari
+da mevcut. Ancak canli config/taxi_pricing.php icinde markets.TR ve
+international_airports.TR bulunmuyor. Bu nedenle havalimanlari fiyatlandirma
+aramalarindan eleniyor.
+
+YUKLEME
+1. cPanel Dosya Yoneticisinde Laravel projesinin config klasorunu bulun.
+   Dogru klasorde taxi_pricing.php, app.php ve database.php gibi dosyalar bulunur.
+   Laravel yolu hosting kurulumuna gore degisir; public_html/api/config oldugunu
+   varsaymayin. api/index.php icindeki bootstrap/app.php yolu Laravel kokunu gosterir.
+2. Mevcut config/taxi_pricing.php dosyasini yedekleyin.
+3. Paketteki taxi_pricing.php dosyasini bu dosyanin uzerine yukleyin.
+   Bu dosya yerel projenin guncel fiyat konfigurasyonunun tamamidir. Canlidaki
+   dosyada ozel indirim/ulke/havalimani ayarlari varsa tam dosyayi degistirmek
+   yerine asagidaki iki TR girdisini mevcut dosyaya ekleyin.
+
+   'markets' => [ ... ] bolumunun icine:
+   'TR' => ['name' => 'Turkiye'],
+
+   'international_airports' => [ ... ] bolumunun icine:
+   'TR' => ['IST', 'SAW', 'AYT', 'ADB', 'ESB', 'DLM', 'BJV', 'GZT', 'GZP',
+            'ASR', 'TZX', 'COV', 'NAV', 'ERZ', 'ISE'],
+
+4. Ozel kontrol baglantisini yeniden acin. Su degerler beklenir:
+   loaded_turkey_market: true
+   file_turkey_market: true
+   IST ve SAW icin pricing_market_enabled: true
+5. Website'i yenileyin. Onceki havalimani secimini silin; IST arayip havalimanini
+   listeden yeniden secin. Oteli/adresi de listeden secip arac/fiyat aramasini yapin.
+   Eski secim Geoapify sonucu oldugundan yeniden secmek gereklidir.
+6. Kontrol bittiginde skyfleet-pricing-check-20261005.php dosyasini sunucudan silin.
+
+Canli raporda configuration_cached:false oldugu icin artisan komutu gerekmiyor.
+Degisiklik kontrol raporuna yansimazsa hosting panelinden PHP/OPcache'i yenileyin.
+
+GUNCEL DOSYANIN BAGIMLILIGI
+Mevcut Laravel database/data/airport_taxi_tariffs.json dosyasini kullanir.
+Bu dosya fiyat referans verisidir; bu paket tarifeleri degistirmez.
+
+Yerel PHP sozdizimi ve IST/SAW market uygunlugu kontrolu basarili.
+Gercek canli fiyat, yuklemeden sonra rota ve tedarikci tarifeleriyle test edilmelidir.

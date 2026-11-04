@@ -5,8 +5,8 @@ import useTransfer from "../hooks/useTransfer";
 import transferService from "../services/transferService";
 
 const TEXT = {
-  tr: { title: "Dispatcher İşlemleri", subtitle: "Hızlı operasyon araçları", callPassenger: "Yolcuyu Ara", callDriver: "Sürücüyü Ara", whatsapp: "Yolcu WhatsApp", whatsappLoading: "Mesaj hazırlanıyor...", tracking: "Yolcu Takip Linki", trackingLoading: "Takip linki alınıyor...", pickupMap: "Pickup Haritası", dropoffMap: "Dropoff Haritası", passengerPhone: "Yolcu telefonu", driverPhone: "Sürücü telefonu", noPhone: "Telefon bilgisi yok", noDriverPhone: "Sürücü telefonu yok" },
-  en: { title: "Dispatcher Actions", subtitle: "Quick operation tools", callPassenger: "Call Passenger", callDriver: "Call Driver", whatsapp: "Passenger WhatsApp", whatsappLoading: "Preparing message...", tracking: "Passenger Tracking", trackingLoading: "Loading tracking link...", pickupMap: "Pickup Map", dropoffMap: "Dropoff Map", passengerPhone: "Passenger phone", driverPhone: "Driver phone", noPhone: "Phone not available", noDriverPhone: "Driver phone not available" },
+  tr: { title: "Dispatcher İşlemleri", subtitle: "Hızlı operasyon araçları", callPassenger: "Yolcuyu Ara", callDriver: "Sürücüyü Ara", whatsapp: "Voucher + Buluşma Talimatı", whatsappLoading: "Mesaj hazırlanıyor...", tracking: "Yolcu Takip Linki", trackingLoading: "Takip linki alınıyor...", pickupMap: "Pickup Haritası", dropoffMap: "Dropoff Haritası", passengerPhone: "Yolcu telefonu", driverPhone: "Sürücü telefonu", noPhone: "Telefon bilgisi yok", noDriverPhone: "Sürücü telefonu yok" },
+  en: { title: "Dispatcher Actions", subtitle: "Quick operation tools", callPassenger: "Call Passenger", callDriver: "Call Driver", whatsapp: "Voucher + Meeting Instructions", whatsappLoading: "Preparing message...", tracking: "Passenger Tracking", trackingLoading: "Loading tracking link...", pickupMap: "Pickup Map", dropoffMap: "Dropoff Map", passengerPhone: "Passenger phone", driverPhone: "Driver phone", noPhone: "Phone not available", noDriverPhone: "Driver phone not available" },
   ar: { title: "إجراءات المرسل", subtitle: "أدوات تشغيل سريعة", callPassenger: "اتصل بالراكب", callDriver: "اتصل بالسائق", whatsapp: "واتساب الراكب", whatsappLoading: "جارٍ تجهيز الرسالة...", tracking: "رابط تتبع الراكب", trackingLoading: "جارٍ تحميل رابط التتبع...", pickupMap: "خريطة الاستلام", dropoffMap: "خريطة الوجهة", passengerPhone: "هاتف الراكب", driverPhone: "هاتف السائق", noPhone: "رقم الهاتف غير متاح", noDriverPhone: "هاتف السائق غير متاح" },
   es: { title: "Acciones del dispatcher", subtitle: "Herramientas rápidas de operación", callPassenger: "Llamar al pasajero", callDriver: "Llamar al conductor", whatsapp: "WhatsApp del pasajero", whatsappLoading: "Preparando mensaje...", tracking: "Seguimiento del pasajero", trackingLoading: "Cargando enlace...", pickupMap: "Mapa de recogida", dropoffMap: "Mapa de destino", passengerPhone: "Teléfono del pasajero", driverPhone: "Teléfono del conductor", noPhone: "Teléfono no disponible", noDriverPhone: "Teléfono del conductor no disponible" },
 };
@@ -102,22 +102,105 @@ function createPassengerMessage(transfer, trackingUrl = "") {
   const passengerName = transfer.passenger_name || "Değerli misafirimiz";
   const bookingReference = transfer.booking_reference || "-";
   const pickup = transfer.pickup_location?.name || transfer.pickup || "-";
-  const driverName = transfer.driver?.name || "henüz atanmadı";
-  const vehiclePlate = transfer.assigned_vehicle?.plate || transfer.driver?.vehicle?.plate || "-";
+  const dropoff = transfer.dropoff_location?.name || transfer.dropoff || "-";
+  const pickupTime = transfer.pickup_time ? new Date(transfer.pickup_time).toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" }) : "-";
+  const flight = transfer.flight_number || "-";
+  const istPickup = isIstanbulAirportPickup(transfer);
+  const airportDropoff = isIstanbulAirportDropoff(transfer);
   const lines = [
-    `Merhaba ${passengerName},`,
+    istPickup || airportDropoff ? `Hello ${passengerName},` : `Merhaba ${passengerName},`,
     "",
-    `SkyTrip Transfer rezervasyonunuz: ${bookingReference}`,
-    `Alış noktası: ${pickup}`,
-    `Sürücü: ${driverName}`,
-    `Araç plakası: ${vehiclePlate}`,
+    istPickup || airportDropoff ? `Your SkyTrip Transfer reservation: ${bookingReference}` : `SkyTrip Transfer rezervasyonunuz: ${bookingReference}`,
+    istPickup || airportDropoff ? `Voucher / booking number: ${bookingReference}` : `Voucher / rezervasyon no: ${bookingReference}`,
+    istPickup || airportDropoff ? `Pickup date and time: ${pickupTime}` : `Alış tarihi ve saati: ${pickupTime}`,
+    istPickup || airportDropoff ? `Pickup: ${pickup}` : `Alış noktası: ${pickup}`,
+    istPickup || airportDropoff ? `Drop-off: ${dropoff}` : `Varış noktası: ${dropoff}`,
+    istPickup || airportDropoff ? `Flight number: ${flight}` : `Uçuş numarası: ${flight}`,
   ];
 
-  if (trackingUrl) {
-    lines.push("", "Aracınızı canlı takip edin:", trackingUrl);
+  if (istPickup) {
+    lines.push(
+      "",
+      "*****Meeting Point*****",
+      "Our greeter team is at gate 13. After take your luggage, please go gate 14. When you go outside, our meeting point is on your right. F84 is written on our board. Please go there and check your name.",
+      "",
+      "*****Waiting Time*****",
+      "Every passenger has 75 minutes of waiting time. After your flight lands, you need to show up within 75 minutes.",
+      "",
+      "*****Passenger Name*****",
+      "Please provide us with all passenger names. We need to enter them into the police system (UEDTS) for your safety. This is a legal obligation in Turkey.",
+      "",
+      "*****Amendment*****",
+      "If you want to make an amendment, you need to contact the reservation website or travel agent. We cannot change your reservation.",
+      "",
+      "*****Delay*****",
+      "If your flight is delayed, do not worry. We will wait for you until your flight lands.",
+      "",
+      "If you have any problem or question, you can text or call us. We will help you.",
+      "",
+      "*****Transfer Details - Please Check*****",
+      `DATE: ${formatVoucherDate(transfer.pickup_time)}`,
+      `HOUR: ${formatVoucherTime(transfer.pickup_time)}`,
+      `FLIGHT CODE: ${flight}`,
+      `REZ NO: ${bookingReference}`,
+    );
+  } else if (airportDropoff) {
+    lines.push(
+      "",
+      "Dear Valued Guest,",
+      "",
+      "Welcome! Your scheduled departure transfer in Turkey is confirmed. The meeting point is at the hotel's front, and we request your readiness within 15 minutes of our vehicle's arrival.",
+      "",
+      "Contact us promptly for any discrepancies or further information. Your comfort and convenience are our utmost priorities.",
+      "",
+      "Please review your transfer details:",
+      `DATE: ${formatVoucherDate(transfer.pickup_time)}`,
+      `NAME: ${passengerName}`,
+      `HOUR: ${formatVoucherTime(transfer.pickup_time)}`,
+      `PICK-UP: ${pickup}`,
+      `DROP-OFF: ${dropoff}`,
+      `REZ NO: ${bookingReference}`,
+      "",
+      "Contact us promptly for any discrepancies or further information. Your comfort and convenience are our utmost priorities.",
+      "",
+      "Thank you for choosing us, and we look forward to providing your journey.",
+    );
   } else {
-    lines.push("", "Operasyon ekibimiz transferinizi takip etmektedir.");
+    const meetingPoint = transfer.meet_point || transfer.pickup_point?.name || "Please follow the airport meeting instructions provided by our operations team.";
+    lines.push("", "Meeting Instructions:", meetingPoint, `Transfer date: ${formatVoucherDate(transfer.pickup_time)}`, `Pickup time: ${formatVoucherTime(transfer.pickup_time)}`, `Booking reference: ${bookingReference}`);
+  }
+
+  if (trackingUrl) {
+    lines.push("", istPickup || airportDropoff ? "Track your vehicle live:" : "Aracınızı canlı takip edin:", trackingUrl);
+  } else {
+    lines.push("", istPickup || airportDropoff ? "Our operations team is monitoring your transfer." : "Operasyon ekibimiz transferinizi takip etmektedir.");
   }
 
   return lines.join("\n");
+}
+
+function isIstanbulAirportPickup(transfer) {
+  const iata = String(transfer.pickup_location?.airport?.iata_code || transfer.pickup_location?.code || "").toUpperCase();
+  const pickup = String(transfer.pickup_location?.name || transfer.pickup || "").toLowerCase();
+  return iata === "IST" || pickup.includes("istanbul airport") || pickup.includes("istanbul havalimanı") || pickup.includes("istanbul havalimani");
+}
+
+function isIstanbulAirportDropoff(transfer) {
+  const iata = String(transfer.dropoff_location?.airport?.iata_code || transfer.dropoff_location?.code || "").toUpperCase();
+  const dropoff = String(transfer.dropoff_location?.name || transfer.dropoff || "").toLowerCase();
+  return iata === "IST" || iata === "SAW" || dropoff.includes("istanbul airport") || dropoff.includes("istanbul havalimanı") || dropoff.includes("istanbul havalimani") || dropoff.includes("new airport") || dropoff.includes("sabiha gökçen") || dropoff.includes("sabiha gokcen");
+}
+
+function formatVoucherDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function formatVoucherTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
 }

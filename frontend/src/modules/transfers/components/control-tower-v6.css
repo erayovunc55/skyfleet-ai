@@ -1,0 +1,28 @@
+/* Scoped Control Tower v6 layout; no API or business logic changes. */
+.sf-v6 { min-width:0; width:100%; }
+.sf-v6-tabs { display:flex; flex-wrap:wrap; gap:6px; padding:0 0 12px; margin:0 0 14px; border-bottom:1px solid rgba(140,180,220,.2); }
+.sf-v6-tabs button { cursor:pointer; border-radius:8px; border:1px solid rgba(140,180,220,.28); background:#343437; color:#b3cce6; padding:9px 13px; font-size:12px; font-weight:700; }
+.sf-v6-tabs button[aria-selected="true"] { background:#126ca5; border-color:#22a9ec; color:white; }
+.sf-v6-body { min-width:0; width:100%; }
+.sf-v6 .sf-quick-dispatch { width:100%; max-width:none; box-sizing:border-box; padding:16px; }
+.sf-v6 .sf-qd-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.sf-v6 .sf-qd-field { min-width:0; }
+.sf-v6 .sf-qd-field select { width:100%; min-width:0; }
+.sf-v6 .sf-qd-vehicle { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+.sf-v6 .sf-qd-save { width:100%; }
+.sf-v6 .sf-qd-pool { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.sf-v6 .sf-qd-pool button { flex-shrink:0; }
+.sf-v6-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.sf-v6-summary>div { min-width:0; border:1px solid rgba(140,180,220,.16); background:rgba(52, 52, 55,.65); border-radius:9px; padding:10px 12px; display:flex; flex-direction:column; gap:5px; }
+.sf-v6-summary span { color:#8baacb; font-size:11px; }
+.sf-v6-summary strong { color:#f2f7ff; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sf-v6-expand-button { width:100%; margin-top:12px; border:1px solid rgba(140,180,220,.25); border-radius:8px; padding:11px 12px; background:#3d3d40; color:#c2ddf7; cursor:pointer; font-weight:600; text-align:left; display:flex; justify-content:space-between; }
+.sf-v6-full { margin-top:12px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.sf-v6-full>* { min-width:0; }
+.sf-v6-contact { min-width:0; }
+.sf-v6-contact> :first-child { width:100%; max-width:none; }
+.sf-v6-expand { margin-top:12px; border:1px solid rgba(140,180,220,.2); border-radius:8px; padding:12px; }
+.sf-v6-expand summary { cursor:pointer; color:#c2ddf7; font-size:13px; font-weight:700; }
+.sf-v6-expand> :not(summary) { margin-top:12px; }
+.sf-v6-documents .document-placeholder { display:inline-flex; align-items:center; justify-content:flex-start; min-height:38px; width:calc(50% - 8px); margin:4px; padding:8px 12px; box-sizing:border-box; text-align:left; }
+@media(max-width:680px) { .sf-v6 .sf-qd-fields, .sf-v6-summary, .sf-v6-full { grid-template-columns:1fr; } .sf-v6-documents .document-placeholder { width:100%; margin:4px 0; } }

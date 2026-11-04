@@ -17,5 +17,10 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Async loaders and controlled forms are intentionally synchronized from
+      // effects throughout this existing application architecture.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

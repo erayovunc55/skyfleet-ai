@@ -137,7 +137,7 @@ export default function LiveOperationMap() {
       });
 
     return () => controller.abort();
-  }, [routeKey]);
+  }, [routeKey, routeWaypoints]);
 
   const fitPoints =
     roadRoute.length > 1

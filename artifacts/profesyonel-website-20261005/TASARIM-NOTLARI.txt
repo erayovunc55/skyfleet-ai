@@ -1,0 +1,28 @@
+﻿SKYFLEET tasarım notları — 05.10.2026
+
+Görsel yön: https://www.vert.london/en referansındaki sade rezervasyon, büyük görsel, ferah hizmet bölümleri ve araç sınıfları yaklaşımı. SKYFLEET için ayrı siyah/krem/altın tasarım, özgün metinler ve yeni ana görsel.
+
+Değişen kaynaklar:
+website/src/components/HomeExperience.jsx
+website/src/styles/experience.css
+website/src/App.jsx
+website/index.html
+website/src/assets/premium/hero-experience-v1.png
+
+Ana görsel: built-in imagegen aracıyla üretildi (CLI kullanılmadı).
+Görsel brief: Geniş, fotogerçekçi bir havalimanı karşılama sahnesi. Koyu takım elbiseli şoför premium siyah vanın kapısını krem paltolu kadın yolcu için açıyor. Modern cam terminal, akşamın sıcak ışığı, sağ tarafta kişiler ve araç, solda başlık/form için boş alan, metin veya marka logosu olmadan.
+Üretilen orijinal: C:/Users/tlb-o/.codex/generated_images/01a10b5c-5541-7653-ac62-38b5a6c2653f/exec-0c95fced-cc81-4a9e-80da-205369fa5ef4.png
+Kaydedilen proje varlığı: website/src/assets/premium/hero-experience-v1.png
+Araç görselleri: projedeki mevcut Vito/E-Class/S-Class varlıkları.
+
+Doğrulama:
+- npm run lint: geçti, uyarı yok.
+- npm run build: geçti.
+- scripts/address-search-regression.mjs: 21/21 geçti.
+- PublicRegionalPricingControllerTest: 3 test, 14 assertion geçti.
+- PublicAirportPricingFallbackTest: 3 test, 17 assertion geçti.
+- Tarayıcı: mobil menü, TR/EN geçişi, araç sekmesi, FAQ açılması, havalimanı ve otel önerilerinin seçimi doğrulandı.
+- Dar mobil görünüm: 390px viewport, yatay taşma yok; ana sayfa, transfer, hakkımızda kontrol edildi.
+- Yerel geliştirmede API çağrıları Vite proxy üzerinden aynı origin kullanır; üretimde mevcut /api/index.php/public adresi korunur.
+
+Fiyatlandırma: bu tasarım backend fiyat formülünü değiştirmez. Yerel taksi tarifesi ve önceden belirlenen araç oranları mevcut backend tarafından hesaplanır. Tarifesiz rota için manuel teklif davranışı devam eder. Kontroller yerel ortamda yapıldı; yeni tasarım canlıya henüz yüklenmedi.

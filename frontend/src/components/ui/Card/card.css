@@ -3,7 +3,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
-  background: linear-gradient(180deg, rgba(10, 29, 48, .96), rgba(7, 23, 39, .96));
+  background: linear-gradient(180deg, rgba(52, 52, 55, .96), rgba(45, 45, 48, .96));
   box-shadow: var(--shadow-card);
 }
 

@@ -59,7 +59,38 @@ class LocationController extends Controller
         if (!empty($validated['search'])) {$search = trim($validated['search']);$query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('native_name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%")->orWhere('address', 'like', "%{$search}%"));}
         if (filter_var($validated['pickup_only'] ?? false, FILTER_VALIDATE_BOOL)) $query->whereHas('points', fn ($q) => $q->where('is_active', true)->where('is_pickup_allowed', true));
         if (filter_var($validated['dropoff_only'] ?? false, FILTER_VALIDATE_BOOL)) $query->whereHas('points', fn ($q) => $q->where('is_active', true)->where('is_dropoff_allowed', true));
-        return response()->json(['data' => $query->orderBy('sort_order')->orderBy('name')->get()]);
+        $locations = $query->orderBy('sort_order')->orderBy('name')->get();
+
+        // Location imports can contain duplicate city records with different accents
+        // (for example Istanbul and İstanbul). Keep airport selection usable across them.
+        if ($locations->isEmpty() && ($validated['type'] ?? null) === 'airport') {
+            $normalizedCity = Str::lower(Str::ascii($city->name));
+            $matchingCityIds = City::query()
+                ->get(['id', 'name'])
+                ->filter(function (City $candidate) use ($normalizedCity): bool {
+                    $candidateName = Str::lower(Str::ascii($candidate->name));
+
+                    return $candidateName === $normalizedCity
+                        || ($normalizedCity === 'istanbul' && Str::contains($candidateName, 'istanbul'));
+                })
+                ->pluck('id');
+
+            if ($matchingCityIds->isNotEmpty()) {
+                $fallback = Location::query()
+                    ->with(['type', 'airport'])
+                    ->whereIn('city_id', $matchingCityIds)
+                    ->where('is_active', true)
+                    ->where('is_public', true)
+                    ->whereHas('type', fn ($typeQuery) => $typeQuery->where('code', 'airport'))
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get();
+
+                $locations = $fallback;
+            }
+        }
+
+        return response()->json(['data' => $locations]);
     }
 
     public function show(Location $location): JsonResponse

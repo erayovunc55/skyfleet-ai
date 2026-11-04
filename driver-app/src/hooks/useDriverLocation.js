@@ -5,8 +5,11 @@
   useState,
 } from "react";
 
+import { registerPlugin, Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
 import driverLocationService from "../services/driverLocationService";
 
+const BackgroundGeolocation = registerPlugin("BackgroundGeolocation");
 const DEFAULT_SEND_INTERVAL = 5000;
 const HEARTBEAT_INTERVAL = 10000;
 
@@ -28,6 +31,7 @@ export default function useDriverLocation({
   const lastSendTimeRef = useRef(0);
   const sendingRef = useRef(false);
   const mountedRef = useRef(true);
+  const trackingAttemptRef = useRef(0);
 
   const sendLocation = useCallback(
     async (currentLocation, force = false) => {
@@ -166,17 +170,32 @@ export default function useDriverLocation({
   }, [enabled, sendLocation, stopHeartbeat, transferId]);
 
   const stopTracking = useCallback(() => {
-    if (watchIdRef.current !== null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
+    trackingAttemptRef.current += 1;
+
+    const watchId = watchIdRef.current;
+    watchIdRef.current = null;
+
+    if (typeof watchId === "string") {
+      BackgroundGeolocation.removeWatcher({ id: watchId }).catch(
+        (trackingError) => {
+          if (mountedRef.current) {
+            setError(
+              trackingError?.message ||
+                "Arka plan konum takibi durdurulamadı.",
+            );
+          }
+        },
+      );
+    } else if (watchId !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchId);
     }
 
-    watchIdRef.current = null;
     stopHeartbeat();
     setTracking(false);
   }, [stopHeartbeat]);
 
   const startTracking = useCallback(() => {
-    if (!navigator.geolocation) {
+    if (!Capacitor.isNativePlatform() && !navigator.geolocation) {
       setPermissionState("unsupported");
       setError("Bu cihaz konum hizmetlerini desteklemiyor.");
       return;
@@ -191,6 +210,104 @@ export default function useDriverLocation({
 
     setError("");
     setTracking(true);
+
+    if (Capacitor.isNativePlatform()) {
+      const attempt = ++trackingAttemptRef.current;
+
+      async function startNativeTracking() {
+        try {
+          if (Capacitor.getPlatform() === "android") {
+            const permission =
+              await LocalNotifications.checkPermissions();
+
+            if (permission.display !== "granted") {
+              const requested =
+                await LocalNotifications.requestPermissions();
+
+              if (requested.display !== "granted") {
+                throw new Error(
+                  "Arka planda konum için bildirim izni gereklidir.",
+                );
+              }
+            }
+          }
+
+          const watcherId =
+            await BackgroundGeolocation.addWatcher(
+              {
+                backgroundTitle: "Skyfleet Driver",
+                backgroundMessage:
+                  "Aktif transferiniz için konumunuz paylaşılıyor.",
+                requestPermissions: true,
+                stale: false,
+                distanceFilter: 5,
+              },
+              (position, trackingError) => {
+                if (trackingError) {
+                  if (
+                    !mountedRef.current ||
+                    attempt !== trackingAttemptRef.current
+                  ) {
+                    return;
+                  }
+
+                  if (trackingError.code === "NOT_AUTHORIZED") {
+                    setPermissionState("denied");
+                  }
+
+                  setError(
+                    trackingError.message ||
+                      "Arka plan konum izni alınamadı.",
+                  );
+                  return;
+                }
+
+                if (!position) return;
+
+                saveLocation(
+                  {
+                    coords: {
+                      latitude: position.latitude,
+                      longitude: position.longitude,
+                      accuracy: position.accuracy,
+                      speed: position.speed,
+                      heading: position.bearing,
+                    },
+                    timestamp: position.time || Date.now(),
+                  },
+                  false,
+                );
+              },
+            );
+
+          if (
+            !mountedRef.current ||
+            attempt !== trackingAttemptRef.current
+          ) {
+            await BackgroundGeolocation.removeWatcher({
+              id: watcherId,
+            });
+            return;
+          }
+
+          watchIdRef.current = watcherId;
+          startHeartbeat();
+        } catch (trackingError) {
+          if (!mountedRef.current || attempt !== trackingAttemptRef.current) {
+            return;
+          }
+
+          setTracking(false);
+          setError(
+            trackingError?.message ||
+              "Arka plan konum takibi başlatılamadı.",
+          );
+        }
+      }
+
+      startNativeTracking();
+      return;
+    }
 
     // Do not wait for movement before publishing the first live coordinate.
     requestFreshLocation(true);

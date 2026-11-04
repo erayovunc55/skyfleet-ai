@@ -21,6 +21,12 @@ class TransferRequestConversionController extends Controller
         Request $request,
         TransferRequest $transferRequest
     ): JsonResponse {
+        if ($transferRequest->request_type === 'tour') {
+            return response()->json([
+                'message' => 'Tour reservations cannot be converted to transfers.',
+            ], 409);
+        }
+
         $validated = $request->validate([
             'supplier' => ['required', 'string', 'max:255'],
             'price' => ['nullable', 'numeric', 'min:0'],

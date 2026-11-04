@@ -6,12 +6,15 @@ export const PAGE_ROUTES = {
   fleet: "/fleet",
   drivers: "/drivers",
   suppliers: "/suppliers",
+  agencies: "/agencies",
   locations: "/locations",
   documents: "/documents",
   ratings: "/ratings",
   finance: "/finance",
   aiDispatcher: "/ai-dispatcher",
+  aiTraining: "/ai-training",
   settings: "/settings",
+  tourPackages: "/tour-packages",
 };
 
 export const SIDEBAR_ROUTES = [
@@ -52,6 +55,12 @@ export const SIDEBAR_ROUTES = [
     path: PAGE_ROUTES.suppliers,
   },
   {
+  id: "agencies",
+  title: "Agencies",
+  icon: "🤝",
+  path: PAGE_ROUTES.agencies,
+},
+  {
     id: "locations",
     title: "Locations",
     icon: "🌍",
@@ -81,10 +90,22 @@ export const SIDEBAR_ROUTES = [
     icon: "🤖",
     path: PAGE_ROUTES.aiDispatcher,
   },
+{
+  id: "ai-training",
+  title: "AI Training Center",
+  icon: "🧠",
+  path: PAGE_ROUTES.aiTraining,
+},
   {
     id: "settings",
     title: "Settings",
     icon: "⚙️",
     path: PAGE_ROUTES.settings,
+  },
+  {
+    id: "tour-packages",
+    title: "Tour Packages",
+    icon: "🗺️",
+    path: PAGE_ROUTES.tourPackages,
   },
 ];

@@ -15,6 +15,7 @@ import {
 } from "./i18n";
 
 import "./styles/driver-app.css";
+import "./styles/driver-transfer-tabs.css";
 
 function hasPasswordResetLink() {
   const params = new URLSearchParams(

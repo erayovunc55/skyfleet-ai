@@ -38,7 +38,7 @@ class TransferRequestConversionTest extends TestCase
 
         $payload = ['supplier' => 'Skytrip Transfer', 'price' => 45, 'currency' => 'EUR', 'vehicle_type' => 'Minivan'];
 
-        $this->postJson("/api/admin/transfer-requests/{$transferRequest->id}/convert", $payload)
+        $this->postJson("/admin/transfer-requests/{$transferRequest->id}/convert", $payload)
             ->assertCreated()
             ->assertJsonPath('data.booking_reference', 'STR-20260826-CONV01')
             ->assertJsonPath('data.status', 'pending');
@@ -49,7 +49,7 @@ class TransferRequestConversionTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->postJson("/api/admin/transfer-requests/{$transferRequest->id}/convert", $payload)
+        $this->postJson("/admin/transfer-requests/{$transferRequest->id}/convert", $payload)
             ->assertConflict();
 
         $this->assertDatabaseCount('transfers', 1);
@@ -99,7 +99,7 @@ class TransferRequestConversionTest extends TestCase
         ];
 
         $this->postJson(
-            "/api/admin/transfer-requests/{$transferRequest->id}/convert",
+            "/admin/transfer-requests/{$transferRequest->id}/convert",
             $payload
         )->assertCreated()
             ->assertJsonPath('warnings', []);

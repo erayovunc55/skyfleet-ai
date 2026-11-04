@@ -1,0 +1,172 @@
+.ai-training-page {
+  padding: 30px 34px !important;
+  max-width: 1500px !important;
+  margin: 0 auto !important;
+  color: #eaf2ff;
+}
+
+.ai-training-page h1 {
+  color: #f8fbff;
+  letter-spacing: -0.02em;
+}
+
+.ai-training-page > div:first-child p {
+  color: #8fa3bd !important;
+  opacity: 1 !important;
+}
+
+/* Main cards */
+.ai-training-page > form,
+.ai-training-page > form + div {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(52, 52, 55, 0.98),
+      rgba(44, 44, 47, 0.98)
+    ) !important;
+
+  border: 1px solid rgba(71, 143, 202, 0.18) !important;
+  border-radius: 16px !important;
+
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+/* Section titles */
+.ai-training-page h2 {
+  color: #f3f8ff !important;
+}
+
+.ai-training-page label {
+  display: block;
+  color: #9fb4cb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Inputs */
+.ai-training-page input,
+.ai-training-page textarea,
+.ai-training-page select {
+  background: #323235 !important;
+  border: 1px solid #4f4f52 !important;
+  color: #eaf4ff !important;
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.ai-training-page input::placeholder,
+.ai-training-page textarea::placeholder {
+  color: #66829c !important;
+}
+
+.ai-training-page input:focus,
+.ai-training-page textarea:focus,
+.ai-training-page select:focus {
+  border-color: #159de5 !important;
+  background: #3b3b3e !important;
+  box-shadow:
+    0 0 0 3px rgba(21, 157, 229, 0.12);
+}
+
+/* Buttons */
+.ai-training-page button {
+  border: 1px solid #27475f;
+  background: #404043;
+  color: #d9eaff;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.ai-training-page button:hover {
+  background: #515154;
+  border-color: #3373a0;
+}
+
+.ai-training-page form button[type="submit"] {
+  background:
+    linear-gradient(
+      135deg,
+      #108fd4,
+      #0875b5
+    ) !important;
+
+  border: 1px solid #159ee9 !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 6px 18px rgba(7, 126, 190, 0.2);
+}
+
+.ai-training-page form button[type="submit"]:hover {
+  transform: translateY(-1px);
+  background:
+    linear-gradient(
+      135deg,
+      #18a4ee,
+      #0780c3
+    ) !important;
+}
+
+/* Knowledge base */
+.ai-training-page table {
+  color: #d8e5f2;
+}
+
+.ai-training-page th {
+  color: #7fa1bc !important;
+  border-bottom:
+    1px solid rgba(75, 126, 164, 0.22) !important;
+
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px !important;
+}
+
+.ai-training-page td {
+  color: #c8d8e7 !important;
+  border-bottom:
+    1px solid rgba(70, 109, 139, 0.14) !important;
+}
+
+.ai-training-page tbody tr {
+  transition: background 0.15s ease;
+}
+
+.ai-training-page tbody tr:hover {
+  background:
+    rgba(29, 111, 164, 0.07);
+}
+
+.ai-training-page td strong {
+  color: #f1f7fd;
+}
+
+/* Search */
+.ai-training-page > form + div input {
+  background: #323235 !important;
+}
+
+/* Scrollbar */
+.ai-training-page *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ai-training-page *::-webkit-scrollbar-track {
+  background: #2a2a2d;
+}
+
+.ai-training-page *::-webkit-scrollbar-thumb {
+  background: #23445c;
+  border-radius: 20px;
+}
+
+.ai-training-page *::-webkit-scrollbar-thumb:hover {
+  background: #32617f;
+}

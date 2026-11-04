@@ -12,7 +12,6 @@ export default function DriverGpsPanel({
     error,
     lastSentAt,
     startTracking,
-    stopTracking,
   } = useDriverLocation({
     transferId,
     enabled,

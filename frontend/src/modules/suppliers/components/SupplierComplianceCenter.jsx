@@ -4,7 +4,7 @@ import supplierService from "../services/supplierService";
 const TYPES = ["contract","company_registration","tax_document","insurance","transport_license","tourism_license","other"];
 const PAGE_SIZES = [20,50,100];
 
-export default function SupplierComplianceCenter({ supplierId, text, language }) {
+export default function SupplierComplianceCenter({ supplierId, language }) {
   const [data,setData]=useState({data:[],summary:{},meta:{current_page:1,last_page:1,total:0,per_page:20}});
   const [search,setSearch]=useState("");
   const [type,setType]=useState("");
@@ -23,6 +23,8 @@ export default function SupplierComplianceCenter({ supplierId, text, language })
     finally{setLoading(false);}
   };
 
+  // Search is applied explicitly with Enter/Search; the other filters reload automatically.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{setPage(1);load(1);},[supplierId,type,status,perPage]);
 
   const submit=async(e)=>{

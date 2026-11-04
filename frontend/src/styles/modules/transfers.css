@@ -94,7 +94,7 @@
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-medium);
   color: var(--color-muted);
-  background: rgba(15, 23, 42, 0.28);
+  background: rgba(48, 48, 51, 0.28);
   font-size: 12px;
   text-align: center;
 }
@@ -111,7 +111,7 @@
   border: 1px solid var(--color-border);
   border-radius: 14px;
   color: var(--color-text);
-  background: rgba(15, 23, 42, 0.46);
+  background: rgba(48, 48, 51, 0.46);
   text-align: left;
   transition:
     border-color 150ms ease,
@@ -120,21 +120,21 @@
 }
 
 .transfer-list-item:hover {
-  border-color: rgba(56, 189, 248, 0.3);
-  background: rgba(30, 41, 59, 0.56);
+  border-color: rgba(201, 162, 74, 0.3);
+  background: rgba(61, 61, 64, 0.56);
   transform: translateY(-1px);
 }
 
 .transfer-list-item.active {
-  border-color: rgba(56, 189, 248, 0.55);
+  border-color: rgba(201, 162, 74, 0.55);
   background:
     linear-gradient(
       135deg,
-      rgba(37, 99, 235, 0.16),
-      rgba(14, 165, 233, 0.07)
+      rgba(201, 162, 74, 0.16),
+      rgba(201, 162, 74, 0.07)
     );
   box-shadow:
-    0 0 0 3px rgba(56, 189, 248, 0.06);
+    0 0 0 3px rgba(201, 162, 74, 0.06);
 }
 
 .transfer-list-item-top,
@@ -236,7 +236,7 @@
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.34);
+  background: rgba(32, 32, 35, 0.34);
 }
 
 .transfer-summary-item span,
@@ -282,10 +282,10 @@
   background:
     radial-gradient(
       circle at center,
-      rgba(37, 99, 235, 0.12),
+      rgba(201, 162, 74, 0.12),
       transparent 46%
     ),
-    rgba(2, 6, 23, 0.25);
+    rgba(32, 32, 35, 0.25);
   text-align: center;
 }
 
@@ -397,7 +397,7 @@
   display: grid;
   place-items: center;
   border: 1px dashed var(--color-border);
-  background: rgba(2, 6, 23, 0.38);
+  background: rgba(32, 32, 35, 0.38);
   font-size: 42px;
 }
 
@@ -434,8 +434,8 @@ top:4px;
 width:14px;
 height:14px;
 border-radius:50%;
-background:#2563eb;
-box-shadow:0 0 0 5px rgba(37,99,235,.12);
+background:#b8923a;
+box-shadow:0 0 0 5px rgba(201, 162, 74,.12);
 }
 
 .timeline-content strong{
@@ -498,7 +498,7 @@ margin-bottom:12px;
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.34);
+  background: rgba(32, 32, 35, 0.34);
 }
 
 .assignment-vehicle-preview span,
@@ -558,7 +558,7 @@ margin-bottom:12px;
   flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.3);
+  background: rgba(32, 32, 35, 0.3);
 }
 
 .dispatcher-contact-row {
@@ -604,7 +604,7 @@ margin-bottom:12px;
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.34);
+  background: rgba(32, 32, 35, 0.34);
 }
 
 .operation-status-current span {
@@ -636,10 +636,10 @@ margin-bottom:12px;
   gap: 12px;
   padding: 11px 13px;
   border: 1px solid
-    rgba(56, 189, 248, 0.16);
+    rgba(201, 162, 74, 0.16);
   border-radius: var(--radius-medium);
   color: var(--color-primary);
-  background: rgba(56, 189, 248, 0.06);
+  background: rgba(201, 162, 74, 0.06);
   font-size: 11px;
   font-weight: 800;
 }
@@ -676,7 +676,7 @@ margin-bottom:12px;
   background:
     linear-gradient(
       180deg,
-      rgba(56, 189, 248, 0.32),
+      rgba(201, 162, 74, 0.32),
       rgba(148, 163, 184, 0.08)
     );
 }
@@ -688,7 +688,7 @@ margin-bottom:12px;
   z-index: 2;
   width: 16px;
   height: 16px;
-  border: 3px solid #081225;
+  border: 3px solid #2c2c2f;
   border-radius: 50%;
   background: var(--color-muted);
   box-shadow:
@@ -716,7 +716,7 @@ margin-bottom:12px;
 .timeline-dot-info {
   background: var(--color-primary);
   box-shadow:
-    0 0 0 4px rgba(56, 189, 248, 0.1);
+    0 0 0 4px rgba(201, 162, 74, 0.1);
 }
 
 .timeline-dot-purple {
@@ -730,7 +730,7 @@ margin-bottom:12px;
   padding: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.28);
+  background: rgba(32, 32, 35, 0.28);
 }
 
 .timeline-content-header {
@@ -771,10 +771,10 @@ margin-bottom:12px;
 .timeline-note {
   padding: 10px 12px;
   border-left: 3px solid
-    rgba(56, 189, 248, 0.35);
+    rgba(201, 162, 74, 0.35);
   border-radius: 0 var(--radius-small)
     var(--radius-small) 0;
-  background: rgba(56, 189, 248, 0.05);
+  background: rgba(201, 162, 74, 0.05);
 }
 
 .timeline-location {
@@ -824,7 +824,7 @@ margin-bottom:12px;
   padding: 13px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.34);
+  background: rgba(32, 32, 35, 0.34);
 }
 
 .live-map-metric span,
@@ -846,14 +846,14 @@ margin-bottom:12px;
 }
 
 .leaflet-container {
-  background: #081225;
+  background: #2c2c2f;
   font-family: inherit;
 }
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
   color: var(--color-text);
-  background: #0f172a;
+  background: #303033;
 }
 
 .leaflet-popup-content {
@@ -902,7 +902,7 @@ margin-bottom:12px;
 
 .transfer-workspace-timeline .timeline::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: rgba(56, 189, 248, 0.25);
+  background: rgba(201, 162, 74, 0.25);
 }
 .live-transfer-sync {
   display: flex;
@@ -913,7 +913,7 @@ margin-bottom:12px;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.34);
+  background: rgba(32, 32, 35, 0.34);
 }
 
 .live-transfer-sync-status {
@@ -957,10 +957,10 @@ margin-bottom:12px;
   flex: 0 0 auto;
   padding: 9px 12px;
   border: 1px solid
-    rgba(56, 189, 248, 0.18);
+    rgba(201, 162, 74, 0.18);
   border-radius: 9px;
-  color: #7dd3fc;
-  background: rgba(56, 189, 248, 0.07);
+  color: #e8c872;
+  background: rgba(201, 162, 74, 0.07);
   font-size: 9px;
   font-weight: 800;
 }
@@ -995,7 +995,7 @@ margin-bottom:12px;
   padding: 12px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgba(2, 6, 23, 0.34);
+  background: rgba(32, 32, 35, 0.34);
 }
 
 .live-gps-health-dot {

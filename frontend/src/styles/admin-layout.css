@@ -1,13 +1,14 @@
+.tour-admin-page{padding:34px 36px 60px;color:#eef6ff}.tour-admin-page>header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:22px}.tour-admin-page header span{color:#38c8f5;font-size:11px;font-weight:800;letter-spacing:2px}.tour-admin-page h1{margin:9px 0 6px;font-size:36px}.tour-admin-page header p{margin:0;color:#8fa8c6}.tour-admin-page header button,.tour-admin-actions button{border:0;border-radius:8px;padding:11px 15px;color:#fff;background:#149ff5;font-weight:800;cursor:pointer}.tour-admin-notice{margin-bottom:15px;padding:11px 14px;border:1px solid rgba(54,226,154,.3);border-radius:8px;color:#8cf3db;background:rgba(13,148,136,.1)}.tour-admin-layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:18px}.tour-admin-form,.tour-admin-list{padding:20px;border:1px solid #1d3b5e;border-radius:14px;background:#333336}.tour-admin-form h2,.tour-admin-list h2{margin:0 0 16px;font-size:19px}.tour-admin-form label{display:block;margin-bottom:12px;color:#8fa8c6;font-size:11px}.tour-admin-form input,.tour-admin-form textarea,.tour-admin-form select{display:block;width:100%;margin-top:6px;box-sizing:border-box;border:1px solid #294d70;border-radius:7px;padding:9px;color:#eaf5ff;background:#2e2e31}.tour-admin-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tour-admin-check{display:flex!important;gap:8px;align-items:center}.tour-admin-check input{display:inline;width:auto;margin:0}.tour-admin-actions{display:flex;gap:8px}.tour-admin-actions button:last-child{color:#bdd0e2;background:#444447}.tour-admin-list{display:grid;gap:10px}.tour-admin-list>h2{grid-column:1/-1}.tour-admin-list article{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px;border:1px solid rgba(87,123,160,.2);border-radius:10px;background:#2f2f32}.tour-admin-image{width:120px;height:90px;border-radius:8px;background-position:center;background-size:cover}.tour-admin-list small{color:#38c8f5;font-size:10px}.tour-admin-list h3{margin:5px 0;font-size:15px}.tour-admin-list p{margin:0 0 7px;color:#91a8bf;font-size:11px}.tour-admin-list strong{color:#65e9ad}.tour-admin-item-actions{display:flex;gap:6px}.tour-admin-item-actions button{border:1px solid #315878;border-radius:6px;padding:7px 9px;color:#d9eafa;background:#3b3b3e;cursor:pointer}@media(max-width:900px){.tour-admin-page{padding:24px 18px}.tour-admin-page>header{align-items:flex-start;flex-direction:column}.tour-admin-layout{grid-template-columns:1fr}}@media(max-width:600px){.tour-admin-list article{grid-template-columns:80px 1fr}.tour-admin-image{width:80px;height:70px}.tour-admin-item-actions{grid-column:1/-1}}
 .admin-layout {
   min-height: 100vh;
   color: #e5eefb;
   background:
     radial-gradient(
       circle at top right,
-      rgba(37, 99, 235, 0.13),
+      rgba(201, 162, 74, 0.13),
       transparent 30%
     ),
-    #050b18;
+    #212124;
 }
 
 .admin-sidebar {
@@ -23,8 +24,8 @@
   background:
     linear-gradient(
       180deg,
-      rgba(12, 22, 42, 0.99),
-      rgba(5, 11, 24, 0.99)
+      rgba(48, 48, 51, 0.99),
+      rgba(33, 33, 36, 0.99)
     );
   transition: transform 180ms ease;
 }
@@ -43,17 +44,17 @@
   width: 42px;
   height: 42px;
   place-items: center;
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(201, 162, 74, 0.35);
   border-radius: 13px;
   color: #ffffff;
   background:
     linear-gradient(
       135deg,
-      #2563eb,
+      #b8923a,
       #06b6d4
     );
   box-shadow:
-    0 10px 25px rgba(37, 99, 235, 0.24);
+    0 10px 25px rgba(201, 162, 74, 0.24);
   font-size: 14px;
   font-weight: 900;
   letter-spacing: 0.05em;
@@ -119,18 +120,18 @@
 
 .admin-sidebar-item:hover {
   color: #e2e8f0;
-  background: rgba(30, 41, 59, 0.48);
+  background: rgba(61, 61, 64, 0.48);
   transform: translateX(2px);
 }
 
 .admin-sidebar-item.active {
-  border-color: rgba(56, 189, 248, 0.15);
+  border-color: rgba(201, 162, 74, 0.15);
   color: #ffffff;
   background:
     linear-gradient(
       90deg,
-      rgba(37, 99, 235, 0.22),
-      rgba(14, 165, 233, 0.08)
+      rgba(201, 162, 74, 0.22),
+      rgba(201, 162, 74, 0.08)
     );
 }
 
@@ -147,9 +148,9 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #38bdf8;
+  background: #e0b85a;
   box-shadow:
-    0 0 0 4px rgba(56, 189, 248, 0.1);
+    0 0 0 4px rgba(201, 162, 74, 0.1);
 }
 
 .admin-sidebar-footer {
@@ -195,7 +196,7 @@
 
 .admin-sidebar-footer > p {
   margin: 13px 0 0;
-  color: #334155;
+  color: #525255;
   font-size: 8px;
   letter-spacing: 0.08em;
   text-align: center;
@@ -218,7 +219,7 @@
   gap: 20px;
   padding: 12px 24px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-  background: rgba(5, 11, 24, 0.88);
+  background: rgba(33, 33, 36, 0.88);
   backdrop-filter: blur(18px);
 }
 
@@ -243,7 +244,7 @@
   padding: 0 11px;
   border: 1px solid rgba(148, 163, 184, 0.11);
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.52);
+  background: rgba(48, 48, 51, 0.52);
 }
 
 .admin-search > span {
@@ -270,7 +271,7 @@
   border: 1px solid rgba(148, 163, 184, 0.13);
   border-radius: 5px;
   color: #64748b;
-  background: rgba(2, 6, 23, 0.7);
+  background: rgba(32, 32, 35, 0.7);
   font-size: 8px;
 }
 
@@ -287,7 +288,7 @@
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 11px;
   color: #94a3b8;
-  background: rgba(15, 23, 42, 0.46);
+  background: rgba(48, 48, 51, 0.46);
   cursor: pointer;
 }
 
@@ -319,13 +320,13 @@
   width: 38px;
   height: 38px;
   place-items: center;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(201, 162, 74, 0.25);
   border-radius: 50%;
   color: #e0f2fe;
   background:
     linear-gradient(
       135deg,
-      rgba(37, 99, 235, 0.7),
+      rgba(201, 162, 74, 0.7),
       rgba(8, 145, 178, 0.7)
     );
   font-size: 11px;
@@ -371,7 +372,7 @@
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 10px;
   color: #e2e8f0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(48, 48, 51, 0.5);
   cursor: pointer;
 }
 
@@ -407,7 +408,7 @@
     z-index: 40;
     display: block;
     border: 0;
-    background: rgba(2, 6, 23, 0.72);
+    background: rgba(32, 32, 35, 0.72);
     backdrop-filter: blur(3px);
   }
 }
@@ -453,12 +454,12 @@
   padding: 32px;
   border: 1px solid rgba(148, 163, 184, 0.1);
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(48, 48, 51, 0.55);
 }
 
 .module-placeholder-card > p {
   margin: 0 0 8px;
-  color: #38bdf8;
+  color: #e0b85a;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.14em;

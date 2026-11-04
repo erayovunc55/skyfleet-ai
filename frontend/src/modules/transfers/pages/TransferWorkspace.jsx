@@ -16,7 +16,7 @@ import LiveTransferSync from "../components/LiveTransferSync";
 import TimelineCard from "../components/TimelineCard";
 import TransferDetail from "../components/TransferDetail";
 import TransferExcelImportModal from "../components/TransferExcelImportModal";
-import TransferList from "../components/TransferList";
+
 
 import useTransfer from "../hooks/useTransfer";
 import useTransfers from "../hooks/useTransfers";
@@ -135,6 +135,10 @@ export default function TransferWorkspace() {
   const [bulkPoolLoading, setBulkPoolLoading] = useState(false);
   const [bulkMessage, setBulkMessage] = useState("");
   const [bulkError, setBulkError] = useState("");
+  const [search, setSearch] = useState("");
+  const [view, setView] = useState("all");
+  const [showMap, setShowMap] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
 
   const {
     transfers,
@@ -162,6 +166,21 @@ export default function TransferWorkspace() {
           new Date(second.pickup_time).getTime(),
       );
   }, [transfers, selectedDate]);
+
+  const counts = useMemo(() => ({
+    all: filteredTransfers.length,
+    unassigned: filteredTransfers.filter((t) => !t.driver_id && !t.driver?.id && !["completed", "cancelled", "canceled"].includes(t.status)).length,
+    active: filteredTransfers.filter((t) => ["accepted", "on_the_way", "arrived", "passenger_called", "passenger_on_board", "trip_started", "in_progress"].includes(t.status)).length,
+    completed: filteredTransfers.filter((t) => t.status === "completed").length,
+  }), [filteredTransfers]);
+
+  const visibleTransfers = useMemo(() => filteredTransfers.filter((t) => {
+    if (view === "unassigned" && (t.driver_id || t.driver?.id || ["completed", "cancelled", "canceled"].includes(t.status))) return false;
+    if (view === "active" && !["accepted", "on_the_way", "arrived", "passenger_called", "passenger_on_board", "trip_started", "in_progress"].includes(t.status)) return false;
+    if (view === "completed" && t.status !== "completed") return false;
+    const haystack = [t.booking_reference, t.passenger_name, t.customer_name, t.flight_number, t.pickup_address, t.dropoff_address, t.pickup_location?.name, t.dropoff_location?.name, t.driver?.name, t.driver_name].filter(Boolean).join(" ").toLocaleLowerCase();
+    return haystack.includes(search.trim().toLocaleLowerCase());
+  }), [filteredTransfers, view, search]);
 
   const poolEligibleTransfers = useMemo(
     () => filteredTransfers.filter(isPoolSelectable),
@@ -257,139 +276,55 @@ export default function TransferWorkspace() {
 
   return (
     <>
-      <main className="transfer-workspace">
-        <Card
-          className="transfer-workspace-list"
-          title={text.operations}
-          subtitle={`${filteredTransfers.length} ${text.transfer}`}
-          actions={
-            <div className="transfer-workspace-actions">
-              <Button size="sm" onClick={() => setShowExcelImport(true)}>
-                {text.importExcel}
-              </Button>
-
-              <Button variant="ghost" size="sm" loading={loading} onClick={reload}>
-                {text.refresh}
-              </Button>
+      <style>{`
+        .ct2{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(360px,1fr);gap:14px;align-items:start;min-width:0}
+        .ct2 *{box-sizing:border-box}.ct2-left,.ct2-right{min-width:0}.ct2-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}.ct2-input{background:#081a2d;border:1px solid #244463;color:#eef7ff;border-radius:8px;padding:9px 11px;min-width:160px;flex:1}.ct2-pill{background:#0c2740;color:#b9dfff;border:1px solid #234768;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:12px}.ct2-pill[data-active="true"]{background:#12609a;color:white;border-color:#249bdf}.ct2-stats{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.ct2-table-wrap{overflow:auto;max-height:calc(100vh - 340px);min-height:280px;border:1px solid #203b58;border-radius:10px}.ct2-table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}.ct2-table th{position:sticky;top:0;background:#10243d;color:#8eb8d7;text-align:left;font-weight:600;padding:11px 9px;z-index:1}.ct2-table td{padding:9px;border-top:1px solid #1d334d;color:#e7f3ff}.ct2-table tr[data-selected="true"]{background:#11365b}.ct2-table tbody tr:hover{background:#16324f;cursor:pointer}.ct2-muted{color:#8ba9c6;font-size:11px}.ct2-cell-main{font-weight:600}.ct2-check{accent-color:#16b3ed}.ct2-detail{max-height:calc(100vh - 150px);overflow:auto}.ct2-footer{grid-column:1/-1}.ct2-alert{font-size:12px;margin:8px 0}.ct2-toggle{display:flex;gap:8px;flex-wrap:wrap}.ct2-empty{padding:28px;text-align:center;color:#9ab7d3}@media(max-width:1100px){.ct2{grid-template-columns:minmax(0,1fr)}.ct2-detail{max-height:none}.ct2-table-wrap{max-height:60vh}}
+      `}</style>
+      <LiveTransferSync />
+      <main className="ct2">
+        <div className="ct2-left">
+          <Card title={language === "tr" ? "Operasyon Kontrol Kulesi" : "Operations Control Tower"} subtitle={`${filteredTransfers.length} ${text.transfer}`} actions={<div className="transfer-workspace-actions"><Button size="sm" onClick={() => setShowExcelImport(true)}>{text.importExcel}</Button><Button variant="ghost" size="sm" loading={loading} onClick={reload}>{text.refresh}</Button></div>}>
+            <div className="transfer-date-filter">
+              <button type="button" onClick={goToPreviousDay} aria-label={text.previousDay}>‹</button>
+              <label><span>{text.operationDate}</span><input type="date" value={selectedDate} onChange={(event) => {setSelectedDate(event.target.value);setSelectedIds([]);}} /></label>
+              <button type="button" onClick={goToNextDay} aria-label={text.nextDay}>›</button>
+              <button type="button" className="today" onClick={goToToday}>{text.today}</button>
             </div>
-          }
-        >
-          <div className="transfer-date-filter">
-            <button type="button" onClick={goToPreviousDay} aria-label={text.previousDay}>‹</button>
-
-            <label>
-              <span>{text.operationDate}</span>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(event) => {
-                  setSelectedDate(event.target.value);
-                  setSelectedIds([]);
-                }}
-              />
-            </label>
-
-            <button type="button" onClick={goToNextDay} aria-label={text.nextDay}>›</button>
-            <button className="today" type="button" onClick={goToToday}>{text.today}</button>
-          </div>
-
-          <div className="transfer-selected-date">
-            <strong>{formatSelectedDate(selectedDate, locale, text.noDate)}</strong>
-            <span>{filteredTransfers.length} {text.transfer}</span>
-          </div>
-
-          <div
-            className="transfer-bulk-pool-bar"
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              alignItems: "center",
-              margin: "10px 0 12px",
-            }}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={poolEligibleTransfers.length === 0 || bulkPoolLoading}
-              onClick={handleSelectAll}
-            >
-              {text.selectAll}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={selectedIds.length === 0 || bulkPoolLoading}
-              onClick={() => setSelectedIds([])}
-            >
-              {text.clearSelection}
-            </Button>
-
-            <Button
-              size="sm"
-              loading={bulkPoolLoading}
-              disabled={selectedIds.length === 0}
-              onClick={handleBulkPublish}
-            >
-              {text.sendSelectedToPool} ({selectedIds.length})
-            </Button>
-
-            <span style={{ fontSize: "12px", opacity: 0.75 }}>
-              {selectedIds.length} {text.selectedCount} · {poolEligibleTransfers.length} {text.poolEligibleCount}
-            </span>
-          </div>
-
-          {bulkMessage ? (
-            <div style={{ marginBottom: "10px", fontSize: "12px", color: "#57d9a3" }}>
-              {bulkMessage}
+            <div className="ct2-stats">
+              {[ ["all", language === "tr" ? "Tümü" : "All", counts.all], ["unassigned", language === "tr" ? "Sürücüsüz" : "Unassigned", counts.unassigned], ["active", language === "tr" ? "Aktif" : "Active", counts.active], ["completed", language === "tr" ? "Tamamlanan" : "Completed", counts.completed] ].map(([key,label,count]) => <button key={key} type="button" className="ct2-pill" data-active={view === key} onClick={() => setView(key)}>{label} · {count}</button>)}
             </div>
-          ) : null}
-
-          {bulkError ? (
-            <div style={{ marginBottom: "10px", fontSize: "12px", color: "#ff7b7b" }}>
-              {bulkError}
+            <div className="ct2-toolbar">
+              <input className="ct2-input" aria-label={language === "tr" ? "Transfer ara" : "Search transfers"} placeholder={language === "tr" ? "Rezervasyon, yolcu, uçuş, adres ara..." : "Search booking, passenger, flight, address..."} value={search} onChange={(e) => setSearch(e.target.value)} />
+              <button type="button" className="ct2-pill" onClick={() => setShowMap((v) => !v)}>{showMap ? "−" : "+"} {text.map}</button>
+              <button type="button" className="ct2-pill" onClick={() => setShowTimeline((v) => !v)}>{language === "tr" ? "Zaman Çizelgesi" : "Timeline"}</button>
             </div>
-          ) : null}
-
-          <TransferList
-            transfers={filteredTransfers}
-            loading={loading}
-            error={error}
-            selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
-            isSelectable={isPoolSelectable}
-          />
-        </Card>
-
-        <Card
-          className="transfer-workspace-detail"
-          title={text.detail}
-          subtitle={selectedTransfer ? selectedTransfer.booking_reference : text.notSelected}
-          actions={selectedTransfer ? <StatusBadge status={selectedTransfer.status} /> : null}
-        >
-          {selectedTransfer ? (
-            <TransferDetail />
-          ) : (
-            <div className="transfer-detail-empty">{text.emptyDetail}</div>
-          )}
-        </Card>
-
-        <Card className="transfer-workspace-map" title={text.map} subtitle={text.mapSubtitle}>
-          <LiveTransferSync />
-          <LiveOperationMap />
-        </Card>
-
-        <section className="transfer-workspace-timeline">
-          <TimelineCard />
-        </section>
+            <div className="ct2-toolbar">
+              <Button variant="ghost" size="sm" disabled={!poolEligibleTransfers.length || bulkPoolLoading} onClick={handleSelectAll}>{text.selectAll}</Button>
+              <Button variant="ghost" size="sm" disabled={!selectedIds.length || bulkPoolLoading} onClick={() => setSelectedIds([])}>{text.clearSelection}</Button>
+              <Button size="sm" loading={bulkPoolLoading} disabled={!selectedIds.length || bulkPoolLoading} onClick={handleBulkPublish}>{text.sendSelectedToPool} ({selectedIds.length})</Button>
+              <span className="ct2-muted">{selectedIds.length} {text.selectedCount} · {poolEligibleTransfers.length} {text.poolEligibleCount}</span>
+            </div>
+            {bulkMessage && <div className="ct2-alert" style={{color:"#57d9a3"}}>{bulkMessage}</div>}
+            {bulkError && <div className="ct2-alert" style={{color:"#ff7b7b"}}>{bulkError}</div>}
+            {error && <div role="alert" className="ct2-alert" style={{color:"#ff7b7b"}}>{String(error?.message || error)}</div>}
+            <div className="ct2-table-wrap">
+              <table className="ct2-table"><thead><tr><th aria-label="Pool selection">✓</th><th>{language === "tr" ? "Saat" : "Time"}</th><th>{language === "tr" ? "Rezervasyon / Yolcu" : "Booking / Passenger"}</th><th>{language === "tr" ? "Güzergâh" : "Route"}</th><th>{language === "tr" ? "Uçuş" : "Flight"}</th><th>{language === "tr" ? "Sürücü" : "Driver"}</th><th>{language === "tr" ? "Durum" : "Status"}</th></tr></thead>
+              <tbody>{visibleTransfers.map((t) => <tr key={t.id} data-selected={Number(selectedTransfer?.id) === Number(t.id)} onClick={() => selectTransfer(t)}>
+                <td onClick={(e) => e.stopPropagation()}><input className="ct2-check" type="checkbox" aria-label={`${t.booking_reference || t.id} ${text.selectAll}`} checked={selectedIds.some((id) => Number(id) === Number(t.id))} disabled={!isPoolSelectable(t) || bulkPoolLoading} onChange={() => handleToggleSelect(t.id)} /></td>
+                <td className="ct2-cell-main">{formatTime(t.pickup_time, locale)}</td>
+                <td><div className="ct2-cell-main">{t.booking_reference || `#${t.id}`}</div><div className="ct2-muted">{t.passenger_name || t.customer_name || "—"}</div></td>
+                <td title={`${getPlace(t,"pickup")} → ${getPlace(t,"dropoff")}`}><div className="ct2-cell-main">{shorten(getPlace(t,"pickup"),22)} → {shorten(getPlace(t,"dropoff"),22)}</div></td>
+                <td>{t.flight_number || "—"}</td><td>{t.driver?.name || t.driver_name || (t.driver_id ? `#${t.driver_id}` : "—")}</td><td><StatusBadge status={t.status || "pending"}/></td>
+              </tr>)}</tbody></table>
+              {!loading && !visibleTransfers.length && <div className="ct2-empty">{text.emptyDetail}</div>}
+              {loading && !visibleTransfers.length && <div className="ct2-empty">{language === "tr" ? "Yükleniyor..." : "Loading..."}</div>}
+            </div>
+          </Card>
+        </div>
+        <div className="ct2-right"><Card className="ct2-detail" title={text.detail} subtitle={selectedTransfer?.booking_reference || text.notSelected} actions={selectedTransfer ? <StatusBadge status={selectedTransfer.status}/> : null}>{selectedTransfer ? <TransferDetail/> : <div className="transfer-detail-empty">{text.emptyDetail}</div>}</Card></div>
+        {(showMap || showTimeline) && <div className="ct2-footer">{showMap && <Card title={text.map} subtitle={text.mapSubtitle}><LiveOperationMap /></Card>}{showTimeline && <section className="transfer-workspace-timeline"><TimelineCard /></section>}</div>}
       </main>
-
-      <TransferExcelImportModal
-        open={showExcelImport}
-        onClose={() => setShowExcelImport(false)}
-        onImported={handleImported}
-      />
+      <TransferExcelImportModal open={showExcelImport} onClose={() => setShowExcelImport(false)} onImported={handleImported} />
     </>
   );
 }
@@ -425,4 +360,17 @@ function formatSelectedDate(dateKey, locale, fallback) {
     month: "long",
     year: "numeric",
   });
+}
+
+function shorten(value, max) {
+  const text = String(value || "—");
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+function getPlace(transfer, kind) {
+  const value = transfer?.[`${kind}_location`];
+  return transfer?.[`${kind}_address`] || (typeof value === "string" ? value : value?.name || value?.address) || transfer?.[`${kind}_name`] || "—";
+}
+function formatTime(value, locale) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleTimeString(locale, {hour:"2-digit", minute:"2-digit"});
 }

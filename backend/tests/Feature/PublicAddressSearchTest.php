@@ -13,7 +13,9 @@ class PublicAddressSearchTest extends TestCase
         parent::setUp();
 
         Cache::flush();
+        Http::preventStrayRequests();
         config([
+            'google_places.enabled' => false,
             'geocoding.provider' => 'geoapify',
             'geocoding.geoapify.key' => 'test-api-key',
             'geocoding.geoapify.endpoint' => 'https://api.geoapify.com/v1/geocode/search',
@@ -43,7 +45,7 @@ class PublicAddressSearchTest extends TestCase
         ]);
 
         $response = $this->getJson(
-            '/api/public/address-search?q=Taksim%20Meydan%C4%B1'
+            '/public/address-search?q=Taksim%20Meydan%C4%B1'
         );
 
         $response->assertOk()
@@ -73,10 +75,81 @@ class PublicAddressSearchTest extends TestCase
     {
         Http::fake();
 
-        $this->getJson('/api/public/address-search?q=A')
+        $this->getJson('/public/address-search?q=A')
             ->assertUnprocessable()
             ->assertJsonValidationErrors('q');
 
         Http::assertNothingSent();
+    }
+
+    public function test_selected_google_place_falls_back_to_text_geocoding_for_coordinates(): void
+    {
+        config([
+            'google_places.enabled' => true,
+            'google_places.key' => 'test-google-key',
+        ]);
+
+        Http::fake([
+            'https://places.googleapis.com/*' => Http::response([], 403),
+            'https://api.geoapify.com/*' => Http::response([
+                'features' => [[
+                    'properties' => [
+                        'name' => 'Istanbul Airport',
+                        'formatted' => 'Istanbul Airport, Arnavutköy, İstanbul, Türkiye',
+                        'lat' => 41.275,
+                        'lon' => 28.752,
+                        'place_id' => 'geoapify-airport-place',
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $this->getJson('/public/address-search?' . http_build_query([
+            'place_id' => 'google-airport-place',
+            'fallback_query' => 'Istanbul Airport, İstanbul, Türkiye',
+        ]))
+            ->assertOk()
+            ->assertJsonPath('data.latitude', 41.275)
+            ->assertJsonPath('data.longitude', 28.752)
+            ->assertJsonPath('data.provider', 'geoapify');
+
+        Http::assertSent(function ($request): bool {
+            return str_starts_with(
+                $request->url(),
+                'https://api.geoapify.com/v1/geocode/search?'
+            )
+                && $request['text'] === 'Istanbul Airport, İstanbul, Türkiye'
+                && $request['apiKey'] === 'test-api-key';
+        });
+    }
+
+    public function test_city_and_address_words_do_not_match_airport_code_substrings(): void
+    {
+        Http::fake([
+            'https://api.geoapify.com/*' => Http::response([
+                'features' => [[
+                    'properties' => [
+                        'name' => 'Address result',
+                        'formatted' => 'Address result',
+                        'lat' => 41.0,
+                        'lon' => 29.0,
+                        'place_id' => 'address-result',
+                    ],
+                ]],
+            ]),
+        ]);
+
+        foreach (['Taksim Istanbul', 'Taksim İstanbul', 'Artist Hotel', 'Sawgrass Hotel'] as $query) {
+            foreach (['pickup', 'dropoff'] as $field) {
+                $this->getJson('/public/address-search?' . http_build_query([
+                    'q' => $query,
+                    'field' => $field,
+                ]))
+                    ->assertOk()
+                    ->assertJsonCount(1, 'data')
+                    ->assertJsonPath('data.0.name', 'Address result')
+                    ->assertJsonPath('data.0.is_airport', false);
+            }
+        }
     }
 }

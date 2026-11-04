@@ -47,7 +47,11 @@ export default function LocationOperationsMap({
 }) {
   const text = COPY[language] || COPY.en;
   const locationPosition = coordinatePair(location?.latitude, location?.longitude);
-  const points = Array.isArray(location?.points) ? location.points : [];
+  const locationPoints = location?.points;
+  const points = useMemo(
+    () => (Array.isArray(locationPoints) ? locationPoints : []),
+    [locationPoints],
+  );
   const draftPosition = coordinatePair(draftPoint?.latitude, draftPoint?.longitude);
 
   const pointCoordinates = useMemo(

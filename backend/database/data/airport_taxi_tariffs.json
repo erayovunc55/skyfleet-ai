@@ -1,0 +1,382 @@
+[
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "mad-centre",
+    "airports": [
+      "MAD"
+    ],
+    "label": "Madrid — central subset inside M-30",
+    "amount": 33,
+    "zone": {
+      "latitude": 40.4168,
+      "longitude": -3.7038,
+      "radius_km": 1.4
+    },
+    "source_url": "https://www.aena.es/es/adolfo-suarez-madrid-barajas/como-llegar/taxi.html"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "rix-centre",
+    "airports": [
+      "RIX"
+    ],
+    "label": "Riga — old town subset of voucher zone",
+    "amount": 33.5,
+    "zone": {
+      "latitude": 56.9496,
+      "longitude": 24.1052,
+      "radius_km": 0.65
+    },
+    "source_url": "https://www.riga-airport.com/en/transport-0"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "cdg-opera",
+    "airports": [
+      "CDG"
+    ],
+    "label": "Paris — Opéra, right bank subset",
+    "amount": 56,
+    "zone": {
+      "latitude": 48.8719,
+      "longitude": 2.3316,
+      "radius_km": 0.6
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "cdg-montparnasse",
+    "airports": [
+      "CDG"
+    ],
+    "label": "Paris — Montparnasse, left bank subset",
+    "amount": 65,
+    "zone": {
+      "latitude": 48.8422,
+      "longitude": 2.3219,
+      "radius_km": 0.6
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "ory-opera",
+    "airports": [
+      "ORY"
+    ],
+    "label": "Paris — Opéra, right bank subset",
+    "amount": 45,
+    "zone": {
+      "latitude": 48.8719,
+      "longitude": 2.3316,
+      "radius_km": 0.6
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "ory-montparnasse",
+    "airports": [
+      "ORY"
+    ],
+    "label": "Paris — Montparnasse, left bank subset",
+    "amount": 36,
+    "zone": {
+      "latitude": 48.8422,
+      "longitude": 2.3219,
+      "radius_km": 0.6
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "nce-centre",
+    "airports": [
+      "NCE"
+    ],
+    "label": "Nice — city centre subset",
+    "amount": 32,
+    "zone": {
+      "latitude": 43.7001,
+      "longitude": 7.2683,
+      "radius_km": 0.7
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "nce-cannes",
+    "airports": [
+      "NCE"
+    ],
+    "label": "Cannes — centre subset",
+    "amount": 85,
+    "zone": {
+      "latitude": 43.5528,
+      "longitude": 7.0174,
+      "radius_km": 0.7
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "nce-antibes",
+    "airports": [
+      "NCE"
+    ],
+    "label": "Juan-les-Pins — centre subset",
+    "amount": 72,
+    "zone": {
+      "latitude": 43.5702,
+      "longitude": 7.1133,
+      "radius_km": 0.5
+    },
+    "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F22127"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "vie-centre-departure",
+    "airports": [
+      "VIE"
+    ],
+    "label": "Vienna — centre to airport; Taxi 40100 pre-booked reference",
+    "amount": 42,
+    "zone": {
+      "latitude": 48.2082,
+      "longitude": 16.3738,
+      "radius_km": 2
+    },
+    "source_url": "https://www.wien.info/en/travel-info/arrival-departure/airport-to-center/taxi-360908"
+  },
+  {
+    "enabled": true,
+    "type": "fixed",
+    "currency": "EUR",
+    "directions": [
+      "pickup"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-16",
+    "valid_from": "2026-09-16",
+    "valid_until": "2026-12-15",
+    "id": "lju-centre",
+    "airports": [
+      "LJU"
+    ],
+    "label": "Ljubljana — centre; published standard taxi operator fare",
+    "amount": 42,
+    "zone": {
+      "latitude": 46.0511,
+      "longitude": 14.506,
+      "radius_km": 0.8
+    },
+    "source_url": "https://taxi-airport-ljubljana.si/sl/cenik/"
+  },
+  {
+    "enabled": true,
+    "type": "metered",
+    "currency": "TRY",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-19",
+    "valid_from": "2026-02-16",
+    "valid_until": "2026-12-31",
+    "id": "ist-istanbul-metered",
+    "airports": [
+      "IST"
+    ],
+    "label": "Istanbul Airport — Istanbul yellow taxi metered reference",
+    "base": 65.40,
+    "per_km": 43.56,
+    "minimum": 210.00,
+    "max_distance_km": 150,
+    "zone": {
+      "latitude": 41.0082,
+      "longitude": 28.9784,
+      "radius_km": 45
+    },
+    "source_url": "https://tuhim.ibb.gov.tr/media/27431/taksi-ta%C5%9F%C4%B1mac%C4%B1l%C4%B1%C4%9F%C4%B1-%C3%BCcret-tarifesi.pdf"
+  },
+  {
+    "enabled": true,
+    "type": "metered",
+    "currency": "TRY",
+    "directions": [
+      "pickup",
+      "dropoff"
+    ],
+    "vehicle_types": [
+      "standard_car"
+    ],
+    "max_passengers": 4,
+    "max_luggage": 3,
+    "verified_at": "2026-09-19",
+    "valid_from": "2026-02-16",
+    "valid_until": "2026-12-31",
+    "id": "saw-istanbul-metered",
+    "airports": [
+      "SAW"
+    ],
+    "label": "Sabiha Gokcen Airport — Istanbul yellow taxi metered reference",
+    "base": 65.40,
+    "per_km": 43.56,
+    "minimum": 210.00,
+    "max_distance_km": 150,
+    "zone": {
+      "latitude": 41.0082,
+      "longitude": 28.9784,
+      "radius_km": 45
+    },
+    "source_url": "https://tuhim.ibb.gov.tr/media/27431/taksi-ta%C5%9F%C4%B1mac%C4%B1l%C4%B1%C4%9F%C4%B1-%C3%BCcret-tarifesi.pdf"
+  }
+]

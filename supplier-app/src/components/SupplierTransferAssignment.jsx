@@ -4,6 +4,8 @@ import {
   useState,
 } from "react";
 
+import { useLanguage } from "../i18n";
+
 import {
   assignSupplierTransfer,
   getSupplierDrivers,
@@ -11,10 +13,258 @@ import {
   unassignSupplierTransfer,
 } from "../services/supplierService";
 
+const TEXT = {
+  tr: {
+    loadError:
+      "Sürücü ve araç bilgileri yüklenemedi.",
+    selectDriverError:
+      "Sürücü seçmelisiniz.",
+    selectVehicleError:
+      "Araç seçmelisiniz.",
+    assignedSuccess:
+      "Transfer sürücü ve araca atandı.",
+    assignError:
+      "Transfer ataması kaydedilemedi.",
+    unassignConfirm:
+      "Transferin sürücü ve araç ataması kaldırılsın mı?",
+    unassignedSuccess:
+      "Transfer ataması kaldırıldı.",
+    unassignError:
+      "Transfer ataması kaldırılamadı.",
+
+    eyebrow: "OPERASYON ATAMASI",
+    title: "Sürücü ve Araç",
+    assigned: "Atandı",
+    unassigned: "Atanmadı",
+
+    currentDriver: "Mevcut sürücü",
+    currentVehicle: "Mevcut araç",
+    phoneNotSpecified:
+      "Telefon belirtilmedi",
+    vehicleNotAssigned:
+      "Araç atanmadı",
+
+    driver: "Sürücü",
+    vehicle: "Araç",
+    selectDriver: "Sürücü seçin",
+    selectVehicle: "Araç seçin",
+
+    vehicleOverride:
+      "Seçilen araç sürücünün mevcut aracının yerine atanacaktır.",
+
+    loading:
+      "Sürücü ve araçlar yükleniyor...",
+
+    noDrivers:
+      "Atama yapabilmek için önce aktif bir sürücü eklemelisiniz.",
+
+    noVehicles:
+      "Atama yapabilmek için önce aktif bir araç eklemelisiniz.",
+
+    cannotAssign:
+      "Operasyonu başlamış veya kapanmış transferin ataması değiştirilemez.",
+
+    removeAssignment:
+      "Atamayı Kaldır",
+    saving:
+      "Kaydediliyor...",
+    updateAssignment:
+      "Atamayı Güncelle",
+    assignTransfer:
+      "Transferi Ata",
+  },
+
+  en: {
+    loadError:
+      "Driver and vehicle information could not be loaded.",
+    selectDriverError:
+      "Please select a driver.",
+    selectVehicleError:
+      "Please select a vehicle.",
+    assignedSuccess:
+      "The transfer has been assigned to the driver and vehicle.",
+    assignError:
+      "The transfer assignment could not be saved.",
+    unassignConfirm:
+      "Remove the driver and vehicle assignment from this transfer?",
+    unassignedSuccess:
+      "The transfer assignment has been removed.",
+    unassignError:
+      "The transfer assignment could not be removed.",
+
+    eyebrow: "OPERATION ASSIGNMENT",
+    title: "Driver and Vehicle",
+    assigned: "Assigned",
+    unassigned: "Unassigned",
+
+    currentDriver: "Current driver",
+    currentVehicle: "Current vehicle",
+    phoneNotSpecified:
+      "Phone not specified",
+    vehicleNotAssigned:
+      "Vehicle not assigned",
+
+    driver: "Driver",
+    vehicle: "Vehicle",
+    selectDriver: "Select driver",
+    selectVehicle: "Select vehicle",
+
+    vehicleOverride:
+      "The selected vehicle will replace the driver's current vehicle for this transfer.",
+
+    loading:
+      "Loading drivers and vehicles...",
+
+    noDrivers:
+      "Add an active driver before assigning this transfer.",
+
+    noVehicles:
+      "Add an active vehicle before assigning this transfer.",
+
+    cannotAssign:
+      "The assignment cannot be changed after the operation has started or closed.",
+
+    removeAssignment:
+      "Remove Assignment",
+    saving:
+      "Saving...",
+    updateAssignment:
+      "Update Assignment",
+    assignTransfer:
+      "Assign Transfer",
+  },
+
+  es: {
+    loadError:
+      "No se pudo cargar la información de conductores y vehículos.",
+    selectDriverError:
+      "Seleccione un conductor.",
+    selectVehicleError:
+      "Seleccione un vehículo.",
+    assignedSuccess:
+      "El traslado ha sido asignado al conductor y al vehículo.",
+    assignError:
+      "No se pudo guardar la asignación del traslado.",
+    unassignConfirm:
+      "¿Desea eliminar la asignación del conductor y vehículo de este traslado?",
+    unassignedSuccess:
+      "La asignación del traslado ha sido eliminada.",
+    unassignError:
+      "No se pudo eliminar la asignación del traslado.",
+
+    eyebrow: "ASIGNACIÓN OPERATIVA",
+    title: "Conductor y Vehículo",
+    assigned: "Asignado",
+    unassigned: "Sin asignar",
+
+    currentDriver: "Conductor actual",
+    currentVehicle: "Vehículo actual",
+    phoneNotSpecified:
+      "Teléfono no especificado",
+    vehicleNotAssigned:
+      "Vehículo no asignado",
+
+    driver: "Conductor",
+    vehicle: "Vehículo",
+    selectDriver: "Seleccionar conductor",
+    selectVehicle: "Seleccionar vehículo",
+
+    vehicleOverride:
+      "El vehículo seleccionado sustituirá al vehículo actual del conductor para este traslado.",
+
+    loading:
+      "Cargando conductores y vehículos...",
+
+    noDrivers:
+      "Añada un conductor activo antes de asignar este traslado.",
+
+    noVehicles:
+      "Añada un vehículo activo antes de asignar este traslado.",
+
+    cannotAssign:
+      "La asignación no puede modificarse una vez iniciada o cerrada la operación.",
+
+    removeAssignment:
+      "Eliminar Asignación",
+    saving:
+      "Guardando...",
+    updateAssignment:
+      "Actualizar Asignación",
+    assignTransfer:
+      "Asignar Traslado",
+  },
+
+  ar: {
+    loadError:
+      "تعذر تحميل معلومات السائقين والمركبات.",
+    selectDriverError:
+      "يرجى اختيار سائق.",
+    selectVehicleError:
+      "يرجى اختيار مركبة.",
+    assignedSuccess:
+      "تم تعيين الرحلة للسائق والمركبة.",
+    assignError:
+      "تعذر حفظ تعيين الرحلة.",
+    unassignConfirm:
+      "هل تريد إزالة تعيين السائق والمركبة من هذه الرحلة؟",
+    unassignedSuccess:
+      "تمت إزالة تعيين الرحلة.",
+    unassignError:
+      "تعذر إزالة تعيين الرحلة.",
+
+    eyebrow: "تعيين العملية",
+    title: "السائق والمركبة",
+    assigned: "تم التعيين",
+    unassigned: "غير معين",
+
+    currentDriver: "السائق الحالي",
+    currentVehicle: "المركبة الحالية",
+    phoneNotSpecified:
+      "رقم الهاتف غير محدد",
+    vehicleNotAssigned:
+      "لم يتم تعيين مركبة",
+
+    driver: "السائق",
+    vehicle: "المركبة",
+    selectDriver: "اختر السائق",
+    selectVehicle: "اختر المركبة",
+
+    vehicleOverride:
+      "ستحل المركبة المحددة محل المركبة الحالية للسائق لهذه الرحلة.",
+
+    loading:
+      "جارٍ تحميل السائقين والمركبات...",
+
+    noDrivers:
+      "أضف سائقاً نشطاً قبل تعيين هذه الرحلة.",
+
+    noVehicles:
+      "أضف مركبة نشطة قبل تعيين هذه الرحلة.",
+
+    cannotAssign:
+      "لا يمكن تغيير التعيين بعد بدء العملية أو إغلاقها.",
+
+    removeAssignment:
+      "إزالة التعيين",
+    saving:
+      "جارٍ الحفظ...",
+    updateAssignment:
+      "تحديث التعيين",
+    assignTransfer:
+      "تعيين الرحلة",
+  },
+};
+
 export default function SupplierTransferAssignment({
   transfer,
   onAssigned,
 }) {
+  const { language } = useLanguage();
+
+  const t =
+    TEXT[language] ||
+    TEXT.en;
+
   const [drivers, setDrivers] =
     useState([]);
 
@@ -60,9 +310,11 @@ export default function SupplierTransferAssignment({
     );
 
     setSelectedVehicleId(
-      transfer?.assigned_vehicle_id
+      transfer
+        ?.assigned_vehicle_id
         ? String(
-            transfer.assigned_vehicle_id,
+            transfer
+              .assigned_vehicle_id,
           )
         : transfer?.driver
             ?.vehicle_id
@@ -121,7 +373,7 @@ export default function SupplierTransferAssignment({
           setError(
             getErrorMessage(
               requestError,
-              "Sürücü ve araç bilgileri yüklenemedi.",
+              t.loadError,
             ),
           );
         }
@@ -137,7 +389,7 @@ export default function SupplierTransferAssignment({
     return () => {
       active = false;
     };
-  }, []);
+  }, [t.loadError]);
 
   const selectedDriver =
     useMemo(
@@ -188,7 +440,7 @@ export default function SupplierTransferAssignment({
 
     if (!selectedDriverId) {
       setError(
-        "Sürücü seçmelisiniz.",
+        t.selectDriverError,
       );
 
       return;
@@ -196,7 +448,7 @@ export default function SupplierTransferAssignment({
 
     if (!selectedVehicleId) {
       setError(
-        "Araç seçmelisiniz.",
+        t.selectVehicleError,
       );
 
       return;
@@ -215,7 +467,7 @@ export default function SupplierTransferAssignment({
         );
 
       setMessage(
-        "Transfer sürücü ve araca atandı.",
+        t.assignedSuccess,
       );
 
       onAssigned?.(
@@ -225,7 +477,7 @@ export default function SupplierTransferAssignment({
       setError(
         getErrorMessage(
           requestError,
-          "Transfer ataması kaydedilemedi.",
+          t.assignError,
         ),
       );
     } finally {
@@ -243,7 +495,7 @@ export default function SupplierTransferAssignment({
 
     const confirmed =
       window.confirm(
-        "Transferin sürücü ve araç ataması kaldırılsın mı?",
+        t.unassignConfirm,
       );
 
     if (!confirmed) {
@@ -264,7 +516,7 @@ export default function SupplierTransferAssignment({
       setSelectedVehicleId("");
 
       setMessage(
-        "Transfer ataması kaldırıldı.",
+        t.unassignedSuccess,
       );
 
       onAssigned?.(
@@ -274,7 +526,7 @@ export default function SupplierTransferAssignment({
       setError(
         getErrorMessage(
           requestError,
-          "Transfer ataması kaldırılamadı.",
+          t.unassignError,
         ),
       );
     } finally {
@@ -291,11 +543,11 @@ export default function SupplierTransferAssignment({
       <div className="supplier-assignment-heading">
         <div>
           <span className="supplier-eyebrow">
-            OPERASYON ATAMASI
+            {t.eyebrow}
           </span>
 
           <h3>
-            Sürücü ve Araç
+            {t.title}
           </h3>
         </div>
 
@@ -307,8 +559,8 @@ export default function SupplierTransferAssignment({
           }
         >
           {transfer.driver_id
-            ? "Atandı"
-            : "Atanmadı"}
+            ? t.assigned
+            : t.unassigned}
         </span>
       </div>
 
@@ -316,7 +568,7 @@ export default function SupplierTransferAssignment({
         <div className="supplier-current-assignment">
           <div>
             <span>
-              Mevcut sürücü
+              {t.currentDriver}
             </span>
 
             <strong>
@@ -325,13 +577,13 @@ export default function SupplierTransferAssignment({
 
             <small>
               {transfer.driver.phone ||
-                "Telefon belirtilmedi"}
+                t.phoneNotSpecified}
             </small>
           </div>
 
           <div>
             <span>
-              Mevcut araç
+              {t.currentVehicle}
             </span>
 
             <strong>
@@ -340,7 +592,7 @@ export default function SupplierTransferAssignment({
                 ?.plate ||
                 transfer.driver
                   ?.vehicle?.plate ||
-                "Araç atanmadı"}
+                t.vehicleNotAssigned}
             </strong>
 
             <small>
@@ -374,7 +626,9 @@ export default function SupplierTransferAssignment({
 
       <div className="supplier-assignment-form">
         <label>
-          <span>Sürücü</span>
+          <span>
+            {t.driver}
+          </span>
 
           <select
             value={
@@ -392,7 +646,7 @@ export default function SupplierTransferAssignment({
             }
           >
             <option value="">
-              Sürücü seçin
+              {t.selectDriver}
             </option>
 
             {drivers.map(
@@ -412,7 +666,9 @@ export default function SupplierTransferAssignment({
         </label>
 
         <label>
-          <span>Araç</span>
+          <span>
+            {t.vehicle}
+          </span>
 
           <select
             value={
@@ -430,7 +686,7 @@ export default function SupplierTransferAssignment({
             }
           >
             <option value="">
-              Araç seçin
+              {t.selectVehicle}
             </option>
 
             {vehicles.map(
@@ -460,37 +716,33 @@ export default function SupplierTransferAssignment({
             selectedVehicleId,
           ) && (
           <div className="supplier-assignment-info">
-            Seçilen araç sürücünün mevcut
-            aracının yerine atanacaktır.
+            {t.vehicleOverride}
           </div>
         )}
 
       {loading && (
         <div className="supplier-assignment-info">
-          Sürücü ve araçlar yükleniyor...
+          {t.loading}
         </div>
       )}
 
       {!loading &&
         drivers.length === 0 && (
           <div className="supplier-assignment-info warning">
-            Atama yapabilmek için önce
-            aktif bir sürücü eklemelisiniz.
+            {t.noDrivers}
           </div>
         )}
 
       {!loading &&
         vehicles.length === 0 && (
           <div className="supplier-assignment-info warning">
-            Atama yapabilmek için önce
-            aktif bir araç eklemelisiniz.
+            {t.noVehicles}
           </div>
         )}
 
       {!canAssign && (
         <div className="supplier-assignment-info warning">
-          Operasyonu başlamış veya kapanmış
-          transferin ataması değiştirilemez.
+          {t.cannotAssign}
         </div>
       )}
 
@@ -519,7 +771,7 @@ export default function SupplierTransferAssignment({
               handleUnassign
             }
           >
-            Atamayı Kaldır
+            {t.removeAssignment}
           </button>
         )}
 
@@ -538,10 +790,10 @@ export default function SupplierTransferAssignment({
           }
         >
           {saving
-            ? "Kaydediliyor..."
+            ? t.saving
             : transfer.driver_id
-              ? "Atamayı Güncelle"
-              : "Transferi Ata"}
+              ? t.updateAssignment
+              : t.assignTransfer}
         </button>
       </div>
     </section>

@@ -27,11 +27,13 @@ export default function SupplierPage() {
 
   useEffect(()=>{const timer=window.setTimeout(()=>setDebouncedSearch(search.trim()),300);return()=>window.clearTimeout(timer)},[search]);
   useEffect(()=>setCurrentPage(1),[debouncedSearch,status,countryCode,city,pageSize]);
-  useEffect(()=>{loadPage()},[currentPage,pageSize,debouncedSearch,status,countryCode,city]);
+  // loadPage reads exactly these query inputs; listing the function would reload every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(()=>{loadPage()},[currentPage,pageSize,debouncedSearch,status,countryCode,city,text.loadError]);
   useEffect(()=>{loadSupportingData();loadStats()},[]);
 
-  async function loadSupportingData(){try{const[d,v]=await Promise.all([getDrivers(),getVehicles()]);setDrivers(Array.isArray(d)?d:[]);setVehicles(Array.isArray(v)?v:[])}catch{}}
-  async function loadStats(){try{const[a,b,c,d,e]=await Promise.all([supplierService.getSuppliers({per_page:1}),supplierService.getSuppliers({per_page:1,is_active:1}),supplierService.getSuppliers({per_page:1,status:"approved"}),supplierService.getSuppliers({per_page:1,status:"pending"}),supplierService.getSuppliers({per_page:1,status:"under_review"})]);setStats({total:Number(a?.total||0),active:Number(b?.total||0),approved:Number(c?.total||0),review:Number(d?.total||0)+Number(e?.total||0)})}catch{}}
+  async function loadSupportingData(){try{const[d,v]=await Promise.all([getDrivers(),getVehicles()]);setDrivers(Array.isArray(d)?d:[]);setVehicles(Array.isArray(v)?v:[])}catch{/* Supporting counts are non-critical; the main supplier list remains usable. */}}
+  async function loadStats(){try{const[a,b,c,d,e]=await Promise.all([supplierService.getSuppliers({per_page:1}),supplierService.getSuppliers({per_page:1,is_active:1}),supplierService.getSuppliers({per_page:1,status:"approved"}),supplierService.getSuppliers({per_page:1,status:"pending"}),supplierService.getSuppliers({per_page:1,status:"under_review"})]);setStats({total:Number(a?.total||0),active:Number(b?.total||0),approved:Number(c?.total||0),review:Number(d?.total||0)+Number(e?.total||0)})}catch{/* KPI failures must not block supplier management. */}}
   async function loadPage(){setLoading(true);setError("");try{const params={page:currentPage,per_page:pageSize};if(debouncedSearch)params.search=debouncedSearch;if(status)params.status=status;if(countryCode.trim())params.country_code=countryCode.trim().toUpperCase();if(city.trim())params.city=city.trim();const response=await supplierService.getSuppliers(params);const rows=Array.isArray(response?.data)?response.data:[];setSuppliers(rows);setMeta({total:Number(response?.total||rows.length),last_page:Math.max(1,Number(response?.last_page||1)),from:Number(response?.from||(rows.length?1:0)),to:Number(response?.to||rows.length)})}catch(err){setSuppliers([]);setError(err?.response?.data?.message||err?.message||text.loadError)}finally{setLoading(false)}}
   async function refreshAll(){await Promise.all([loadPage(),loadStats(),loadSupportingData()])}
   async function handleSupplierCreated(){setShowCreateModal(false);setSuccessMessage(text.created);await refreshAll();window.setTimeout(()=>setSuccessMessage(""),5000)}
